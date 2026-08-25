@@ -84,7 +84,7 @@ export default function HomePage() {
                 className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 shadow-2xl transform hover:scale-105 transition-all duration-200"
                 data-testid="button-get-started"
               >
-                Get Started
+                Start
               </Button>
               <Button 
                 onClick={() => setLocation('/guest-upload')}
