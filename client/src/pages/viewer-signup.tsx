@@ -354,7 +354,7 @@ export default function ViewerSignup() {
                         onChange={(e) => handleFormChange("firstName", e.target.value)}
                         required
                         placeholder="First name"
-                        className="mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
                         data-testid="input-first-name"
                       />
                     </div>
@@ -365,7 +365,7 @@ export default function ViewerSignup() {
                         value={form.middleName}
                         onChange={(e) => handleFormChange("middleName", e.target.value)}
                         placeholder="Middle name (optional)"
-                        className="mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
                         data-testid="input-middle-name"
                       />
                     </div>
@@ -377,7 +377,7 @@ export default function ViewerSignup() {
                         onChange={(e) => handleFormChange("lastName", e.target.value)}
                         required
                         placeholder="Last name"
-                        className="mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
                         data-testid="input-last-name"
                       />
                     </div>
@@ -392,7 +392,7 @@ export default function ViewerSignup() {
                       onChange={(e) => handleFormChange("dateOfBirth", e.target.value)}
                       required
                       max={new Date().toISOString().split('T')[0]}
-                      className="mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                      className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
                       data-testid="input-date-of-birth"
                     />
                   </div>
@@ -432,7 +432,7 @@ export default function ViewerSignup() {
                                 placeholder="Search"
                                 value={phoneCountrySearch}
                                 onChange={(e) => setPhoneCountrySearch(e.target.value)}
-                                className="h-8 bg-white/10 backdrop-blur-lg border border-white/20 placeholder:text-white"
+                                className="h-8 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
                               />
                             </div>
                             <div className="py-1">
@@ -464,7 +464,7 @@ export default function ViewerSignup() {
                         required
                         placeholder="XXXXXXXXXX"
                         maxLength={10}
-                        className="flex-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                        className="flex-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
                         data-testid="input-phone-number"
                       />
                     </div>
@@ -482,7 +482,7 @@ export default function ViewerSignup() {
                       onChange={(e) => handleFormChange("email", e.target.value)}
                       required
                       placeholder="your.email@example.com"
-                      className="mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                      className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
                       data-testid="input-email"
                     />
                   </div>
@@ -506,7 +506,7 @@ export default function ViewerSignup() {
                       onChange={(e) => handleFormChange("username", e.target.value)}
                       required
                       placeholder="Choose a unique username"
-                      className="mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                      className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
                       data-testid="input-username"
                     />
                   </div>
@@ -521,7 +521,7 @@ export default function ViewerSignup() {
                         onChange={(e) => handleFormChange("password", e.target.value)}
                         required
                         placeholder="Enter password"
-                        className="mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
                         data-testid="input-password"
                       />
                     </div>
@@ -533,7 +533,7 @@ export default function ViewerSignup() {
                         onChange={(e) => handleFormChange("confirmPassword", e.target.value)}
                         required
                         placeholder="Confirm password"
-                        className="mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
                         data-testid="input-confirm-password"
                       />
                     </div>
