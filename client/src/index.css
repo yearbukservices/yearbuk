@@ -455,3 +455,18 @@ input:-webkit-autofill:active {
   color: rgba(255, 255, 255, 0.6) !important;
   -webkit-text-fill-color: rgba(255, 255, 255, 0.6) !important;
 }
+
+
+/* Keep every autofilled input legible against the app's dark UI. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.95) inset !important;
+  box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.95) inset !important;
+  caret-color: #ffffff !important;
+}
