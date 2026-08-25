@@ -1881,15 +1881,51 @@ export class DatabaseStorage implements IStorage {
 
   // Memory operations
   async getMemoriesBySchoolAndYear(schoolId: string, year: number): Promise<Memory[]> {
-    return await db.select().from(memories).where(
+    // Keep this projection compatible with existing databases that predate memories.user_id.
+    const result = await db.select({
+      id: memories.id,
+      schoolId: memories.schoolId,
+      title: memories.title,
+      description: memories.description,
+      imageUrl: memories.imageUrl,
+      cloudinaryPublicId: memories.cloudinaryPublicId,
+      mediaType: memories.mediaType,
+      eventDate: memories.eventDate,
+      year: memories.year,
+      category: memories.category,
+      tags: memories.tags,
+      status: memories.status,
+      uploadedBy: memories.uploadedBy,
+      publicUploadLinkId: memories.publicUploadLinkId,
+      createdAt: memories.createdAt,
+    }).from(memories).where(
       and(eq(memories.schoolId, schoolId), eq(memories.year, year))
     );
+    return result.map(memory => ({ ...memory, userId: null })) as Memory[];
   }
 
   async getMemoriesBySchool(schoolId: string): Promise<Memory[]> {
-    return await db.select().from(memories).where(
+    // Keep this projection compatible with existing databases that predate memories.user_id.
+    const result = await db.select({
+      id: memories.id,
+      schoolId: memories.schoolId,
+      title: memories.title,
+      description: memories.description,
+      imageUrl: memories.imageUrl,
+      cloudinaryPublicId: memories.cloudinaryPublicId,
+      mediaType: memories.mediaType,
+      eventDate: memories.eventDate,
+      year: memories.year,
+      category: memories.category,
+      tags: memories.tags,
+      status: memories.status,
+      uploadedBy: memories.uploadedBy,
+      publicUploadLinkId: memories.publicUploadLinkId,
+      createdAt: memories.createdAt,
+    }).from(memories).where(
       eq(memories.schoolId, schoolId)
     );
+    return result.map(memory => ({ ...memory, userId: null })) as Memory[];
   }
 
   async getMemoriesByUser(userId: string): Promise<Memory[]> {
