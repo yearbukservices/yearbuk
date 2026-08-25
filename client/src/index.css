@@ -521,3 +521,54 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
   caret-color: #ffffff !important;
   transition: background-color 9999s ease-out 0s;
 }
+
+/* iOS Safari compatibility: prevent native white form controls on older and newer devices. */
+.signup-form-page input[type="text"],
+.signup-form-page input[type="email"],
+.signup-form-page input[type="password"],
+.signup-form-page input[type="url"],
+.signup-form-page input[type="number"],
+.signup-form-page input[type="tel"],
+.signup-form-page input[type="search"],
+.signup-form-page input:not([type]),
+.signup-form-page textarea,
+.signup-form-page select {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-image: none !important;
+  background-clip: padding-box !important;
+  -webkit-background-clip: padding-box !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  caret-color: #ffffff !important;
+}
+
+.signup-form-page input[type="text"]::placeholder,
+.signup-form-page input[type="email"]::placeholder,
+.signup-form-page input[type="password"]::placeholder,
+.signup-form-page input[type="url"]::placeholder,
+.signup-form-page input[type="number"]::placeholder,
+.signup-form-page input[type="tel"]::placeholder,
+.signup-form-page input[type="search"]::placeholder,
+.signup-form-page textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* iOS autofill paints an inset layer; keep that layer translucent too. */
+.signup-form-page input:-webkit-autofill,
+.signup-form-page input:-webkit-autofill:hover,
+.signup-form-page input:-webkit-autofill:focus,
+.signup-form-page input:-webkit-autofill:active {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-image: none !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
+  box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
+  caret-color: #ffffff !important;
+}
