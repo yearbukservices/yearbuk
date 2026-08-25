@@ -1342,6 +1342,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get the complete public school profile by username.
+  // The frontend profile pages consume school, yearbooks, and memories together.
+  app.get("/api/schools/profile-by-username/:username", async (req, res) => {
+    try {
+      const username = decodeURIComponent(req.params.username).trim().toLowerCase();
+      const school = await storage.getSchoolByUsername(username);
+
+      if (!school) {
+        return res.status(404).json({ message: "School not found" });
+      }
+
+      const [yearbooks, memories] = await Promise.all([
+        storage.getYearbooksBySchool(school.id),
+        storage.getMemoriesBySchool(school.id),
+      ]);
+
+      res.json({ school, yearbooks, memories });
+    } catch (error) {
+      console.error("Error fetching school profile by username:", error);
+      res.status(500).json({ message: "Failed to get school profile" });
+    }
+  });
+
   app.get("/api/schools/by-username/:username", async (req, res) => {
     try {
       const { username } = req.params;
