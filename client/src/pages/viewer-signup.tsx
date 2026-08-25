@@ -356,7 +356,7 @@ export default function ViewerSignup() {
                         placeholder="First name"
                         className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-first-name"
-                      />/>/>
+                      />
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-white">Middle Name</Label>
@@ -367,7 +367,7 @@ export default function ViewerSignup() {
                         placeholder="Middle name (optional)"
                         className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-middle-name"
-                      />/>/>
+                      />
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-white">Last Name *</Label>
@@ -379,7 +379,7 @@ export default function ViewerSignup() {
                         placeholder="Last name"
                         className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-last-name"
-                      />/>/>
+                      />
                     </div>
                   </div>
 
@@ -394,7 +394,7 @@ export default function ViewerSignup() {
                       max={new Date().toISOString().split('T')[0]}
                       className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                       data-testid="input-date-of-birth"
-                    />/>/>
+                    />
                   </div>
                 </div>
               )}
@@ -433,7 +433,7 @@ export default function ViewerSignup() {
                                 value={phoneCountrySearch}
                                 onChange={(e) => setPhoneCountrySearch(e.target.value)}
                                 className="h-8 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
-                              />/>/>
+                              />
                             </div>
                             <div className="py-1">
                               {filteredPhoneCountries.map((country) => (
@@ -466,7 +466,7 @@ export default function ViewerSignup() {
                         maxLength={10}
                         className="flex-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-phone-number"
-                      />/>/>
+                      />
                     </div>
                     <p className="text-xs text-white/60 mt-1">
                       Phone number must be 10 digits
@@ -484,7 +484,7 @@ export default function ViewerSignup() {
                       placeholder="your.email@example.com"
                       className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                       data-testid="input-email"
-                    />/>/>
+                    />
                   </div>
                 </div>
               )}
@@ -508,7 +508,7 @@ export default function ViewerSignup() {
                       placeholder="Choose a unique username"
                       className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                       data-testid="input-username"
-                    />/>/>
+                    />
                   </div>
 
                   {/* Password */}
@@ -523,7 +523,7 @@ export default function ViewerSignup() {
                         placeholder="Enter password"
                         className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-password"
-                      />/>/>
+                      />
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-white">Confirm Password *</Label>
@@ -535,7 +535,7 @@ export default function ViewerSignup() {
                         placeholder="Confirm password"
                         className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-confirm-password"
-                      />/>/>
+                      />
                     </div>
                   </div>
 
