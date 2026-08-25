@@ -354,9 +354,9 @@ export default function ViewerSignup() {
                         onChange={(e) => handleFormChange("firstName", e.target.value)}
                         required
                         placeholder="First name"
-                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
+                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-first-name"
-                      />/>
+                      />/>/>
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-white">Middle Name</Label>
@@ -365,9 +365,9 @@ export default function ViewerSignup() {
                         value={form.middleName}
                         onChange={(e) => handleFormChange("middleName", e.target.value)}
                         placeholder="Middle name (optional)"
-                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
+                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-middle-name"
-                      />/>
+                      />/>/>
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-white">Last Name *</Label>
@@ -377,9 +377,9 @@ export default function ViewerSignup() {
                         onChange={(e) => handleFormChange("lastName", e.target.value)}
                         required
                         placeholder="Last name"
-                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
+                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-last-name"
-                      />/>
+                      />/>/>
                     </div>
                   </div>
 
@@ -392,9 +392,9 @@ export default function ViewerSignup() {
                       onChange={(e) => handleFormChange("dateOfBirth", e.target.value)}
                       required
                       max={new Date().toISOString().split('T')[0]}
-                      className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
+                      className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                       data-testid="input-date-of-birth"
-                    />/>
+                    />/>/>
                   </div>
                 </div>
               )}
@@ -432,8 +432,8 @@ export default function ViewerSignup() {
                                 placeholder="Search"
                                 value={phoneCountrySearch}
                                 onChange={(e) => setPhoneCountrySearch(e.target.value)}
-                                className="h-8 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
-                              />/>
+                                className="h-8 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                              />/>/>
                             </div>
                             <div className="py-1">
                               {filteredPhoneCountries.map((country) => (
@@ -464,9 +464,9 @@ export default function ViewerSignup() {
                         required
                         placeholder="XXXXXXXXXX"
                         maxLength={10}
-                        className="flex-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
+                        className="flex-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-phone-number"
-                      />/>
+                      />/>/>
                     </div>
                     <p className="text-xs text-white/60 mt-1">
                       Phone number must be 10 digits
@@ -482,9 +482,9 @@ export default function ViewerSignup() {
                       onChange={(e) => handleFormChange("email", e.target.value)}
                       required
                       placeholder="your.email@example.com"
-                      className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
+                      className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                       data-testid="input-email"
-                    />/>
+                    />/>/>
                   </div>
                 </div>
               )}
@@ -506,9 +506,9 @@ export default function ViewerSignup() {
                       onChange={(e) => handleFormChange("username", e.target.value)}
                       required
                       placeholder="Choose a unique username"
-                      className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
+                      className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                       data-testid="input-username"
-                    />/>
+                    />/>/>
                   </div>
 
                   {/* Password */}
@@ -521,9 +521,9 @@ export default function ViewerSignup() {
                         onChange={(e) => handleFormChange("password", e.target.value)}
                         required
                         placeholder="Enter password"
-                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
+                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-password"
-                      />/>
+                      />/>/>
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-white">Confirm Password *</Label>
@@ -533,9 +533,9 @@ export default function ViewerSignup() {
                         onChange={(e) => handleFormChange("confirmPassword", e.target.value)}
                         required
                         placeholder="Confirm password"
-                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 bg-white/10 text-white"
+                        className="mt-1 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                         data-testid="input-confirm-password"
-                      />/>
+                      />/>/>
                     </div>
                   </div>
 
