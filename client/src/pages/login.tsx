@@ -249,7 +249,7 @@ export default function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 placeholder=""
-                className="w-full h-10 sm:h-12 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 text-white/100"
+                className="w-full h-10 sm:h-12 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                 data-testid="input-username"
               />
             </div>
@@ -269,7 +269,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder=""
-                className="w-full h-10 sm:h-12 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 text-white/100"
+                className="w-full h-10 sm:h-12 border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors duration-200 rounded-lg text-sm sm:text-base bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
                 data-testid="input-password"
               />
             </div>
