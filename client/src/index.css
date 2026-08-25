@@ -433,25 +433,25 @@ input:-webkit-autofill:active {
 }
 
 
-/* Keep Chrome and Safari autofill readable in the login modal. */
+/* Match the working glass input treatment in the login modal, including Chrome autofill. */
 .login-form-page input,
 .login-form-page input:-webkit-autofill,
 .login-form-page input:-webkit-autofill:hover,
 .login-form-page input:-webkit-autofill:focus,
 .login-form-page input:-webkit-autofill:active {
-  color: #111827 !important;
-  -webkit-text-fill-color: #111827 !important;
-  background: #ffffff !important;
-  background-color: #ffffff !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
   background-image: none !important;
   -webkit-background-clip: padding-box !important;
   background-clip: padding-box !important;
-  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-  box-shadow: 0 0 0 1000px #ffffff inset !important;
-  caret-color: #111827 !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
+  box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
+  caret-color: #ffffff !important;
 }
 
 .login-form-page input::placeholder {
-  color: #6b7280 !important;
-  -webkit-text-fill-color: #6b7280 !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.6) !important;
 }
