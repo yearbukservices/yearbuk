@@ -377,3 +377,31 @@
     animation-delay: 4s;
   }
 }
+
+
+/* Keep signup form fields readable on iOS Safari, including autofilled fields. */
+.signup-form-page input,
+.signup-form-page textarea,
+.signup-form-page select {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.signup-form-page input::placeholder,
+.signup-form-page textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.signup-form-page input:-webkit-autofill,
+.signup-form-page input:-webkit-autofill:hover,
+.signup-form-page input:-webkit-autofill:focus,
+.signup-form-page textarea:-webkit-autofill,
+.signup-form-page select:-webkit-autofill {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
+  box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
+  transition: background-color 9999s ease-out 0s;
+}
