@@ -391,5 +391,36 @@ input:-webkit-autofill:active {
 }
 
 .signup-form-page input[type="date"] {
-  color-scheme: dark;
+  color-scheme: light;
+}
+
+
+/* Use a solid high-contrast treatment for signup fields on mobile Safari. */
+.signup-form-page input,
+.signup-form-page textarea,
+.signup-form-page select {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+}
+
+.signup-form-page input::placeholder,
+.signup-form-page textarea::placeholder {
+  color: #6b7280 !important;
+  -webkit-text-fill-color: #6b7280 !important;
+}
+
+.signup-form-page input:-webkit-autofill,
+.signup-form-page input:-webkit-autofill:hover,
+.signup-form-page input:-webkit-autofill:focus,
+.signup-form-page input:-webkit-autofill:active {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  background-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
 }
