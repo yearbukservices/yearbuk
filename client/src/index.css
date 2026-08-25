@@ -520,3 +520,20 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
   box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.95) inset !important;
   caret-color: #ffffff !important;
 }
+
+
+/* Signup autofill must use the same dark, legible treatment as login. */
+.signup-form-page input:-webkit-autofill,
+.signup-form-page input:-webkit-autofill:hover,
+.signup-form-page input:-webkit-autofill:focus,
+.signup-form-page input:-webkit-autofill:active {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.95) inset !important;
+  box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.95) inset !important;
+  caret-color: #ffffff !important;
+  transition: background-color 9999s ease-out 0s;
+}
