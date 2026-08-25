@@ -455,7 +455,10 @@ export class MemStorage implements IStorage {
   }
 
   async getSchoolByUsername(username: string): Promise<School | undefined> {
-    return Array.from(this.schools.values()).find(school => school.username === username);
+    const normalizedUsername = username.trim().toLowerCase();
+    return Array.from(this.schools.values()).find(
+      school => school.username.trim().toLowerCase() === normalizedUsername
+    );
   }
 
   async searchSchools(query: string): Promise<School[]> {
@@ -1733,7 +1736,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSchoolByUsername(username: string): Promise<School | undefined> {
-    const result = await db.select().from(schools).where(eq(schools.username, username)).limit(1);
+    const normalizedUsername = username.trim().toLowerCase();
+    const result = await db.select()
+      .from(schools)
+      .where(sql`LOWER(${schools.username}) = ${normalizedUsername}`)
+      .limit(1);
     return result[0];
   }
 
