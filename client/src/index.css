@@ -1,0 +1,379 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 210 25% 7.8431%;
+  --card: 180 6.6667% 97.0588%;
+  --card-foreground: 210 25% 7.8431%;
+  --card-border: 201.4286 30.4348% 90.9804%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 25% 7.8431%;
+  --popover-border: 201.4286 30.4348% 90.9804%;
+  --primary: 218.18 89.57% 58.43%;
+  --primary-foreground: 0 0% 100%;
+  --primary-border: 218.18 89.57% 48.43%;
+  --secondary: 159.47 94.51% 39.22%;
+  --secondary-foreground: 0 0% 100%;
+  --secondary-border: 159.47 94.51% 29.22%;
+  --muted: 240 1.9608% 90%;
+  --muted-foreground: 210 25% 7.8431%;
+  --muted-border: 240 1.9608% 80%;
+  --accent: 211.5789 51.3514% 92.7451%;
+  --accent-foreground: 218.18 89.57% 58.43%;
+  --accent-border: 211.5789 51.3514% 82.7451%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --destructive-border: 0 84% 50%;
+  --border: 201.4286 30.4348% 90.9804%;
+  --input: 200 23.0769% 97.4510%;
+  --ring: 218.18 89.57% 58.43%;
+  --chart-1: 218.18 89.57% 58.43%;
+  --chart-2: 159.47 94.51% 39.22%;
+  --chart-3: 42.0290 92.8251% 56.2745%;
+  --chart-4: 147.1429 78.5047% 41.9608%;
+  --chart-5: 341.4894 75.2000% 50.9804%;
+  --sidebar: 180 6.6667% 97.0588%;
+  --sidebar-foreground: 210 25% 7.8431%;
+  --sidebar-primary: 218.18 89.57% 58.43%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-primary-border: 218.18 89.57% 48.43%;
+  --sidebar-accent: 211.5789 51.3514% 92.7451%;
+  --sidebar-accent-foreground: 218.18 89.57% 58.43%;
+  --sidebar-accent-border: 211.5789 51.3514% 82.7451%;
+  --sidebar-border: 205.0000 25.0000% 90.5882%;
+  --sidebar-ring: 218.18 89.57% 58.43%;
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.5rem;
+  --shadow-2xs: 0px 2px 0px 0px hsl(218.18 89.57% 58.43% / 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(218.18 89.57% 58.43% / 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(218.18 89.57% 58.43% / 0.00), 0px 1px 2px -1px hsl(218.18 89.57% 58.43% / 0.00);
+  --shadow: 0px 2px 0px 0px hsl(218.18 89.57% 58.43% / 0.00), 0px 1px 2px -1px hsl(218.18 89.57% 58.43% / 0.00);
+  --shadow-md: 0px 2px 0px 0px hsl(218.18 89.57% 58.43% / 0.00), 0px 2px 4px -1px hsl(218.18 89.57% 58.43% / 0.00);
+  --shadow-lg: 0px 2px 0px 0px hsl(218.18 89.57% 58.43% / 0.00), 0px 4px 6px -1px hsl(218.18 89.57% 58.43% / 0.00);
+  --shadow-xl: 0px 2px 0px 0px hsl(218.18 89.57% 58.43% / 0.00), 0px 8px 10px -1px hsl(218.18 89.57% 58.43% / 0.00);
+  --shadow-2xl: 0px 2px 0px 0px hsl(218.18 89.57% 58.43% / 0.00);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    @apply font-sans antialiased text-foreground;
+    background-color: white;
+  }
+
+  /* Prevent image saving on iOS devices - specifically for protected content */
+  .protected-image {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+    -khtml-user-drag: none !important;
+    -moz-user-drag: none !important;
+    -o-user-drag: none !important;
+    user-drag: none !important;
+    pointer-events: none !important;
+  }
+
+  /* Allow click events on protected images when needed */
+  .protected-image.clickable {
+    pointer-events: auto !important;
+  }
+
+  /* Enhanced anti-download protection for yearbook pages */
+  .yearbook-page-image {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+    -khtml-user-drag: none !important;
+    -moz-user-drag: none !important;
+    -o-user-drag: none !important;
+    user-drag: none !important;
+    pointer-events: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Background-based yearbook page (no img tag) */
+  .yearbook-page-bg {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    pointer-events: auto !important;
+  }
+  
+
+  /* Ensure root element has proper background */
+  html {
+    background-color: white;
+  }
+  
+  
+  /* Force background on all pages */
+  #root {
+    @apply min-h-screen;
+    background-color: white;
+  }
+  
+
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 0.2;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.3;
+      transform: scale(1.1);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  @keyframes float-delayed {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-15px);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float-delayed 6s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+
+  /* Fade and slide animations */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in-delayed {
+    0% {
+      opacity: 0;
+    }
+    60% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-in-left {
+    from {
+      opacity: 0;
+      transform: translateX(-50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes bounce-gentle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.8);
+    }
+  }
+
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes text-shimmer {
+    0% {
+      background-position: -200% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
+  }
+
+  @keyframes icon-float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  @keyframes avatar-bounce {
+    0%, 100% {
+      transform: translateY(0px) scale(1);
+    }
+    50% {
+      transform: translateY(-5px) scale(1.05);
+    }
+  }
+
+  @keyframes heartbeat {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+  }
+
+  /* Animation classes */
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out forwards;
+  }
+
+  .animate-fade-in-delayed {
+    animation: fade-in-delayed 2s ease-out forwards;
+  }
+
+  .animate-slide-in-left {
+    animation: slide-in-left 0.6s ease-out forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.6s ease-out forwards;
+  }
+
+  .animate-bounce-gentle {
+    animation: bounce-gentle 3s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 1.5s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
+  .animate-text-shimmer {
+    background: linear-gradient(90deg, #ffffff 0%, #60a5fa 50%, #ffffff 100%);
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: text-shimmer 3s ease-in-out infinite;
+  }
+
+  .animate-icon-float {
+    animation: icon-float 2s ease-in-out infinite;
+  }
+
+  .animate-avatar-bounce {
+    animation: avatar-bounce 2s ease-in-out infinite;
+  }
+
+  .animate-heartbeat {
+    animation: heartbeat 1.5s ease-in-out infinite;
+  }
+
+  /* Animation delays */
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+
+  .animation-delay-500 {
+    animation-delay: 0.5s;
+  }
+
+  .animation-delay-600 {
+    animation-delay: 0.6s;
+  }
+
+  .animation-delay-800 {
+    animation-delay: 0.8s;
+  }
+
+  .animation-delay-1000 {
+    animation-delay: 1s;
+  }
+
+  .animation-delay-1500 {
+    animation-delay: 1.5s;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
