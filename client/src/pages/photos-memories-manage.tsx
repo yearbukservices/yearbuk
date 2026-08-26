@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowRight, Upload, FolderOpen, HardDrive, Images, X, FileImage, Menu, Home, Settings, ShoppingCart, LogOut, Share2, Copy, Calendar, Clock, Check, XCircle, AlertTriangle, Eye, Edit2, Trash2, Search, Filter, Bell } from "lucide-react";
+import { ArrowLeft, ArrowRight, Upload, FolderOpen, HardDrive, X, FileImage, Menu, Home, Settings, ShoppingCart, LogOut, Share2, Copy, Calendar, Clock, Check, XCircle, AlertTriangle, Eye, Edit2, Trash2, Search, Filter, Bell } from "lucide-react";
 import EnhancedImageViewer from "@/components/ui/enhanced-image-viewer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -1364,35 +1364,6 @@ export default function PhotosMemoriesManage() {
               </div>
               <PublicUploadLinksManager schoolId={schoolId} year={year} />
             </div>
-          </Card>
-
-          {/* Memory Types Info */}
-          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-            <CardHeader>
-              <CardTitle className="flex items-center text-white">
-                <Images className="h-5 w-5 mr-2" />
-                Memory Categories
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 sm:gap-4 text-center">
-                <div className="p-3 bg-green-500/20 backdrop-blur-lg border border-green-400/20 rounded-lg">
-                  <p className="text-sm font-medium text-green-200">Graduation</p>
-                </div>
-                <div className="p-3 bg-orange-500/20 backdrop-blur-lg border border-orange-400/20 rounded-lg">
-                  <p className="text-sm font-medium text-orange-200">Sports</p>
-                </div>
-                <div className="p-3 bg-purple-500/20 backdrop-blur-lg border border-purple-400/20 rounded-lg">
-                  <p className="text-sm font-medium text-purple-200">Arts</p>
-                </div>
-                <div className="p-3 bg-pink-500/20 backdrop-blur-lg border border-pink-400/20 rounded-lg">
-                  <p className="text-sm font-medium text-pink-200">Field Trips</p>
-                </div>
-                <div className="p-3 bg-blue-500/20 backdrop-blur-lg border border-blue-400/20 rounded-lg">
-                  <p className="text-sm font-medium text-blue-200">Academic</p>
-                </div>
-              </div>
-            </CardContent>
           </Card>
 
           {/* Upload Form with Tabs */}
