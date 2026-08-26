@@ -1340,6 +1340,7 @@ export default function PhotosMemoriesManage() {
                               setPreviewMemory(memory);
                               setShowPreviewDialog(true);
                             }}
+                            squarePreview={true}
                             className="border bg-white/5 hover:bg-white/10 transition-colors"
                           />
                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-80 transition-opacity flex flex-col justify-between p-2 rounded-lg pointer-events-none">
