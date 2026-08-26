@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileImage, X, CheckCircle, AlertCircle, Clock, Users, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BETA_VERSION } from "@shared/constants";
+import ImageCropDialog from "@/components/ImageCropDialog";
 
 // Form schema for guest upload
 const guestUploadSchema = z.object({
@@ -65,6 +66,8 @@ export default function GuestUpload() {
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [cropTarget, setCropTarget] = useState<{ file: File; mode: "single" | "multiple"; metadata?: MultipleUploadFile } | null>(null);
+  const [pendingMultipleCrops, setPendingMultipleCrops] = useState<MultipleUploadFile[]>([]);
   const [linkInfo, setLinkInfo] = useState<UploadLinkInfo | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -191,18 +194,66 @@ export default function GuestUpload() {
     }
   };
 
+  const isImageFile = (file: File) => file.type.startsWith("image/");
+
+  const createCroppedFile = (originalFile: File, croppedBlob: Blob) => {
+    const baseName = originalFile.name.replace(/\.[^/.]+$/, "");
+    const extension = croppedBlob.type === "image/png" ? "png" : "jpg";
+    return new File([croppedBlob], baseName + "-cropped." + extension, {
+      type: croppedBlob.type || "image/jpeg",
+      lastModified: Date.now(),
+    });
+  };
+
+  const startNextMultipleCrop = (queue: MultipleUploadFile[]) => {
+    const [next, ...remaining] = queue;
+    setPendingMultipleCrops(remaining);
+    setCropTarget(next ? { file: next.file, mode: "multiple", metadata: next } : null);
+  };
+
   // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      
-      // Create preview URL
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      
-      // Update form with file
-      form.setValue('file', file);
+    if (!file) return;
+
+    if (isImageFile(file)) {
+      setCropTarget({ file, mode: "single" });
+      event.target.value = "";
+      return;
+    }
+
+    setSelectedFile(file);
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    form.setValue("file", file);
+    event.target.value = "";
+  };
+
+  const handleCropSave = (croppedBlob: Blob) => {
+    if (!cropTarget) return;
+
+    const croppedFile = createCroppedFile(cropTarget.file, croppedBlob);
+    if (cropTarget.mode === "single") {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setSelectedFile(croppedFile);
+      setPreviewUrl(URL.createObjectURL(croppedFile));
+      form.setValue("file", croppedFile);
+      setCropTarget(null);
+      return;
+    }
+
+    if (cropTarget.metadata) {
+      setMultipleFiles(prev => [...prev, { ...cropTarget.metadata!, file: croppedFile }]);
+    }
+    startNextMultipleCrop(pendingMultipleCrops);
+  };
+
+  // Closing the crop dialog cancels the current image and continues the queue.
+  const handleCropClose = () => {
+    if (cropTarget?.mode === "multiple") {
+      startNextMultipleCrop(pendingMultipleCrops);
+    } else {
+      setCropTarget(null);
     }
   };
 
@@ -213,30 +264,23 @@ export default function GuestUpload() {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl("");
     }
-    form.setValue('file', undefined as any);
+    form.setValue("file", undefined as any);
   };
 
   // Multiple file selection handler
   const handleMultipleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    
-    // Generate default title based on category and year
-    const defaultTitle = linkInfo ? `${getCategoryDisplayName(linkInfo.category)} ${linkInfo.year}` : "Memory";
-    
-    // Generate unique IDs and create upload items
+    const defaultTitle = linkInfo ? getCategoryDisplayName(linkInfo.category) + " " + linkInfo.year : "Memory";
     const newUploadFiles: MultipleUploadFile[] = files.map(file => ({
       file,
       title: defaultTitle,
       description: "",
       id: Math.random().toString(36).substr(2, 9)
     }));
-    
-    // Check total size including existing files
-    const existingSize = multipleFiles.reduce((sum, item) => sum + item.file.size, 0);
+
+    const existingSize = [...multipleFiles, ...pendingMultipleCrops].reduce((sum, item) => sum + item.file.size, 0);
     const newSize = newUploadFiles.reduce((sum, item) => sum + item.file.size, 0);
-    const totalSize = existingSize + newSize;
-    
-    if (totalSize > 10 * 1024 * 1024) {
+    if (existingSize + newSize > 10 * 1024 * 1024) {
       toast({
         className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
         title: "File size limit exceeded",
@@ -245,11 +289,27 @@ export default function GuestUpload() {
       });
       return;
     }
-    
-    setMultipleFiles(prev => [...prev, ...newUploadFiles]);
-    
-    // Clear the input
-    event.target.value = '';
+
+    const imageFiles = newUploadFiles.filter(item => isImageFile(item.file));
+    const nonImageFiles = newUploadFiles.filter(item => !isImageFile(item.file));
+    if (nonImageFiles.length > 0) setMultipleFiles(prev => [...prev, ...nonImageFiles]);
+
+    if (imageFiles.length > 0) {
+      const queue = [...pendingMultipleCrops, ...imageFiles];
+      if (!cropTarget) {
+        startNextMultipleCrop(queue);
+      } else {
+        setPendingMultipleCrops(queue);
+      }
+    }
+
+    toast({
+      className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+      title: "Files Added",
+      description: imageFiles.length > 0 ? newUploadFiles.length + " file(s) added. Images will be cropped before upload." : newUploadFiles.length + " file(s) added",
+    });
+
+    event.target.value = "";
   };
 
   // Remove file from multiple upload
@@ -962,6 +1022,8 @@ export default function GuestUpload() {
                         disabled={
                           multipleUploadMutation.isPending || 
                           isMultipleSubmitting ||
+                          !!cropTarget ||
+                          pendingMultipleCrops.length > 0 ||
                           !codeVerified || 
                           !verifiedCode || 
                           multipleFiles.length === 0 || 
@@ -986,6 +1048,17 @@ export default function GuestUpload() {
               </Tabs>
             </CardContent>
           </Card>
+
+          <ImageCropDialog
+            isOpen={!!cropTarget}
+            imageFile={cropTarget?.file || null}
+            onClose={handleCropClose}
+            onSave={handleCropSave}
+            aspectRatio={1}
+            cropLabel="memory image"
+            saveButtonText="Use Cropped Image"
+            closeOnSave={false}
+          />
 
           {/* Info Card */}
           <Card className="mt-6 bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl">
