@@ -2871,7 +2871,7 @@ function SortablePendingPage({
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-6 min-w-0">
           {/* Left Sidebar - Price Management & Table of Contents */}
           <div className="w-full lg:w-56 flex-shrink-0 space-y-6">
             {/* Price Management Card */}
@@ -3162,10 +3162,10 @@ function SortablePendingPage({
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col gap-6">
+          <div className="flex-1 min-w-0 flex flex-col gap-6">
 
             {/* Live Preview Card */}
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-lg">
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-lg min-w-0 overflow-hidden">
               <div className="p-4 border-b border-white/20">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -3242,7 +3242,7 @@ function SortablePendingPage({
 
                   return (
                     <div className="flex flex-col items-center gap-4">
-                      <div className="flex items-center justify-center w-full gap-4">
+                      <div className="flex items-center justify-center w-full min-w-0 gap-4">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -3288,7 +3288,7 @@ function SortablePendingPage({
                       {previewPages.length > 1 && (
                         <div
                           ref={previewThumbsRef}
-                          className="flex gap-2 overflow-x-auto pb-1 max-w-full [&::-webkit-scrollbar]:hidden"
+                          className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto pb-1 px-1 [&::-webkit-scrollbar]:hidden"
                           style={{
                             scrollbarWidth: 'none',
                             msOverflowStyle: 'none',
@@ -3315,14 +3315,14 @@ function SortablePendingPage({
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-lg flex flex-col" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-lg flex flex-col min-w-0 overflow-hidden" style={{ maxHeight: 'calc(100vh - 220px)' }}>
               <div className="p-4 border-b border-white/20 flex-shrink-0">
                 <div className="flex justify-between items-center">
                   <h2 className="text-base font-semibold text-white">Yearbook Pages</h2>
                   
                 </div>
               </div>
-              <div className="overflow-y-auto flex-1">
+              <div className="overflow-y-auto flex-1 min-w-0">
 
               {/* Cover Pages - Only show in image upload mode */}
               {yearbook?.uploadType !== "pdf" && (
