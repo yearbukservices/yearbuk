@@ -105,20 +105,6 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
   return (
     <div className="min-h-screen py-0 sm:py-2">
       <div className="max-w-3xl mx-auto px-4">
-        {/* Back Button */}
-        {onBack && (
-          <div className="mb-6">
-            <Button
-              variant="ghost"
-              onClick={onBack}
-              className="text-white/70 hover:text-white hover:bg-white/10"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          </div>
-        )}
-
         {/* Header Section */}
         <div className="text-center mb-12 space-y-5">
           {/* Profile Picture */}
