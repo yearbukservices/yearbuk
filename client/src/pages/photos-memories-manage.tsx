@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowRight, Upload, FolderOpen, HardDrive, X, FileImage, Menu, Home, Settings, ShoppingCart, LogOut, Share2, Copy, Calendar, Clock, Check, XCircle, AlertTriangle, Eye, Edit2, Trash2, Search, Filter, Bell } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Upload, FolderOpen, HardDrive, X, FileImage, Menu, Home, Settings, ShoppingCart, LogOut, Share2, Copy, Calendar, Clock, Check, XCircle, AlertTriangle, Eye, Edit2, Trash2, Search, Filter, Bell } from "lucide-react";
 import EnhancedImageViewer from "@/components/ui/enhanced-image-viewer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -346,6 +346,42 @@ export default function PhotosMemoriesManage() {
     },
     refetchInterval: 15000,
   });
+
+  const previewMemoryIndex = previewMemory
+    ? pendingMemories.findIndex((memory: any) => memory.id === previewMemory.id)
+    : -1;
+  const isPendingPreview = previewMemoryIndex !== -1 && previewMemory?.status === 'pending';
+  const previewTouchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const navigatePendingMemory = (direction: "previous" | "next") => {
+    if (!isPendingPreview) return;
+
+    const nextIndex = direction === "previous"
+      ? previewMemoryIndex - 1
+      : previewMemoryIndex + 1;
+
+    if (nextIndex < 0 || nextIndex >= pendingMemories.length) return;
+    setPreviewMemory(pendingMemories[nextIndex]);
+  };
+
+  const handlePreviewTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    previewTouchStart.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handlePreviewTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const start = previewTouchStart.current;
+    previewTouchStart.current = null;
+
+    if (!start || !isPendingPreview) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+
+    if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+    navigatePendingMemory(deltaX > 0 ? "previous" : "next");
+  };
 
   // Optimistic memory upload mutation
   const uploadMemoryMutation = useMutation({
@@ -1972,7 +2008,26 @@ export default function PhotosMemoriesManage() {
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,20rem)] sm:items-start">
                 {/* Image/Video Preview */}
-                <div className="flex min-w-0 justify-center">
+                <div
+                  className="flex w-full min-w-0 items-center justify-center gap-2"
+                  onTouchStart={handlePreviewTouchStart}
+                  onTouchEnd={handlePreviewTouchEnd}
+                >
+                  {isPendingPreview && pendingMemories.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0 bg-white/[0.07] text-white hover:bg-white/20"
+                      onClick={() => navigatePendingMemory("previous")}
+                      disabled={previewMemoryIndex === 0}
+                      aria-label="Previous pending memory"
+                      data-testid="button-previous-pending-memory"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                  )}
+                  <div className="flex min-w-0 flex-1 justify-center">
                 {previewMemory.mediaType === 'video' && previewMemory.videoUrl ? (
                   <EnhancedVideoPlayer
                     src={previewMemory.videoUrl.startsWith('/') ? previewMemory.videoUrl : `/${previewMemory.videoUrl}`} 
@@ -1997,9 +2052,24 @@ export default function PhotosMemoriesManage() {
                     <Images className="h-16 w-16 text-gray-400" />
                   </div>
                 )}
-              </div>
-              
-              {/* Memory Details */}
+                  </div>
+                  {isPendingPreview && pendingMemories.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0 bg-white/[0.07] text-white hover:bg-white/20"
+                      onClick={() => navigatePendingMemory("next")}
+                      disabled={previewMemoryIndex === pendingMemories.length - 1}
+                      aria-label="Next pending memory"
+                      data-testid="button-next-pending-memory"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
+
+                            {/* Memory Details */}
                 <div className="min-w-0 space-y-3 text-sm">
                 <div>
                   <span className="font-semibold text-blue-50">Title:</span>
