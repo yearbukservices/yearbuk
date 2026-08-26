@@ -53,6 +53,17 @@ export const uploadToCloudinary = async (
   }
 };
 
+// Build a durable HTTPS delivery URL for an existing public Cloudinary asset.
+export const generateCloudinaryUrl = (
+  publicId: string,
+  options: any = {}
+): string => {
+  return cloudinary.url(publicId, {
+    secure: true,
+    ...options
+  });
+};
+
 // Upload secured yearbook content page to Cloudinary with authenticated access
 export const uploadSecureYearbookPage = async (
   filePath: string,
