@@ -2022,6 +2022,7 @@ export default function PhotosMemoriesManage() {
                       src={previewMemory.imageUrl}
                       alt={previewMemory.title}
                       enableZoomPan={true}
+                      fitToViewport={true}
                       className="rounded-lg"
                       data-testid="preview-image"
                     />
