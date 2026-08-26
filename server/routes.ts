@@ -3276,7 +3276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: memory.id,
         title: memory.title,
         description: memory.description,
-        imageUrl: memory.image_url ? `/public${memory.image_url}` : null,
+        imageUrl: memory.image_url || null,
         mediaType: memory.media_type,
         eventDate: memory.event_date,
         year: memory.year,
