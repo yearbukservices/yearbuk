@@ -28,7 +28,7 @@ export default function EnhancedImageViewer({
   enableZoomPan = false,
   squarePreview = false,
   fitToViewport = false,
-  zoomControlsPosition = "overlay"
+  zoomControlsPosition = "side"
 }: EnhancedImageViewerProps) {
   const [isVerticalImage, setIsVerticalImage] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<string>("1 / 1");
