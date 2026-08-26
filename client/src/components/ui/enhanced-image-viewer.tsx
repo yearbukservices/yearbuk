@@ -13,6 +13,7 @@ interface EnhancedImageViewerProps {
   enableZoomPan?: boolean;
   squarePreview?: boolean;
   fitToViewport?: boolean;
+  zoomControlsPosition?: "overlay" | "side";
 }
 
 export default function EnhancedImageViewer({ 
@@ -26,7 +27,8 @@ export default function EnhancedImageViewer({
   viewerMode = false,
   enableZoomPan = false,
   squarePreview = false,
-  fitToViewport = false
+  fitToViewport = false,
+  zoomControlsPosition = "overlay"
 }: EnhancedImageViewerProps) {
   const [isVerticalImage, setIsVerticalImage] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<string>("1 / 1");
@@ -112,9 +114,10 @@ export default function EnhancedImageViewer({
   };
 
   return (
-    <div 
-      ref={imageContainerRef}
-      className={`group relative rounded-lg overflow-hidden ${enableZoomPan ? 'cursor-move' : 'cursor-pointer'} ${className}`}
+    <div className={zoomControlsPosition === "side" ? "flex w-full min-w-0 items-start gap-2" : ""}>
+      <div 
+        ref={imageContainerRef}
+      className={`group relative rounded-lg overflow-hidden ${enableZoomPan ? 'cursor-move' : 'cursor-pointer'} ${zoomControlsPosition === "side" ? "min-w-0 flex-1" : ""} ${className}`}
       style={{ 
         // Grid thumbnails stay square; the dialog keeps the image's natural ratio.
         aspectRatio: squarePreview ? "1 / 1" : isLoaded ? aspectRatio : "1 / 1",
@@ -131,8 +134,8 @@ export default function EnhancedImageViewer({
           : isVerticalImage
             ? '25rem'
             : '100%',
-        width: squarePreview ? '100%' : 'fit-content',
-        margin: squarePreview ? undefined : '0 auto'
+        width: squarePreview || zoomControlsPosition === "side" ? '100%' : 'fit-content',
+        margin: squarePreview || zoomControlsPosition === "side" ? undefined : '0 auto'
       }}
       onClick={!enableZoomPan ? onImageClick : undefined}
       onWheel={handleWheel}
@@ -183,7 +186,7 @@ export default function EnhancedImageViewer({
       )}
       
       {/* Zoom controls */}
-      {enableZoomPan && (
+      {enableZoomPan && zoomControlsPosition === "overlay" && (
         <div className="absolute top-2 right-2 flex flex-col gap-1 bg-black/50 rounded-lg p-1">
           <button
             onClick={(e) => { e.stopPropagation(); zoomIn(); }}
@@ -204,6 +207,20 @@ export default function EnhancedImageViewer({
             className="p-1.5 hover:bg-white/20 rounded transition-colors"
             title="Reset View"
           >
+            <RotateCcw className="h-4 w-4 text-white" />
+          </button>
+        </div>
+      )}
+      </div>
+      {enableZoomPan && zoomControlsPosition === "side" && (
+        <div className="flex shrink-0 flex-col gap-1 rounded-lg bg-black/50 p-1">
+          <button onClick={(e) => { e.stopPropagation(); zoomIn(); }} className="p-1.5 hover:bg-white/20 rounded transition-colors" title="Zoom In">
+            <ZoomIn className="h-4 w-4 text-white" />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); zoomOut(); }} className="p-1.5 hover:bg-white/20 rounded transition-colors" title="Zoom Out">
+            <ZoomOut className="h-4 w-4 text-white" />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); resetZoom(); }} className="p-1.5 hover:bg-white/20 rounded transition-colors" title="Reset View">
             <RotateCcw className="h-4 w-4 text-white" />
           </button>
         </div>
