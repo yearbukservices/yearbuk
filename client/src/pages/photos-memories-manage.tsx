@@ -780,7 +780,7 @@ export default function PhotosMemoriesManage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 relative overflow-hidden">
       {/* Main Animated Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-0 left-0 w-full h-full">
@@ -793,7 +793,7 @@ export default function PhotosMemoriesManage() {
       
       {/* Main Content Container */}
       <div className="relative z-10 min-h-screen">
-      <header className="bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-2xl relative">
+      <header className="bg-slate-950/30 backdrop-blur-2xl border-b border-white/10 shadow-[0_18px_60px_-20px_rgba(0,0,0,0.55)] relative">
         {/* Animated Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full">
@@ -990,10 +990,59 @@ export default function PhotosMemoriesManage() {
         </div>
       )}
 
-      <div className="max-w-screen-2xl mx-auto px-2 sm:px-4 lg:px-8 xl:px-12 py-4 sm:py-8">
-        <div className="space-y-4 sm:space-y-6">
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 py-5 sm:py-10">
+        <div className="space-y-5 sm:space-y-7">
+
+          {/* Quick orientation */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-testid="memory-overview">
+            <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.1]">
+              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-blue-400/20 blur-2xl" />
+              <div className="relative flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-200/70">Uploaded memories</p>
+                  <p className="mt-2 text-2xl sm:text-3xl font-semibold text-white">{memoriesData.length}</p>
+                  <p className="mt-1 text-xs text-white/50">In your collection</p>
+                </div>
+                <div className="rounded-xl bg-blue-400/15 p-2.5 text-blue-200"><FolderOpen className="h-4 w-4" /></div>
+              </div>
+            </div>
+            <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.1]">
+              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-amber-300/20 blur-2xl" />
+              <div className="relative flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100/70">Needs review</p>
+                  <p className="mt-2 text-2xl sm:text-3xl font-semibold text-white">{pendingMemories.length}</p>
+                  <p className="mt-1 text-xs text-white/50">Waiting for approval</p>
+                </div>
+                <div className="rounded-xl bg-amber-300/15 p-2.5 text-amber-100"><Clock className="h-4 w-4" /></div>
+              </div>
+            </div>
+            <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.1]">
+              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-300/20 blur-2xl" />
+              <div className="relative flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-100/70">Categories</p>
+                  <p className="mt-2 text-2xl sm:text-3xl font-semibold text-white">{Math.max(availableCategories.length - 1, 0)}</p>
+                  <p className="mt-1 text-xs text-white/50">Ways to keep memories tidy</p>
+                </div>
+                <div className="rounded-xl bg-violet-300/15 p-2.5 text-violet-100"><Filter className="h-4 w-4" /></div>
+              </div>
+            </div>
+            <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.1]">
+              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-300/20 blur-2xl" />
+              <div className="relative flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/70">Upload portal</p>
+                  <p className="mt-2 text-2xl sm:text-3xl font-semibold text-white">Ready</p>
+                  <p className="mt-1 text-xs text-white/50">Share a link with your community</p>
+                </div>
+                <div className="rounded-xl bg-cyan-300/15 p-2.5 text-cyan-100"><Share2 className="h-4 w-4" /></div>
+              </div>
+            </div>
+          </div>
+
           {/* Constant Memory Upload Link */}
-          <Card className="bg-blue-500/20 backdrop-blur-lg border border-blue-400/40 shadow-2xl">
+          <Card className="bg-blue-500/[0.16] backdrop-blur-2xl border border-blue-300/25 shadow-[0_20px_70px_-28px_rgba(37,99,235,0.65)] rounded-2xl">
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                 <div className="flex items-center space-x-3">
@@ -1033,7 +1082,7 @@ export default function PhotosMemoriesManage() {
           </Card>
           {/* Pending Memories Section */}
           {pendingMemories.length > 0 && (
-            <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+            <Card className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
               <CardHeader>
                 <CardTitle className="flex items-center text-white">
                   <Clock className="h-5 w-5 mr-2" />
@@ -1054,14 +1103,14 @@ export default function PhotosMemoriesManage() {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
                       {pendingMemories.slice(0, 5).map((memory: any) => (
                       <div key={memory.id} className="relative group">
-                        <Card className="bg-white/5 backdrop-blur-lg border border-white/10 hover:bg-white/10 transition-all duration-200">
+                        <Card className="bg-white/[0.045] backdrop-blur-2xl border border-white/10 hover:bg-white/[0.09] transition-all duration-300 rounded-xl">
                           <CardContent className="p-3 sm:p-4">
                             {/* Media Preview */}
                             <div 
-                              className="aspect-square mb-3 rounded-lg overflow-hidden bg-black/20 border border-white/10 cursor-pointer hover:bg-black/30 transition-colors"
+                              className="aspect-square mb-4 rounded-xl overflow-hidden bg-black/20 border border-white/10 cursor-pointer hover:bg-black/30 transition-colors"
                               onClick={() => {
                                 setPreviewMemory(memory);
                                 setShowPreviewDialog(true);
@@ -1195,7 +1244,7 @@ export default function PhotosMemoriesManage() {
             </Card>
           )}
           {/* Public Upload Link Section */}
-          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <Card className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-white">
                 <div className="flex items-center">
@@ -1215,7 +1264,7 @@ export default function PhotosMemoriesManage() {
                       Generate Link
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl max-w-lg w-[95vw] sm:w-[90vw] mx-auto">
+                  <DialogContent className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl max-w-lg w-[95vw] sm:w-[90vw] mx-auto">
                     <DialogHeader>
                       <DialogTitle className="text-white">Generate Public Upload Link</DialogTitle>
                     </DialogHeader>
@@ -1235,7 +1284,7 @@ export default function PhotosMemoriesManage() {
                                   <FormLabel className="text-blue-50">Memory Category</FormLabel>
                                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
-                                      <SelectTrigger className="placeholder:text-white bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl text-white" data-testid="select-public-category">
+                                      <SelectTrigger className="placeholder:text-white bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl text-white" data-testid="select-public-category">
                                         <SelectValue placeholder="Select category" />
                                       </SelectTrigger>
                                     </FormControl>
@@ -1260,7 +1309,7 @@ export default function PhotosMemoriesManage() {
                                   <FormLabel className="text-white">Link Valid For</FormLabel>
                                   <Select onValueChange={field.onChange} value={field.value || "24"}>
                                     <FormControl>
-                                      <SelectTrigger className="placeholder:text-white bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl text-white" data-testid="select-validity-period">
+                                      <SelectTrigger className="placeholder:text-white bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl text-white" data-testid="select-validity-period">
                                         <SelectValue placeholder="Select validity period" />
                                       </SelectTrigger>
                                     </FormControl>
@@ -1279,7 +1328,7 @@ export default function PhotosMemoriesManage() {
 
                             <Button 
                               type="submit" 
-                              className="w-full bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl cursor-pointer transition-all hover:bg-white/15 hover:scale-105  hover:shadow-blue-500/50 hover:shadow-lg hover:scale-105 transition-all duration-200"
+                              className="w-full bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl cursor-pointer transition-all hover:bg-white/15 hover:scale-105  hover:shadow-blue-500/50 hover:shadow-lg hover:scale-105 transition-all duration-200"
                               disabled={generatePublicLinkMutation.isPending}
                               data-testid="button-create-link"
                             >
@@ -1319,7 +1368,7 @@ export default function PhotosMemoriesManage() {
 
                           <div className="flex justify-between">
                             <Button
-                              className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl cursor-pointer transition-all hover:bg-white/15 hover:scale-105  hover:shadow-blue-500/5 text-white"
+                              className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl cursor-pointer transition-all hover:bg-white/15 hover:scale-105  hover:shadow-blue-500/5 text-white"
                               variant="outline"
                               onClick={() => {
                                 setGeneratedLink(null);
@@ -1367,7 +1416,7 @@ export default function PhotosMemoriesManage() {
           </Card>
 
           {/* Upload Form with Tabs */}
-          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <Card className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center text-white">
                 <Upload className="h-5 w-5 mr-2" />
@@ -1376,7 +1425,7 @@ export default function PhotosMemoriesManage() {
             </CardHeader>
             <CardContent>
               <Tabs value={uploadMode} onValueChange={setUploadMode} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-white/5 backdrop-blur-lg border border-white/20">
+                <TabsList className="grid w-full grid-cols-2 bg-white/[0.045] backdrop-blur-2xl border border-white/10">
                   <TabsTrigger
                     value="single"
                     className="text-white/70 data-[state=active]:text-white data-[state=active]:bg-white/20"
@@ -1718,7 +1767,7 @@ export default function PhotosMemoriesManage() {
 
           {/* Existing Memories */}
           {memoriesData.length > 0 && (
-            <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+            <Card className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
               <CardHeader className="space-y-4">
                 <CardTitle className="flex items-center text-white">
                   <FolderOpen className="h-5 w-5 mr-2" />
@@ -1739,7 +1788,7 @@ export default function PhotosMemoriesManage() {
                 
                 {/* Category Filter Tabs */}
                 <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-white/5 backdrop-blur-lg border border-white/20">
+                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-white/[0.045] backdrop-blur-2xl border border-white/10">
                     {availableCategories.map((category) => (
                       <TabsTrigger
                         key={category}
@@ -1950,7 +1999,7 @@ export default function PhotosMemoriesManage() {
       
       {/* Preview Memory Dialog */}
       <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-        <DialogContent className="max-w-4xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+        <DialogContent className="max-w-4xl bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">Preview Memory</DialogTitle>
           </DialogHeader>
@@ -2018,7 +2067,7 @@ export default function PhotosMemoriesManage() {
               {/* Quick Actions */}
               <div className="flex justify-end space-x-2 pt-4 border-t">
                 <Button
-                  className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl text-white"
+                  className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl text-white"
                   variant="outline"
                   onClick={() => setShowPreviewDialog(false)}
                   data-testid="button-close-preview"
@@ -2096,7 +2145,7 @@ export default function PhotosMemoriesManage() {
       
       {/* Edit Memory Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-md bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+        <DialogContent className="max-w-md bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">Edit Memory</DialogTitle>
           </DialogHeader>
@@ -2110,7 +2159,7 @@ export default function PhotosMemoriesManage() {
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   placeholder=""
-                  className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl text-white"
+                  className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl text-white"
                   data-testid="input-edit-title"
                 />
               </div>
@@ -2120,7 +2169,7 @@ export default function PhotosMemoriesManage() {
                 <Select value={editCategory} onValueChange={setEditCategory}>
                   <SelectTrigger 
                     id="edit-category"
-                    className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl text-white"
+                    className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl text-white"
                     data-testid="select-edit-category"
                   >
                     <SelectValue placeholder="Select a category" />
@@ -2137,7 +2186,7 @@ export default function PhotosMemoriesManage() {
               
               <div className="flex justify-end space-x-2 pt-4">
                 <Button
-                  className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl text-white"
+                  className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl text-white"
                   variant="outline"
                   onClick={() => {
                     setShowEditDialog(false);
@@ -2180,7 +2229,7 @@ export default function PhotosMemoriesManage() {
       
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="max-w-md bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+        <DialogContent className="max-w-md bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center text-red-600">
               <AlertTriangle className="h-5 w-5 mr-2" />
@@ -2194,7 +2243,7 @@ export default function PhotosMemoriesManage() {
                 <p className="text-red-600">
                   Are you sure you want to delete this memory?
                 </p>
-                <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-lg p-3">
+                <div className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl rounded-lg p-3">
                   <p className="text-sm font-medium text-white">
                     "{memoryToDelete.title}"
                   </p>
@@ -2206,7 +2255,7 @@ export default function PhotosMemoriesManage() {
               
               <div className="flex justify-end space-x-2 pt-4 border-t">
                 <Button
-                  className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl text-white"
+                  className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl text-white"
                   variant="outline"
                   onClick={() => {
                     setShowDeleteDialog(false);
@@ -2238,7 +2287,7 @@ export default function PhotosMemoriesManage() {
 
       {/* See All Memories Dialog */}
       <Dialog open={showAllMemoriesDialog} onOpenChange={setShowAllMemoriesDialog}>
-        <DialogContent className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl max-w-7xl w-[95vw] sm:w-[90vw] lg:max-w-6xl max-h-[85vh] sm:max-h-[80vh] overflow-hidden mx-auto">
+        <DialogContent className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl max-w-7xl w-[95vw] sm:w-[90vw] lg:max-w-6xl max-h-[85vh] sm:max-h-[80vh] overflow-hidden mx-auto">
           <DialogHeader>
             <DialogTitle className="text-white text-xl">
               All Pending Memories ({pendingMemories.length})
@@ -2248,7 +2297,7 @@ export default function PhotosMemoriesManage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {pendingMemories.map((memory: any) => (
                 <div key={memory.id} className="relative group">
-                  <Card className="bg-white/5 backdrop-blur-lg border border-white/10 hover:bg-white/10 transition-all duration-200">
+                  <Card className="bg-white/[0.045] backdrop-blur-2xl border border-white/10 hover:bg-white/[0.09] transition-all duration-300 rounded-xl">
                     <CardContent className="p-3">
                       {/* Media Preview */}
                       <div className="relative mb-3 rounded-lg overflow-hidden bg-black/20">
@@ -2535,7 +2584,7 @@ function PublicUploadLinksManager({ schoolId, year }: { schoolId: string; year: 
       
       {/* Delete Link Confirmation Dialog */}
       <AlertDialog open={showDeleteLinkDialog} onOpenChange={setShowDeleteLinkDialog}>
-        <AlertDialogContent data-testid="dialog-delete-link-confirm" className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+        <AlertDialogContent data-testid="dialog-delete-link-confirm" className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
           <AlertDialogHeader className="text-white">
             <AlertDialogTitle>Delete Upload Link</AlertDialogTitle>
             <AlertDialogDescription className="text-gray-100/80">
@@ -2544,7 +2593,7 @@ function PublicUploadLinksManager({ schoolId, year }: { schoolId: string; year: 
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete" className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl text-white">Cancel</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete" className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl text-white">Cancel</AlertDialogCancel>
             <AlertDialogAction
               data-testid="button-confirm-delete"
               onClick={() => {
