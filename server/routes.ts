@@ -28,7 +28,7 @@ import {
   createSchoolRejectionEmail,
   createTestEmail
 } from "./utils/emailTemplates";
-import { uploadToCloudinary, uploadSecureYearbookPage, uploadPdfToCloudinary, deleteFromCloudinary, testCloudinaryConnection, generateFolderPath, deleteSchoolAssets, generateSignedUrl, generateSignedUrlsForPages } from "./cloudinary-config";
+import { uploadToCloudinary, uploadSecureYearbookPage, uploadPdfToCloudinary, deleteFromCloudinary, testCloudinaryConnection, generateFolderPath, deleteSchoolAssets, generateSignedUrl, generateSignedUrlsForPages, generateCloudinaryUrl } from "./cloudinary-config";
 import { getImageUrl } from "./watermark-service";
 import sharp from "sharp";
 
@@ -156,6 +156,22 @@ const normalizeMemoryImageUrl = (imageUrl: string | null | undefined): string | 
     return `/${imageUrl}`;
   }
   return imageUrl;
+};
+
+const isLocalMemoryImageUrl = (imageUrl: string | null | undefined): boolean => {
+  const normalizedUrl = normalizeMemoryImageUrl(imageUrl);
+  return normalizedUrl?.startsWith('/uploads/memories/') ?? false;
+};
+
+// Prefer durable Cloudinary assets when a legacy record still has a local URL.
+const getMemoryImageUrl = (
+  imageUrl: string | null | undefined,
+  cloudinaryPublicId: string | null | undefined
+): string | null => {
+  if (cloudinaryPublicId && isLocalMemoryImageUrl(imageUrl)) {
+    return generateCloudinaryUrl(cloudinaryPublicId);
+  }
+  return normalizeMemoryImageUrl(imageUrl);
 };
 
 // Extend Express Request type to include superAdmin and file
@@ -347,7 +363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const result = await pool.query(
-        'SELECT id, title, description, image_url, media_type, event_date, year, category, status, uploaded_by, created_at FROM memories WHERE school_id = $1 AND status = $2 ORDER BY created_at DESC',
+        'SELECT id, title, description, image_url, cloudinary_public_id, media_type, event_date, year, category, status, uploaded_by, created_at FROM memories WHERE school_id = $1 AND status = $2 ORDER BY created_at DESC',
         [schoolId, 'pending']
       );
       
@@ -2440,7 +2456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .map(m => ({
           id: m.id,
           title: m.title,
-          imageUrl: m.imageUrl,
+          imageUrl: getMemoryImageUrl(m.imageUrl, m.cloudinaryPublicId),
           eventDate: m.eventDate,
           year: m.year
         }));
@@ -2490,7 +2506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .map(m => ({
           id: m.id,
           title: m.title,
-          imageUrl: m.imageUrl,
+          imageUrl: getMemoryImageUrl(m.imageUrl, m.cloudinaryPublicId),
           eventDate: m.eventDate,
           year: m.year
         }));
@@ -2591,7 +2607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: m.id,
           title: m.title,
           description: m.description,
-          imageUrl: m.imageUrl,
+          imageUrl: getMemoryImageUrl(m.imageUrl, m.cloudinaryPublicId),
           cloudinaryPublicId: m.cloudinaryPublicId,
           eventDate: m.eventDate,
           year: m.year,
@@ -3293,7 +3309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: memory.id,
         title: memory.title,
         description: memory.description,
-        imageUrl: normalizeMemoryImageUrl(memory.image_url),
+        imageUrl: getMemoryImageUrl(memory.image_url, memory.cloudinary_public_id),
+        cloudinaryPublicId: memory.cloudinary_public_id,
         mediaType: memory.media_type,
         eventDate: memory.event_date,
         year: memory.year,
@@ -3328,7 +3345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(memory => memory.status === 'approved')
         .map(memory => ({
           ...memory,
-          imageUrl: normalizeMemoryImageUrl(memory.imageUrl),
+          imageUrl: getMemoryImageUrl(memory.imageUrl, memory.cloudinaryPublicId),
         }));
       res.json(approvedMemories);
     } catch (error) {
@@ -3341,7 +3358,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const taggedMemories = await storage.getTaggedMemoriesByUser(userId);
-      res.json(taggedMemories);
+      res.json(taggedMemories.map(memory => ({
+        ...memory,
+        imageUrl: getMemoryImageUrl(memory.imageUrl, memory.cloudinaryPublicId)
+      })));
     } catch (error) {
       console.error("Error fetching tagged memories:", error);
       res.status(500).json({ message: "Failed to fetch tagged memories" });
@@ -3352,7 +3372,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const userMemories = await storage.getMemoriesByUser(userId);
-      res.json(userMemories);
+      res.json(userMemories.map(memory => ({
+        ...memory,
+        imageUrl: getMemoryImageUrl(memory.imageUrl, memory.cloudinaryPublicId)
+      })));
     } catch (error) {
       console.error("Error fetching user memories:", error);
       res.status(500).json({ message: "Failed to fetch user memories" });
@@ -3618,30 +3641,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Delete the actual files from disk to prevent orphaned files
+      // Remove durable Cloudinary assets and any remaining local files.
       const fs = await import('fs');
       const path = await import('path');
       
       try {
-        if (memory.imageUrl) {
-          const imagePath = path.default.join(__dirname, '../public', memory.imageUrl);
+        if (memory.cloudinaryPublicId) {
+          await deleteFromCloudinary(memory.cloudinaryPublicId);
+        } else if (memory.imageUrl && isLocalMemoryImageUrl(memory.imageUrl)) {
+          const imagePath = path.default.join(__dirname, '../public', normalizeMemoryImageUrl(memory.imageUrl)!);
           if (fs.default.existsSync(imagePath)) {
             fs.default.unlinkSync(imagePath);
-            console.log(`Deleted image file: ${imagePath}`);
+            console.log('Deleted image file: ' + imagePath);
           }
         }
-        if (memory.videoUrl) {
-          const videoPath = path.default.join(__dirname, '../public', memory.videoUrl);
+        if (memory.videoUrl && isLocalMemoryImageUrl(memory.videoUrl)) {
+          const videoPath = path.default.join(__dirname, '../public', normalizeMemoryImageUrl(memory.videoUrl)!);
           if (fs.default.existsSync(videoPath)) {
             fs.default.unlinkSync(videoPath);
-            console.log(`Deleted video file: ${videoPath}`);
+            console.log('Deleted video file: ' + videoPath);
           }
         }
       } catch (fileError) {
-        console.error("Error deleting files:", fileError);
-        // Continue with database deletion even if file deletion fails
+        console.error("Error deleting memory assets:", fileError);
+        // Continue with database deletion even if asset cleanup fails
       }
-      
+
       await storage.deleteMemory(memoryId);
       res.json({ message: "Memory deleted successfully" });
     } catch (error) {
