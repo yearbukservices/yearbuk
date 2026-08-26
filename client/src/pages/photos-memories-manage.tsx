@@ -1147,19 +1147,7 @@ export default function PhotosMemoriesManage() {
 
                             {/* Approval Actions */}
                             <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 w-8 p-0 bg-white/10 border-white/30 text-white hover:bg-white/20"
-                                onClick={() => {
-                                  setPreviewMemory(memory);
-                                  setShowPreviewDialog(true);
-                                }}
-                                aria-label="Preview memory"
-                                data-testid={`button-preview-${memory.id}`}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
+                              
 
                               {/* Keep deny on the left and approve on the right on mobile. */}
                               <Button
