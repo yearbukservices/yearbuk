@@ -2007,8 +2007,9 @@ export default function PhotosMemoriesManage() {
           
           {previewMemory && (
             <div className="space-y-4">
-              {/* Image/Video Preview */}
-              <div className="flex justify-center">
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,20rem)] sm:items-start">
+                {/* Image/Video Preview */}
+                <div className="flex min-w-0 justify-center">
                 {previewMemory.mediaType === 'video' && previewMemory.videoUrl ? (
                   <EnhancedVideoPlayer
                     src={previewMemory.videoUrl.startsWith('/') ? previewMemory.videoUrl : `/${previewMemory.videoUrl}`} 
@@ -2035,7 +2036,7 @@ export default function PhotosMemoriesManage() {
               </div>
               
               {/* Memory Details */}
-              <div className="space-y-3 text-sm">
+                <div className="min-w-0 space-y-3 text-sm">
                 <div>
                   <span className="font-semibold text-blue-50">Title:</span>
                   <p className="text-green-50 mt-1">{previewMemory.title}</p>
@@ -2064,6 +2065,7 @@ export default function PhotosMemoriesManage() {
                     <span className="ml-2 text-green-50">{previewMemory.uploadedBy}</span>
                   </div>
                 </div>
+              </div>
               </div>
               
               {/* Quick Actions */}
