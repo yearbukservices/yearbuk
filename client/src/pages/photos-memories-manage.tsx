@@ -1076,7 +1076,7 @@ export default function PhotosMemoriesManage() {
                 </code>
               </div>
               <p className="text-xs text-blue-200 mt-2">
-                Non-registered users will be prompted to enter codes. Logged-in viewers/alumni will go directly to upload.
+              
               </p>
             </CardContent>
           </Card>
