@@ -1144,33 +1144,7 @@ export default function PhotosMemoriesManage() {
                               )}
                             </div>
                             
-                            {/* Memory Info */}
-                            <div className="space-y-2 mb-4">
-                              <h3 className="font-medium text-white text-sm" data-testid={`text-pending-title-${memory.id}`}>
-                                {memory.title}
-                              </h3>
-                              
-                              {memory.description && (
-                                <p className="text-blue-100 text-xs line-clamp-2" data-testid={`text-pending-description-${memory.id}`}>
-                                  {memory.description}
-                                </p>
-                              )}
-                              
-                              <div className="flex items-center justify-between text-xs text-blue-200">
-                                <span data-testid={`text-pending-uploader-${memory.id}`}>By: {memory.uploadedBy}</span>
-                                <span className="flex items-center">
-                                  <Calendar className="h-3 w-3 mr-1" />
-                                  {memory.year}
-                                </span>
-                              </div>
-                              
-                              {memory.category && (
-                                <span className="inline-block px-2 py-1 bg-white/10 text-white text-xs rounded-full capitalize">
-                                  {memory.category.replace('_', ' ')}
-                                </span>
-                              )}
-                            </div>
-                            
+
                             {/* Approval Actions */}
                             <div className="flex items-center gap-2">
                               <Button
