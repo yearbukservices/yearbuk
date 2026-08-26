@@ -1172,50 +1172,51 @@ export default function PhotosMemoriesManage() {
                             </div>
                             
                             {/* Approval Actions */}
-                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                            <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                                className="min-w-0 flex-1 bg-white/10 border-white/30 text-white hover:bg-white/20"
                                 onClick={() => {
                                   setPreviewMemory(memory);
                                   setShowPreviewDialog(true);
                                 }}
                                 data-testid={`button-preview-${memory.id}`}
                               >
-                                <Eye className="h-4 w-4 mr-1" />
+                                <Eye className="h-4 w-4 mr-1 shrink-0" />
                                 Preview
                               </Button>
-                              
-                              <Button
-                                size="sm"
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white border-green-700"
-                                onClick={() => approveMemoryMutation.mutate(memory.id)}
-                                disabled={approveMemoryMutation.isPending || denyMemoryMutation.isPending}
-                                data-testid={`button-approve-${memory.id}`}
-                              >
-                                {approveMemoryMutation.isPending ? (
-                                  <Clock className="h-4 w-4 mr-1 animate-spin" />
-                                ) : (
-                                  <Check className="h-4 w-4 mr-1" />
-                                )}
-                               
-                              </Button>
-                              
+
+                              {/* Keep deny on the left and approve on the right on mobile. */}
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                className="flex-1"
+                                className="shrink-0 px-3"
                                 onClick={() => denyMemoryMutation.mutate(memory.id)}
                                 disabled={approveMemoryMutation.isPending || denyMemoryMutation.isPending}
+                                aria-label="Deny memory"
                                 data-testid={`button-deny-${memory.id}`}
                               >
                                 {denyMemoryMutation.isPending ? (
-                                  <Clock className="h-4 w-4 mr-1 animate-spin" />
+                                  <Clock className="h-4 w-4 animate-spin" />
                                 ) : (
-                                  <XCircle className="h-4 w-4 mr-1" />
+                                  <XCircle className="h-4 w-4" />
                                 )}
-                                
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                className="shrink-0 px-3 bg-green-600 hover:bg-green-700 text-white border-green-700"
+                                onClick={() => approveMemoryMutation.mutate(memory.id)}
+                                disabled={approveMemoryMutation.isPending || denyMemoryMutation.isPending}
+                                aria-label="Approve memory"
+                                data-testid={`button-approve-${memory.id}`}
+                              >
+                                {approveMemoryMutation.isPending ? (
+                                  <Clock className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Check className="h-4 w-4" />
+                                )}
                               </Button>
                             </div>
                           </CardContent>
