@@ -12,14 +12,29 @@ interface ImageCropDialogProps {
   aspectRatio?: number; // Width/Height ratio (e.g., 3 for 3:1). If undefined, uses circular crop
   minWidth?: number; // Minimum width for output image
   minHeight?: number; // Minimum height for output image
+  cropLabel?: string; // Custom label for the crop purpose
+  saveButtonText?: string;
+  closeOnSave?: boolean;
 }
 
 const CROP_SIZE = 300; // Fixed crop size in pixels for circular
 const MIN_IMAGE_SIZE = 200; // Minimum image dimension required
 
-export default function ImageCropDialog({ isOpen, onClose, imageFile, onSave, aspectRatio, minWidth, minHeight }: ImageCropDialogProps) {
+export default function ImageCropDialog({
+  isOpen,
+  onClose,
+  imageFile,
+  onSave,
+  aspectRatio,
+  minWidth,
+  minHeight,
+  cropLabel,
+  saveButtonText,
+  closeOnSave = true,
+}: ImageCropDialogProps) {
   // Determine if this is a rectangular or circular crop
   const isRectangular = aspectRatio !== undefined;
+  const cropTypeLabel = cropLabel || (isRectangular ? 'banner' : 'logo');
   const cropWidth = isRectangular ? 450 : CROP_SIZE; // Wider for banner
   const cropHeight = isRectangular ? cropWidth / aspectRatio : CROP_SIZE;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -416,7 +431,7 @@ export default function ImageCropDialog({ isOpen, onClose, imageFile, onSave, as
         tempCanvas.toBlob((blob) => {
           if (blob) {
             onSave(blob);
-            onClose();
+            if (closeOnSave) onClose();
           }
         }, 'image/jpeg', 0.95);
       } else {
@@ -456,12 +471,14 @@ export default function ImageCropDialog({ isOpen, onClose, imageFile, onSave, as
       <DialogContent className="max-w-2xl bg-gray-900 border-gray-700 text-white" aria-describedby="crop-dialog-description">
         <DialogHeader>
           <DialogTitle className="text-white">
-            {isRectangular ? 'Crop Banner Image' : 'Crop Logo Image'}
+            {cropLabel ? "Crop " + cropLabel : (isRectangular ? 'Crop Banner Image' : 'Crop Logo Image')}
           </DialogTitle>
           <DialogDescription id="crop-dialog-description" className="text-gray-300">
-            {isRectangular 
-              ? `Adjust the position and zoom of your banner to create a ${aspectRatio}:1 crop. Use the controls below to position your image perfectly.`
-              : 'Adjust the position and zoom of your logo to create a circular crop. Use the controls below to position your image perfectly.'
+            {cropLabel
+              ? "Adjust the position and zoom of your " + cropLabel + ". Select the portion of the image you want to keep."
+              : isRectangular
+                ? `Adjust the position and zoom of your banner to create a ${aspectRatio}:1 crop. Use the controls below to position your image perfectly.`
+                : 'Adjust the position and zoom of your logo to create a circular crop. Use the controls below to position your image perfectly.'
             }
           </DialogDescription>
         </DialogHeader>
@@ -547,7 +564,7 @@ export default function ImageCropDialog({ isOpen, onClose, imageFile, onSave, as
                     </Button>
                   </div>
                   <p className="text-xs text-gray-400 text-center">
-                    Drag to reposition • Zoom out to fit more, zoom in for details • {isRectangular ? 'Rectangular area will be saved as banner' : 'Circular area will be saved as logo'}
+                    Drag to reposition • Zoom out to fit more, zoom in for details • {cropLabel ? "Selected area will be saved as " + cropTypeLabel : (isRectangular ? 'Rectangular area will be saved as banner' : 'Circular area will be saved as logo')}
                   </p>
                 </div>
               )}
@@ -567,10 +584,10 @@ export default function ImageCropDialog({ isOpen, onClose, imageFile, onSave, as
                   onClick={handleSave} 
                   disabled={!image || isLoading}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
-                  data-testid={isRectangular ? "button-save-banner" : "button-save-logo"}
+                  data-testid={cropLabel ? "button-save-crop" : (isRectangular ? "button-save-banner" : "button-save-logo")}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {isLoading ? 'Saving...' : (isRectangular ? 'Save Banner' : 'Save Logo')}
+                  {isLoading ? 'Saving...' : (saveButtonText || (isRectangular ? 'Save Banner' : 'Save Logo'))}
                 </Button>
               </div>
             </>
