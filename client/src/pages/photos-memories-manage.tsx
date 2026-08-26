@@ -1103,7 +1103,7 @@ export default function PhotosMemoriesManage() {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+                    <div className="grid grid-cols-3 gap-4 sm:gap-6">
                       {pendingMemories.slice(0, 5).map((memory: any) => (
                       <div key={memory.id} className="relative group">
                         <Card className="bg-white/[0.045] backdrop-blur-2xl border border-white/10 hover:bg-white/[0.09] transition-all duration-300 rounded-xl">
@@ -1328,9 +1328,9 @@ export default function PhotosMemoriesManage() {
                     )}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4 sm:gap-6">
+                  <div className="grid grid-cols-3 gap-4 sm:gap-6">
                     {filteredMemories.map((memory: any) => (
-                    <div key={memory.id} className="w-full relative">
+                    <div key={memory.id} className="min-w-0 w-full relative">
                       {memory.mediaType === 'image' ? (
                         <div className="group relative">
                           <EnhancedImageViewer
@@ -2300,7 +2300,7 @@ export default function PhotosMemoriesManage() {
             </DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh] pr-2 sm:pr-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4">
               {pendingMemories.map((memory: any) => (
                 <div key={memory.id} className="relative group">
                   <Card className="bg-white/[0.045] backdrop-blur-2xl border border-white/10 hover:bg-white/[0.09] transition-all duration-300 rounded-xl">
