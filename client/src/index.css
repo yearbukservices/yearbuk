@@ -572,3 +572,35 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
   box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.1) inset !important;
   caret-color: #ffffff !important;
 }
+
+/* iOS Safari fallback for translucent dashboard surfaces.
+   Older WebKit versions can composite backdrop-filter as opaque white. */
+@supports (-webkit-touch-callout: none) {
+  .dashboard-shell .backdrop-blur-lg,
+  .dashboard-shell .backdrop-blur-sm {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .dashboard-shell .bg-white\/5 {
+    background-color: rgba(47, 67, 126, 0.92) !important;
+    background-image: none !important;
+  }
+
+  .dashboard-shell .bg-white\/10 {
+    background-color: rgba(31, 48, 103, 0.94) !important;
+    background-image: none !important;
+  }
+
+  .dashboard-shell .border-white\/10 {
+    border-color: rgba(255, 255, 255, 0.18) !important;
+  }
+
+  .dashboard-shell .border-white\/20 {
+    border-color: rgba(255, 255, 255, 0.24) !important;
+  }
+
+  .dashboard-shell .dashboard-main {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom)) !important;
+  }
+}
