@@ -126,9 +126,11 @@ export default function ImageCropDialog({
     // Clear canvas
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    // Calculate image dimensions with zoom
-    const imgWidth = canvasWidth * zoom;
-    const imgHeight = canvasHeight * zoom;
+    // Scale the image itself with zoom. The canvas may be wider than the
+    // fitted image to contain the crop viewport, so using canvas dimensions
+    // here would distort portrait and landscape images.
+    const imgWidth = imageWidth * zoom;
+    const imgHeight = imageHeight * zoom;
 
     // Crop is always centered on canvas
     const cropX = (canvasWidth - cropWidth) / 2;
