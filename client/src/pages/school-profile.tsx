@@ -357,7 +357,7 @@ export default function SchoolProfile() {
                 <p className="text-blue-100">No memories shared yet</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 {memories.map((memory) => (
                   <div key={memory.id} className="bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden border border-white/20 shadow-2xl hover:bg-white/15 transition-all cursor-pointer">
                     <img 
