@@ -3364,15 +3364,15 @@ function SortablePendingPage({
                     ) : (
                       <Button
                         
-                       className="text-blue-50 bg-blue-500/40 backdrop-blur-lg border border-blue-500 shadow-2xl cursor-pointer transition-all hover:bg-blue-410 hover:scale-105 hover:border-blue-700 hover:scale-105 transition-all duration-200"
+                       className="h-10 w-10 px-0 sm:w-auto sm:px-4 text-blue-50 bg-blue-500/40 backdrop-blur-lg border border-blue-500 shadow-2xl cursor-pointer transition-all hover:bg-blue-410 hover:scale-105 hover:border-blue-700 hover:scale-105 transition-all duration-200"
                         onClick={() => {
                           setSelectedPageType("front_cover");
                           setShowUploadDialog(true);
                         }}
-                        data-testid="button-upload-front-cover"
+                        data-testid="button-upload-front-cover" aria-label="Upload front cover" title="Upload front cover"
                       >
-                        <Upload className="h-4 w-4 mr-2 text-blue-50" />
-                        Upload Front Cover
+                        <Upload className="h-4 w-4 sm:mr-2 text-blue-50" aria-hidden="true" />
+                        <span className="hidden sm:inline">Upload Front Cover</span>
                       </Button>
                     )}
                   </div>
