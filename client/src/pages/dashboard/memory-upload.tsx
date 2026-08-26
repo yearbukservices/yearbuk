@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, CheckCircle, X, FileImage, RotateCcw, Tag, UserCircle } from "lucide-react";
+import ImageCropDialog from "@/components/ImageCropDialog";
 import { useToast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = 'memory-upload-state';
@@ -73,6 +74,8 @@ export default function MemoryUploadPage() {
   // Multiple upload state
   const [uploadMode, setUploadMode] = useState<'single' | 'multiple'>('single');
   const [multipleUploadForm, setMultipleUploadForm] = useState<{ files: { file: File, title: string, description: string }[] }>({ files: [] });
+  const [cropTarget, setCropTarget] = useState<{ file: File; mode: "single" | "multiple"; metadata?: { file: File; title: string; description: string } } | null>(null);
+  const [pendingMultipleCrops, setPendingMultipleCrops] = useState<{ file: File; title: string; description: string }[]>([]);
   
   // Upload loading states
   const [isUploadingMemory, setIsUploadingMemory] = useState(false);
@@ -153,6 +156,8 @@ export default function MemoryUploadPage() {
     setPreviewUrl("");
     setUploadForm({ title: "", description: "" });
     setMultipleUploadForm({ files: [] });
+    setCropTarget(null);
+    setPendingMultipleCrops([]);
     setUploadMode('single');
     setTaggedUsers([]);
     setTagInput("");
@@ -204,73 +209,111 @@ export default function MemoryUploadPage() {
     }
   };
 
+  const isImageFile = (file: File) => file.type.startsWith("image/");
+
+  const createCroppedFile = (originalFile: File, croppedBlob: Blob) => {
+    const baseName = originalFile.name.replace(/\.[^/.]+$/, "");
+    const extension = croppedBlob.type === "image/png" ? "png" : "jpg";
+    return new File([croppedBlob], baseName + "-cropped." + extension, {
+      type: croppedBlob.type || "image/jpeg",
+      lastModified: Date.now(),
+    });
+  };
+
+  const startNextMultipleCrop = (queue: { file: File; title: string; description: string }[]) => {
+    const [next, ...remaining] = queue;
+    setPendingMultipleCrops(remaining);
+    setCropTarget(next ? { file: next.file, mode: "multiple", metadata: next } : null);
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Check file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-          title: "File Too Large",
-          description: "Please select a file smaller than 10MB",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Cleanup previous preview URL to prevent memory leaks
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "File Too Large",
+        description: "Please select a file smaller than 10MB",
+        variant: "destructive"
+      });
+      event.target.value = "";
+      return;
+    }
+
+    if (isImageFile(file)) {
+      setCropTarget({ file, mode: "single" });
+      event.target.value = "";
+      return;
+    }
+
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    event.target.value = "";
+  };
+
+  const handleCropSave = (croppedBlob: Blob) => {
+    if (!cropTarget) return;
+
+    const croppedFile = createCroppedFile(cropTarget.file, croppedBlob);
+    if (cropTarget.mode === "single") {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setSelectedFile(croppedFile);
+      setPreviewUrl(URL.createObjectURL(croppedFile));
+      setCropTarget(null);
+      return;
+    }
+
+    if (cropTarget.metadata) {
+      setMultipleUploadForm(prev => ({ files: [...prev.files, { ...cropTarget.metadata!, file: croppedFile }] }));
+    }
+    startNextMultipleCrop(pendingMultipleCrops);
+  };
+
+  const handleCropClose = () => {
+    if (cropTarget?.mode === "multiple") {
+      startNextMultipleCrop(pendingMultipleCrops);
+    } else {
+      setCropTarget(null);
     }
   };
 
   const handleMultipleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    
-    // Filter files that are too large
-    const validFiles = files.filter(file => {
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File Too Large",
-          description: `${file.name} is larger than 10MB and was skipped`,
-          variant: "destructive"
-        });
+    const eventType = linkInfo?.category || "Event";
+    const year = linkInfo?.year || new Date().getFullYear();
+    const defaultTitle = eventType + " " + year;
+    const newFiles = files.map(file => ({ file, title: defaultTitle, description: "" }));
+
+    const validFiles = newFiles.filter(fileData => {
+      if (fileData.file.size > 10 * 1024 * 1024) {
+        toast({ title: "File Too Large", description: fileData.file.name + " is larger than 10MB and was skipped", variant: "destructive" });
         return false;
       }
       return true;
     });
+    if (validFiles.length === 0) { event.target.value = ""; return; }
 
-    if (validFiles.length === 0) return;
+    const imageFiles = validFiles.filter(item => isImageFile(item.file));
+    const nonImageFiles = validFiles.filter(item => !isImageFile(item.file));
+    if (nonImageFiles.length > 0) setMultipleUploadForm(prev => ({ files: [...prev.files, ...nonImageFiles] }));
 
-    // Create file data with default titles
-    const newFiles = validFiles.map(file => {
-      // Generate default title: EventType + Year (e.g., "Graduation 2013")
-      const eventType = linkInfo?.category || 'Event';
-      const year = linkInfo?.year || new Date().getFullYear();
-      const defaultTitle = `${eventType} ${year}`;
-      
-      return {
-        file,
-        title: defaultTitle,
-        description: ''
-      };
-    });
-
-    setMultipleUploadForm(prev => ({
-      ...prev,
-      files: [...prev.files, ...newFiles]
-    }));
+    if (imageFiles.length > 0) {
+      const queue = [...pendingMultipleCrops, ...imageFiles];
+      if (!cropTarget) {
+        startNextMultipleCrop(queue);
+      } else {
+        setPendingMultipleCrops(queue);
+      }
+    }
 
     toast({
       className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
       title: "Files Added",
-      description: `${validFiles.length} file(s) added with default titles`,
+      description: imageFiles.length > 0 ? validFiles.length + " file(s) added. Images will be cropped before upload." : validFiles.length + " file(s) added",
     });
+    event.target.value = "";
   };
 
   const handleMemoryUpload = async () => {
@@ -708,7 +751,7 @@ export default function MemoryUploadPage() {
 
                       <Button
                         onClick={handleMultipleMemoryUpload}
-                        disabled={isUploadingMultiple}
+                        disabled={isUploadingMultiple || !!cropTarget || pendingMultipleCrops.length > 0}
                         className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
                         data-testid="button-upload-multiple"
                       >
@@ -722,6 +765,17 @@ export default function MemoryUploadPage() {
           )}
         </CardContent>
       </Card>
+
+      <ImageCropDialog
+        isOpen={!!cropTarget}
+        imageFile={cropTarget?.file || null}
+        onClose={handleCropClose}
+        onSave={handleCropSave}
+        aspectRatio={1}
+        cropLabel="memory image"
+        saveButtonText="Use Cropped Image"
+        closeOnSave={false}
+      />
     </div>
   );
 }
