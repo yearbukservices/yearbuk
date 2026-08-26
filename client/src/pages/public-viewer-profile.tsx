@@ -103,7 +103,7 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
   }
 
   return (
-    <div className="min-h-screen py-4 sm:py-6">
+    <div className="min-h-screen py-0 sm:py-2">
       <div className="max-w-3xl mx-auto px-4">
         {/* Back Button */}
         {onBack && (
