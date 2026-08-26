@@ -2024,6 +2024,7 @@ export default function PhotosMemoriesManage() {
                       alt={previewMemory.title}
                       enableZoomPan={true}
                       fitToViewport={true}
+                      zoomControlsPosition="side"
                       className="rounded-lg"
                       data-testid="preview-image"
                     />
