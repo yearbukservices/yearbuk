@@ -10,13 +10,9 @@ interface PhotoGalleryProps {
 }
 
 export default function PhotoGallery({ memories, viewerMode = false, onImageClick }: PhotoGalleryProps) {
-  // Use flexible grid with auto-fit for different sized items
-  const gridCols = viewerMode 
-    ? "grid-cols-[repeat(auto-fill,minmax(200px,1fr))]" 
-    : "grid-cols-[repeat(auto-fill,minmax(250px,1fr))]";
 
   return (
-    <div className={`grid ${gridCols} gap-6 justify-items-center`}>
+    <div className="grid grid-cols-3 gap-2">
       {memories.map((memory, index) => (
         <div key={memory.id} className="w-full max-w-md">
           {memory.mediaType === 'image' && memory.imageUrl ? (
