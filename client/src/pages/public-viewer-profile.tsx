@@ -103,7 +103,7 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
   }
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-4 sm:py-6">
       <div className="max-w-3xl mx-auto px-4">
         {/* Back Button */}
         {onBack && (
@@ -120,7 +120,7 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
         )}
 
         {/* Header Section */}
-        <div className="text-center mb-12 space-y-6">
+        <div className="text-center mb-12 space-y-5">
           {/* Profile Picture */}
           <div className="flex justify-center">
             <Avatar className="h-32 w-32">
@@ -133,7 +133,7 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
 
           {/* Name & Username */}
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2">{profileUser.fullName}</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">{profileUser.fullName}</h1>
             <p className="text-lg text-cyan-300">@{profileUser.username}</p>
           </div>
 
