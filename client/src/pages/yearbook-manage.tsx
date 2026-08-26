@@ -3315,14 +3315,14 @@ function SortablePendingPage({
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-lg flex flex-col min-w-0 overflow-hidden" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-lg flex flex-col min-w-0 overflow-hidden">
               <div className="p-4 border-b border-white/20 flex-shrink-0">
                 <div className="flex justify-between items-center">
                   <h2 className="text-base font-semibold text-white">Yearbook Pages</h2>
                   
                 </div>
               </div>
-              <div className="overflow-y-auto flex-1 min-w-0">
+              <div className="flex-1 min-w-0">
 
               {/* Cover Pages - Only show in image upload mode */}
               {yearbook?.uploadType !== "pdf" && (
@@ -3498,8 +3498,6 @@ function SortablePendingPage({
                           gap: '16px',
                           justifyContent: 'start',
                           touchAction: 'pan-y',
-                          maxHeight: '520px',
-                          overflowY: 'auto',
                         }}
                         data-testid="pages-grid"
                       >
