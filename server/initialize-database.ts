@@ -100,6 +100,14 @@ export async function initializeDatabase() {
     try {
       const db = await testDatabaseConnection();
       
+      // Repair older databases that predate the logged-in memory uploader column.
+      // This is idempotent and preserves all existing memory records.
+      await db.execute(sql`
+        ALTER TABLE IF EXISTS "memories"
+        ADD COLUMN IF NOT EXISTS "user_id" varchar REFERENCES "users"("id")
+      `);
+      console.log("✅ Verified memories.user_id column");
+
       // Check if users table exists and has data
       const existingUsers = await db.select().from(users).limit(1);
       
