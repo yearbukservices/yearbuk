@@ -39,11 +39,12 @@ export default function EnhancedImageViewer({
   const getMemoryImageUrl = (imageUrl: string | undefined): string => {
     if (!imageUrl) return '/placeholder-image.jpg';
     
-    // Memory images are served directly from /public, so we need to ensure the URL is correct
-    if (imageUrl.startsWith('/uploads/')) {
-      return `/public${imageUrl}`;
-    }
+    // Local memory images are served by the server at /uploads/memories.
+    // Keep that route intact; Cloudinary URLs pass through unchanged.
     if (imageUrl.startsWith('/public/uploads/')) {
+      return imageUrl.replace(/^\/public(?=\/uploads\/)/, '');
+    }
+    if (imageUrl.startsWith('/uploads/')) {
       return imageUrl;
     }
     // If it doesn't start with uploads, assume it's already a full URL
