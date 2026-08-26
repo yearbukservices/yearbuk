@@ -141,6 +141,23 @@ const ensureUploadDirs = async () => {
   }
 };
 
+// Normalize legacy local-memory paths before returning them to clients.
+// Older records may contain /public/uploads/... while the current static route
+// is mounted at /uploads/memories/....
+const normalizeMemoryImageUrl = (imageUrl: string | null | undefined): string | null => {
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith('/public/uploads/')) {
+    return imageUrl.replace(/^\/public(?=\/uploads\/)/, '');
+  }
+  if (imageUrl.startsWith('public/uploads/')) {
+    return `/${imageUrl.replace(/^public\//, '')}`;
+  }
+  if (imageUrl.startsWith('uploads/')) {
+    return `/${imageUrl}`;
+  }
+  return imageUrl;
+};
+
 // Extend Express Request type to include superAdmin and file
 declare global {
   namespace Express {
@@ -3276,7 +3293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: memory.id,
         title: memory.title,
         description: memory.description,
-        imageUrl: memory.image_url || null,
+        imageUrl: normalizeMemoryImageUrl(memory.image_url),
         mediaType: memory.media_type,
         eventDate: memory.event_date,
         year: memory.year,
@@ -3307,7 +3324,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const allMemories = await storage.getMemoriesBySchoolAndYear(schoolId, validYear);
       // Filter out pending memories - only show approved memories in public uploads section
-      const approvedMemories = allMemories.filter(memory => memory.status === 'approved');
+      const approvedMemories = allMemories
+        .filter(memory => memory.status === 'approved')
+        .map(memory => ({
+          ...memory,
+          imageUrl: normalizeMemoryImageUrl(memory.imageUrl),
+        }));
       res.json(approvedMemories);
     } catch (error) {
       res.status(500).json({ message: "Failed to get memories" });
@@ -3376,7 +3398,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uploadedFilePath = path.join(process.cwd(), 'public/uploads/memories', file.filename);
       const mediaType = file.mimetype.startsWith('video/') ? 'video' : 'image';
       
-      let mediaUrl = `/uploads/memories/${file.filename}`;
+      // Images must live in durable storage. A local upload path only survives
+      // for the lifetime of the running server and becomes a broken URL after a
+      // restart or redeploy, so do not save it as a memory image fallback.
+      let mediaUrl: string | null = mediaType === 'image'
+        ? null
+        : `/uploads/memories/${file.filename}`;
       let cloudinaryPublicId: string | null = null;
       
       // Only upload images to Cloudinary (videos stay local for now)
@@ -3405,8 +3432,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Clean up local file after successful upload
           await fs.unlink(uploadedFilePath);
         } catch (error) {
-          console.error('Failed to upload memory to Cloudinary, using local file:', error);
-          // Keep local file as fallback
+          console.error('Failed to upload memory to Cloudinary:', error);
+          try {
+            await fs.unlink(uploadedFilePath);
+          } catch (cleanupError) {
+            console.error('Failed to clean up temporary memory image:', cleanupError);
+          }
+          return res.status(503).json({
+            message: 'Image storage is temporarily unavailable. Please try uploading again.'
+          });
         }
       }
       
