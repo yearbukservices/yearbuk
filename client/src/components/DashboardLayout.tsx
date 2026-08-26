@@ -240,7 +240,7 @@ export function DashboardLayout({ children, userType = "viewer", onSearchTabClic
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+    <div className="dashboard-shell min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-2xl z-30">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
@@ -766,7 +766,7 @@ export function DashboardLayout({ children, userType = "viewer", onSearchTabClic
       </nav>
 
       {/* Main Content Area */}
-      <div className="lg:ml-64 pb-20 lg:pb-8 pt-20">
+      <div className="dashboard-main lg:ml-64 pb-24 lg:pb-8 pt-20">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-8">
           {children}
         </div>
