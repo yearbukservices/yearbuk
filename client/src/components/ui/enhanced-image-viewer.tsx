@@ -79,7 +79,7 @@ export default function EnhancedImageViewer({
     if (!enableZoomPan) return;
     e.preventDefault();
     const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setScale(prev => Math.min(Math.max(0.5, prev + delta), 4));
+    setScale(prev => Math.min(Math.max(1, prev + delta), 4));
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -110,7 +110,7 @@ export default function EnhancedImageViewer({
   };
 
   const zoomOut = () => {
-    setScale(prev => Math.max(prev - 0.25, 0.5));
+    setScale(prev => Math.max(prev - 0.25, 1));
   };
 
   return (
