@@ -2000,7 +2000,7 @@ export default function PhotosMemoriesManage() {
       
       {/* Preview Memory Dialog */}
       <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-        <DialogContent className="max-w-4xl bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
+        <DialogContent className="w-[calc(100%-1rem)] max-w-4xl max-h-[calc(100dvh-1rem)] overflow-y-auto bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl p-4 sm:w-[calc(100%-2rem)] sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-white">Preview Memory</DialogTitle>
           </DialogHeader>
@@ -2017,7 +2017,7 @@ export default function PhotosMemoriesManage() {
                     controls={true}
                   />
                 ) : previewMemory.imageUrl ? (
-                  <div style={{ maxHeight: '45rem', maxWidth: '100%' }}>
+                  <div className="flex w-full max-w-full justify-center overflow-hidden">
                     <EnhancedImageViewer
                       src={previewMemory.imageUrl}
                       alt={previewMemory.title}
