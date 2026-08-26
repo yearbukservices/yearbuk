@@ -599,20 +599,6 @@ export default function InstagramSchoolProfile({
   const { school } = profileData;
   return (
     <div className="w-full">
-      {/* Back Button */}
-      {showBackButton && onBack && (
-        <div className="mb-4">
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="flex items-center gap-2 text-white hover:bg-white/10 bg-white/5 border border-white/20"
-            data-testid="button-back-to-search"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </Button>
-        </div>
-      )}
       {/* Banner Section */}
       <div className="relative w-full aspect-[3/1] bg-muted overflow-hidden group">
         {school.coverPhoto ? (
