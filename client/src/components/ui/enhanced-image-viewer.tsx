@@ -11,6 +11,8 @@ interface EnhancedImageViewerProps {
   category?: string;
   viewerMode?: boolean;
   enableZoomPan?: boolean;
+  squarePreview?: boolean;
+  fitToViewport?: boolean;
 }
 
 export default function EnhancedImageViewer({ 
@@ -22,7 +24,9 @@ export default function EnhancedImageViewer({
   eventDate,
   category,
   viewerMode = false,
-  enableZoomPan = false
+  enableZoomPan = false,
+  squarePreview = false,
+  fitToViewport = false
 }: EnhancedImageViewerProps) {
   const [isVerticalImage, setIsVerticalImage] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<string>("1 / 1");
@@ -112,13 +116,23 @@ export default function EnhancedImageViewer({
       ref={imageContainerRef}
       className={`group relative rounded-lg overflow-hidden ${enableZoomPan ? 'cursor-move' : 'cursor-pointer'} ${className}`}
       style={{ 
-        aspectRatio: isLoaded ? aspectRatio : "1 / 1",
-        // For vertical images (9:16 or portrait), allow larger height up to 720px
-        // For horizontal images, keep reasonable max height
-        maxHeight: isVerticalImage ? '45rem' : '24rem', // 720px for vertical, 384px for horizontal
-        maxWidth: isVerticalImage ? '25rem' : '100%', // 400px max width for vertical images
-        width: 'fit-content',
-        margin: '0 auto'
+        // Grid thumbnails stay square; the dialog keeps the image's natural ratio.
+        aspectRatio: squarePreview ? "1 / 1" : isLoaded ? aspectRatio : "1 / 1",
+        // Keep the full-size viewer inside the available device viewport.
+        maxHeight: squarePreview
+          ? undefined
+          : fitToViewport
+            ? "min(45rem, calc(100dvh - 14rem))"
+            : isVerticalImage
+              ? '45rem'
+              : '24rem',
+        maxWidth: squarePreview || fitToViewport
+          ? '100%'
+          : isVerticalImage
+            ? '25rem'
+            : '100%',
+        width: squarePreview ? '100%' : 'fit-content',
+        margin: squarePreview ? undefined : '0 auto'
       }}
       onClick={!enableZoomPan ? onImageClick : undefined}
       onWheel={handleWheel}
