@@ -63,11 +63,15 @@ export default function ImageCropDialog({
       setError(null);
       setImage(img);
       
-      // Calculate base scale for canvas display
+      // Calculate the fitted image dimensions independently from the crop viewport.
+      // The canvas must be large enough for both. This is important for portrait
+      // images: a 231px-wide image still needs to display a 450px-wide square crop.
       const maxSize = 500;
       const baseScale = Math.min(maxSize / img.width, maxSize / img.height);
-      const canvasWidth = img.width * baseScale;
-      const canvasHeight = img.height * baseScale;
+      const imageWidth = img.width * baseScale;
+      const imageHeight = img.height * baseScale;
+      const canvasWidth = Math.max(imageWidth, cropWidth);
+      const canvasHeight = Math.max(imageHeight, cropHeight);
       
       // Calculate min zoom (crop must stay within image bounds)
       const minZoomCalc = Math.max(
@@ -106,11 +110,15 @@ export default function ImageCropDialog({
     const previewCtx = previewCanvas.getContext('2d');
     if (!ctx || !previewCtx) return;
 
-    // Calculate canvas size (fit image in 500x500 max area)
+    // Fit the image into a 500px bounding box, then make sure the canvas also
+    // contains the complete crop viewport. Without this, a portrait image can
+    // make the square crop wider than the canvas itself.
     const maxSize = 500;
     const scale = Math.min(maxSize / image.width, maxSize / image.height);
-    const canvasWidth = image.width * scale;
-    const canvasHeight = image.height * scale;
+    const imageWidth = image.width * scale;
+    const imageHeight = image.height * scale;
+    const canvasWidth = Math.max(imageWidth, cropWidth);
+    const canvasHeight = Math.max(imageHeight, cropHeight);
 
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
@@ -275,12 +283,12 @@ export default function ImageCropDialog({
     ? (() => {
         const maxSize = 500;
         const baseScale = Math.min(maxSize / image.width, maxSize / image.height);
-        const canvasWidth = image.width * baseScale;
-        const canvasHeight = image.height * baseScale;
-        // Min zoom ensures crop stays within image bounds
+        const imageWidth = image.width * baseScale;
+        const imageHeight = image.height * baseScale;
+        // Min zoom ensures the crop stays within the actual image bounds
         return Math.max(
-          cropWidth / canvasWidth,
-          cropHeight / canvasHeight
+          cropWidth / imageWidth,
+          cropHeight / imageHeight
         );
       })()
     : 1;
