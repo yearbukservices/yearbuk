@@ -14,7 +14,7 @@ export default function PhotoGallery({ memories, viewerMode = false, onImageClic
   return (
     <div className="grid grid-cols-3 gap-2">
       {memories.map((memory, index) => (
-        <div key={memory.id} className="w-full max-w-md">
+        <div key={memory.id} className="min-w-0 w-full">
           {memory.mediaType === 'image' && memory.imageUrl ? (
             <EnhancedImageViewer
               src={memory.imageUrl || undefined}
