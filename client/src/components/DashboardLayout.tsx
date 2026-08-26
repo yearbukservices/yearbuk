@@ -630,20 +630,14 @@ export function DashboardLayout({ children, userType = "viewer", onSearchTabClic
           {userType === "school" ? (
             <>
               <button
-                onClick={() => {
-                  if (location === "/search" && onSearchTabClick) {
-                    onSearchTabClick();
-                  } else {
-                    setLocation("/search");
-                  }
-                }}
+                onClick={() => setLocation("/")}
                 className={`flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-300 ${
-                  location.startsWith("/search") ? "text-white" : "text-blue-200"
+                  location === "/" ? "text-white" : "text-blue-200"
                 }`}
-                data-testid="tab-search-mobile"
+                data-testid="tab-dashboard-mobile"
               >
-                <Search className={`h-6 w-6 mb-1 ${location.startsWith("/search") ? "text-cyan-400" : ""}`} />
-                <span className="text-xs">Search</span>
+                <Home className={`h-6 w-6 mb-1 ${location === "/" ? "text-blue-400" : ""}`} />
+                <span className="text-xs">Dashboard</span>
               </button>
               <button
                 onClick={() => setLocation("/yearbooks")}
