@@ -3968,9 +3968,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
 
-      // Determine media type and URL
+      // Images must use durable storage; local upload paths disappear after a restart or redeploy.
       const mediaType = file.mimetype.startsWith('video/') ? 'video' : 'image';
-      const mediaUrl = `/uploads/memories/${file.filename}`;
+      const uploadedFilePath = path.join(process.cwd(), 'public/uploads/memories', file.filename);
+      let mediaUrl: string | null = `/uploads/memories/${file.filename}`;
+      let cloudinaryPublicId: string | null = null;
+
+      if (mediaType === 'image') {
+        try {
+          const school = await storage.getSchool(link.schoolId);
+          if (!school) {
+            throw new Error('School not found');
+          }
+
+          const folderPath = generateFolderPath(
+            school.name,
+            school.schoolCode,
+            'memories',
+            link.year
+          );
+          const cloudinaryResult = await uploadToCloudinary(uploadedFilePath, folderPath);
+          mediaUrl = cloudinaryResult.secureUrl;
+          cloudinaryPublicId = cloudinaryResult.publicId;
+          await fs.unlink(uploadedFilePath);
+        } catch (error) {
+          console.error('Failed to upload guest memory to Cloudinary:', error);
+          try {
+            await fs.unlink(uploadedFilePath);
+          } catch (cleanupError) {
+            console.error('Failed to clean up temporary guest memory image:', cleanupError);
+          }
+          return res.status(503).json({
+            message: 'Image storage is temporarily unavailable. Please try uploading again.'
+          });
+        }
+      }
 
       // Extract logged-in userId if available (authHeader already declared above)
       const uploaderUserId: string | null = isLoggedIn ? (authHeader as string).substring(7) : null;
@@ -3981,6 +4013,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: title || 'Untitled',
         description: description || null,
         imageUrl: mediaType === 'image' ? mediaUrl : null,
+        cloudinaryPublicId,
         videoUrl: mediaType === 'video' ? mediaUrl : null,
         mediaType,
         eventDate: link.year.toString(),
