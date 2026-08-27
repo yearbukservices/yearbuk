@@ -40,14 +40,18 @@ export default function Search() {
       results = results.filter(school => school.yearFounded === parseInt(selectedYear));
     }
 
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      results = results.filter(school => 
-        school.name.toLowerCase().includes(term) ||
-        school.username.toLowerCase().includes(term) ||
-        school.city?.toLowerCase().includes(term) ||
-        school.state?.toLowerCase().includes(term)
+    const term = searchTerm.trim().toLowerCase();
+    if (term.length >= 2) {
+      const startsWithSearchTerm = (value: string | null | undefined) =>
+        value?.toLowerCase().split(/\s+/).some(word => word.startsWith(term)) ?? false;
+      results = results.filter(school =>
+        startsWithSearchTerm(school.name) ||
+        startsWithSearchTerm(school.username) ||
+        startsWithSearchTerm(school.city) ||
+        startsWithSearchTerm(school.state)
       );
+    } else if (term.length > 0) {
+      results = [];
     }
 
     return results;
