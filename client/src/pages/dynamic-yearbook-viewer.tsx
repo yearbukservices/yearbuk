@@ -1494,7 +1494,7 @@ export default function DynamicYearbookViewer() {
                     <button
                       type="button"
                       onClick={() => setIsNavigationOpen((open) => !open)}
-                      className={`pointer-events-auto absolute top-1/2 ${isNavigationOpen ? "left-full" : "left-0"} flex h-20 w-10 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-white/20 bg-white/10 text-white shadow-2xl backdrop-blur-lg transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+                      className={`pointer-events-auto absolute top-1/2 ${isNavigationOpen ? "left-full" : "left-0"} flex h-20 w-10 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-white/20 bg-white/10 text-white shadow-2xl backdrop-blur-lg transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60`}
                       aria-label={isNavigationOpen ? "Close navigation menu" : "Open navigation menu"}
                       data-testid={isNavigationOpen ? "button-close-navigation" : "button-open-navigation"}
                     >
