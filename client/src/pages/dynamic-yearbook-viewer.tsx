@@ -3,7 +3,7 @@ import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, Maximize2, Share2, BookOpen, FileText, Calendar, ChevronLeft, Menu, Settings, ShoppingCart, LogOut, Home, Bell, X, BookOpenCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, Share2, BookOpen, FileText, Calendar, ChevronLeft, Menu, Settings, ShoppingCart, LogOut, Home, Bell, X, BookOpenCheck } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import type { Yearbook, School, TableOfContentsItem, Notification, AlumniBadge } from "@shared/schema";
@@ -32,7 +32,6 @@ export default function DynamicYearbookViewer() {
   const [user, setUser] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(100);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState('cover');
   const [isSpreadView, setIsSpreadView] = useState(true); // Manual toggle for single vs spread view
 
@@ -452,9 +451,6 @@ export default function DynamicYearbookViewer() {
     });
   };
 
-  const handleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
 
   const handleShare = () => {
     if (navigator.share && yearbook && school) {
@@ -1071,66 +1067,9 @@ export default function DynamicYearbookViewer() {
     }
   };
 
-  const renderFullscreenView = () => {
-    return (
-      <div className="fixed inset-0 bg-black z-50 flex flex-col">
-        <div className="bg-black/80 text-white p-4 flex justify-between items-center">
-          <Button
-            onClick={handleFullscreen}
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-white/20"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Exit Fullscreen
-          </Button>
-
-          <div className="text-sm">
-            {viewMode === 'cover' ? 'Cover' : 
-             viewMode === 'back' ? 'Back Cover' : 
-             `Pages ${currentPage} - ${currentPage + 1}`}
-          </div>
-        </div>
-
-        <div className="flex-1 flex items-center justify-center relative bg-black">
-          {renderPageView()}
-        </div>
-
-        {!isMobile && (
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/80 rounded-full px-6 py-3">
-            <Button
-              onClick={handleZoomOut}
-              variant="ghost"
-              size="sm"
-              className="text-white hover:bg-white/20"
-              disabled={zoomLevel <= 50}
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-
-            <span className="text-white text-sm">{zoomLevel}%</span>
-
-            <Button
-              onClick={handleZoomIn}
-              variant="ghost"
-              size="sm"
-              className="text-white hover:bg-white/20"
-              disabled={zoomLevel >= 500}
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <>
-      {isFullscreen ? (
-        renderFullscreenView()
-      ) : (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
           {/* Animated Background Pattern */}
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-0 left-0 w-full h-full">
@@ -1438,15 +1377,7 @@ export default function DynamicYearbookViewer() {
                           />
                         </div>
 
-                        <Button
-                          onClick={handleFullscreen}
-                          variant="outline"
-                          className="w-full bg-blue-900/90 backdrop-blur-lg border border-blue-700/80 shadow-2xl cursor-pointer transition-all hover:bg-blue-700 hover:scale-105 hover:border-blue-400 text-white"
-                          size="sm"
-                        >
-                          <Maximize2 className="h-4 w-4 mr-2" />
-                          Fullscreen
-                        </Button>
+                        
                       </div>
 
                       {/* Table of Contents */}
@@ -1531,8 +1462,7 @@ export default function DynamicYearbookViewer() {
               </div>
             </div>
           </div>
-        </div>
-      )}
+      </div>
     </>
   );
 }
