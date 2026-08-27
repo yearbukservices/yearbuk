@@ -41,6 +41,8 @@ import {
   type InsertLoginActivity,
   type PasswordResetToken,
   type InsertPasswordResetToken,
+  type RecentSearch,
+  type InsertRecentSearch,
   users,
   schools,
   memories,
@@ -62,7 +64,8 @@ import {
   schoolGalleryImages,
   loginActivity,
   passwordResetTokens,
-  photoTags
+  photoTags,
+  recentSearches
 } from "../shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -115,6 +118,11 @@ export interface IStorage {
   validateUser(username: string, password: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+
+  // Recent search operations
+  getRecentSearches(userId: string): Promise<RecentSearch[]>;
+  saveRecentSearch(search: InsertRecentSearch): Promise<RecentSearch>;
+  clearRecentSearches(userId: string): Promise<void>;
 
   // School operations
   getSchools(): Promise<School[]>;
@@ -326,6 +334,7 @@ export class MemStorage implements IStorage {
   private tableOfContents: Map<string, TableOfContentsItem>;
   private yearbookCodes: Map<string, YearbookCode>;
   private publicUploadLinks: Map<string, PublicUploadLink>;
+  private recentSearches: Map<string, RecentSearch>;
 
   constructor() {
     this.users = new Map();
@@ -343,6 +352,7 @@ export class MemStorage implements IStorage {
     this.tableOfContents = new Map();
     this.yearbookCodes = new Map();
     this.publicUploadLinks = new Map();
+    this.recentSearches = new Map();
     
     // Initialize with seed data
     this.initializeSeedData();
@@ -438,6 +448,39 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async getRecentSearches(userId: string): Promise<RecentSearch[]> {
+    return Array.from(this.recentSearches.values())
+      .filter(search => search.userId === userId)
+      .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0))
+      .slice(0, 5);
+  }
+
+  async saveRecentSearch(search: InsertRecentSearch): Promise<RecentSearch> {
+    for (const [id, existing] of this.recentSearches.entries()) {
+      if (existing.userId === search.userId && existing.searchType === search.searchType && existing.targetUsername === search.targetUsername) {
+        this.recentSearches.delete(id);
+      }
+    }
+
+    const recentSearch: RecentSearch = {
+      ...search,
+      id: randomUUID(),
+      targetImage: search.targetImage ?? null,
+      createdAt: new Date(),
+    };
+    this.recentSearches.set(recentSearch.id, recentSearch);
+
+    const userSearches = await this.getRecentSearches(search.userId);
+    userSearches.slice(5).forEach(item => this.recentSearches.delete(item.id));
+    return recentSearch;
+  }
+
+  async clearRecentSearches(userId: string): Promise<void> {
+    for (const [id, search] of this.recentSearches.entries()) {
+      if (search.userId === userId) this.recentSearches.delete(id);
+    }
   }
 
   async getSchools(): Promise<School[]> {
@@ -1720,6 +1763,38 @@ export class DatabaseStorage implements IStorage {
     const result = await db.update(users).set(updates).where(eq(users.id, id)).returning();
     return result[0];
   }
+
+  async getRecentSearches(userId: string): Promise<RecentSearch[]> {
+    return await db.select()
+      .from(recentSearches)
+      .where(eq(recentSearches.userId, userId))
+      .orderBy(desc(recentSearches.createdAt))
+      .limit(5);
+  }
+
+  async saveRecentSearch(search: InsertRecentSearch): Promise<RecentSearch> {
+    await db.delete(recentSearches).where(and(
+      eq(recentSearches.userId, search.userId),
+      eq(recentSearches.searchType, search.searchType),
+      eq(recentSearches.targetUsername, search.targetUsername),
+    ));
+
+    const [created] = await db.insert(recentSearches).values(search).returning();
+    const allUserSearches = await db.select({ id: recentSearches.id })
+      .from(recentSearches)
+      .where(eq(recentSearches.userId, search.userId))
+      .orderBy(desc(recentSearches.createdAt));
+    const staleIds = allUserSearches.slice(5).map(item => item.id);
+    if (staleIds.length > 0) {
+      await db.delete(recentSearches).where(inArray(recentSearches.id, staleIds));
+    }
+    return created;
+  }
+
+  async clearRecentSearches(userId: string): Promise<void> {
+    await db.delete(recentSearches).where(eq(recentSearches.userId, userId));
+  }
+
 
   // School operations
   async getSchools(): Promise<School[]> {
