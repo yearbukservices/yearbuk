@@ -4,6 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, X } from "lucide-react";
 import type { School } from "@shared/schema";
 
+const MIN_SEARCH_LENGTH = 2;
+
+const startsWithSearchTerm = (value: string | null | undefined, term: string) =>
+  value?.toLowerCase().split(/\s+/).some(word => word.startsWith(term)) ?? false;
+
 interface SearchUser {
   id: string;
   username: string;
@@ -41,13 +46,14 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!searchTerm.trim()) {
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+    if (normalizedSearchTerm.length < MIN_SEARCH_LENGTH) {
       setUserResults([]);
       return;
     }
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchTerm.trim())}`);
+        const res = await fetch(`/api/users/search?q=${encodeURIComponent(normalizedSearchTerm)}`);
         if (res.ok) {
           const data: SearchUser[] = await res.json();
           setUserResults(data.filter(u => u.userType === "viewer"));
@@ -58,13 +64,13 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
   }, [searchTerm]);
 
   const filteredSchools = useMemo(() => {
-    if (!searchTerm.trim()) return [];
-    const term = searchTerm.toLowerCase();
+    const term = searchTerm.trim().toLowerCase();
+    if (term.length < MIN_SEARCH_LENGTH) return [];
     return schools.filter(s =>
-      s.name.toLowerCase().includes(term) ||
-      s.username.toLowerCase().includes(term) ||
-      s.city?.toLowerCase().includes(term) ||
-      s.state?.toLowerCase().includes(term)
+      startsWithSearchTerm(s.name, term) ||
+      startsWithSearchTerm(s.username, term) ||
+      startsWithSearchTerm(s.city, term) ||
+      startsWithSearchTerm(s.state, term)
     ).slice(0, 6);
   }, [schools, searchTerm]);
 
@@ -219,7 +225,12 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                 ) : (
                   <div className="p-8 text-center text-white/50">
                     <Search className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                    {searchTerm ? (
+                    {searchTerm.trim().length > 0 && searchTerm.trim().length < MIN_SEARCH_LENGTH ? (
+                      <>
+                        <p>Type at least {MIN_SEARCH_LENGTH} characters to search</p>
+                        <p className="text-sm mt-1 text-white/30">Searches match the beginning of a name or username</p>
+                      </>
+                    ) : searchTerm ? (
                       <>
                         <p>No results for &ldquo;{searchTerm}&rdquo;</p>
                         <p className="text-sm mt-1 text-white/30">Try a different name or username</p>
