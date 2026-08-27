@@ -1,10 +1,44 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, X } from "lucide-react";
+import { Clock3, Search, Trash2, X } from "lucide-react";
 import type { School } from "@shared/schema";
 
 const MIN_SEARCH_LENGTH = 2;
+const RECENT_SEARCHES_KEY = "yearbuk-recent-searches";
+const MAX_RECENT_SEARCHES = 5;
+
+interface RecentSearch {
+  kind: "school" | "user";
+  id: string;
+  username: string;
+  label: string;
+  profileImage: string | null;
+}
+
+const readRecentSearches = (): RecentSearch[] => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+    if (!stored) return [];
+
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .filter((item): item is RecentSearch =>
+        item &&
+        (item.kind === "school" || item.kind === "user") &&
+        typeof item.id === "string" &&
+        typeof item.username === "string" &&
+        typeof item.label === "string"
+      )
+      .slice(0, MAX_RECENT_SEARCHES);
+  } catch {
+    return [];
+  }
+};
 
 const startsWithSearchTerm = (value: string | null | undefined, term: string) =>
   value?.toLowerCase().split(/\s+/).some(word => word.startsWith(term)) ?? false;
@@ -33,10 +67,15 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
   const [searchTerm, setSearchTerm] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [userResults, setUserResults] = useState<SearchUser[]>([]);
+  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedSchoolData = schools.find(s => s.id === selectedSchool);
+
+  useEffect(() => {
+    setRecentSearches(readRecentSearches());
+  }, []);
 
   useEffect(() => {
     if (!selectedSchoolData && searchInputRef.current) {
@@ -83,6 +122,34 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
     }
     return items.slice(0, 8);
   }, [filteredSchools, userResults]);
+
+  const addRecentSearch = (recentSearch: RecentSearch) => {
+    setRecentSearches(current => {
+      const next = [
+        recentSearch,
+        ...current.filter(item => !(item.kind === recentSearch.kind && item.username === recentSearch.username)),
+      ].slice(0, MAX_RECENT_SEARCHES);
+
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleRecentSearchClick = (recentSearch: RecentSearch) => {
+    setSearchTerm("");
+    setIsExpanded(false);
+
+    if (recentSearch.kind === "school") {
+      onSchoolClick?.(recentSearch.username);
+    } else {
+      onUserClick?.(recentSearch.username);
+    }
+  };
+
+  const handleClearRecentSearches = () => {
+    setRecentSearches([]);
+    localStorage.removeItem(RECENT_SEARCHES_KEY);
+  };
 
   const handleClearSelection = () => {
     if (onSchoolSelect) onSchoolSelect("");
@@ -157,7 +224,53 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
           {isExpanded && (
             <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
               <CardContent className="p-0">
-                {results.length > 0 ? (
+                {searchTerm.trim().length === 0 && recentSearches.length > 0 ? (
+                  <div>
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                        <Clock3 className="w-4 h-4 text-blue-200" />
+                        Recent searches
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleClearRecentSearches}
+                        className="flex items-center gap-1 text-xs text-white/50 hover:text-white/80 transition-colors"
+                        data-testid="button-clear-recent-searches"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Clear
+                      </button>
+                    </div>
+                    {recentSearches.map((recentSearch, index) => (
+                      <button
+                        key={`recent-${recentSearch.kind}-${recentSearch.username}`}
+                        type="button"
+                        onClick={() => handleRecentSearchClick(recentSearch)}
+                        className={`w-full p-4 text-left hover:bg-white/10 transition-colors flex items-center gap-3 ${index < recentSearches.length - 1 ? "border-b border-white/10" : ""}`}
+                        data-testid={`button-recent-search-${recentSearch.kind}-${recentSearch.username}`}
+                      >
+                        <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden bg-white/10 border border-white/20 ${recentSearch.kind === "school" ? "rounded-lg" : ""}`}>
+                          {recentSearch.profileImage ? (
+                            <img
+                              src={recentSearch.profileImage.startsWith("http") ? recentSearch.profileImage : (recentSearch.profileImage.startsWith("/") ? recentSearch.profileImage : `/${recentSearch.profileImage}`)}
+                              alt={recentSearch.label}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-sm font-bold text-white">{recentSearch.label.charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-white truncate">{recentSearch.label}</p>
+                          <p className="text-xs text-white/50">@{recentSearch.username}</p>
+                        </div>
+                        <span className={`flex-shrink-0 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border ${recentSearch.kind === "school" ? "bg-blue-500/30 text-blue-200 border-blue-400/30" : "bg-purple-500/30 text-purple-200 border-purple-400/30"}`}>
+                          {recentSearch.kind === "school" ? "School" : "Viewer"}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : results.length > 0 ? (
                   <div>
                     {results.map((item, index) => {
                       const isLast = index === results.length - 1;
@@ -166,7 +279,16 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                         return (
                           <button
                             key={`school-${s.id}`}
-                            onClick={() => onSchoolClick?.(s.username)}
+                            onClick={() => {
+                              addRecentSearch({
+                                kind: "school",
+                                id: String(s.id),
+                                username: s.username,
+                                label: s.name,
+                                profileImage: s.logo,
+                              });
+                              onSchoolClick?.(s.username);
+                            }}
                             className={`w-full p-4 text-left hover:bg-white/10 transition-colors flex items-center gap-3 ${!isLast ? "border-b border-white/10" : ""}`}
                             data-testid={`button-school-option-${s.id}`}
                           >
@@ -195,7 +317,16 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                         return (
                           <button
                             key={`user-${u.id}`}
-                            onClick={() => onUserClick?.(u.username)}
+                            onClick={() => {
+                              addRecentSearch({
+                                kind: "user",
+                                id: String(u.id),
+                                username: u.username,
+                                label: u.fullName || u.username,
+                                profileImage: u.profileImage,
+                              });
+                              onUserClick?.(u.username);
+                            }}
                             className={`w-full p-4 text-left hover:bg-white/10 transition-colors flex items-center gap-3 ${!isLast ? "border-b border-white/10" : ""}`}
                             data-testid={`button-user-option-${u.id}`}
                           >
