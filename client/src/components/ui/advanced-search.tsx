@@ -47,6 +47,8 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
   const { data: recentSearches = [] } = useQuery<RecentSearch[]>({
     queryKey: ["/api/search/recent"],
     enabled: !!isAuthenticated,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
   const saveRecentSearchMutation = useMutation({
     mutationFn: async (recentSearch: RecentSearch) => {
@@ -115,13 +117,23 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
     return items.slice(0, 8);
   }, [filteredSchools, userResults]);
 
-  const handleRecentSearchClick = (recentSearch: RecentSearch) => {
-    saveRecentSearchMutation.mutate(recentSearch);
-    if (recentSearch.kind === "school") {
-      onSchoolClick?.(recentSearch.username);
-    } else {
-      onUserClick?.(recentSearch.username);
+  const saveAndOpenRecentSearch = async (recentSearch: RecentSearch, openSearch: () => void) => {
+    try {
+      await saveRecentSearchMutation.mutateAsync(recentSearch);
+    } catch (error) {
+      console.error("Failed to save recent search:", error);
     }
+    openSearch();
+  };
+
+  const handleRecentSearchClick = (recentSearch: RecentSearch) => {
+    saveAndOpenRecentSearch(recentSearch, () => {
+      if (recentSearch.kind === "school") {
+        onSchoolClick?.(recentSearch.username);
+      } else {
+        onUserClick?.(recentSearch.username);
+      }
+    });
   };
 
   const handleClearRecentSearches = () => {
@@ -264,16 +276,13 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                         return (
                           <button
                             key={`school-${s.id}`}
-                            onClick={() => {
-                              saveRecentSearchMutation.mutate({
-                                kind: "school",
-                                id: String(s.id),
-                                username: s.username,
-                                label: s.name,
-                                profileImage: s.logo,
-                              });
-                              onSchoolClick?.(s.username);
-                            }}
+                            onClick={() => saveAndOpenRecentSearch({
+                              kind: "school",
+                              id: String(s.id),
+                              username: s.username,
+                              label: s.name,
+                              profileImage: s.logo,
+                            }, () => onSchoolClick?.(s.username))}
                             className={`w-full p-4 text-left hover:bg-white/10 transition-colors flex items-center gap-3 ${!isLast ? "border-b border-white/10" : ""}`}
                             data-testid={`button-school-option-${s.id}`}
                           >
@@ -302,16 +311,13 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                         return (
                           <button
                             key={`user-${u.id}`}
-                            onClick={() => {
-                              saveRecentSearchMutation.mutate({
-                                kind: "user",
-                                id: String(u.id),
-                                username: u.username,
-                                label: u.fullName || u.username,
-                                profileImage: u.profileImage,
-                              });
-                              onUserClick?.(u.username);
-                            }}
+                            onClick={() => saveAndOpenRecentSearch({
+                              kind: "user",
+                              id: String(u.id),
+                              username: u.username,
+                              label: u.fullName || u.username,
+                              profileImage: u.profileImage,
+                            }, () => onUserClick?.(u.username))}
                             className={`w-full p-4 text-left hover:bg-white/10 transition-colors flex items-center gap-3 ${!isLast ? "border-b border-white/10" : ""}`}
                             data-testid={`button-user-option-${u.id}`}
                           >
