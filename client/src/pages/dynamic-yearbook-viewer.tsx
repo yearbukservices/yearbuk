@@ -1470,7 +1470,7 @@ export default function DynamicYearbookViewer() {
                   <div className="border-b border-white/20 p-3 sm:p-4">
                     <Button
                       onClick={handleReturnToSchoolPage}
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       className="text-white bg-white/10 backdrop-blur-lg border border-white/30 hover:bg-white/20"
                       data-testid="button-return-to-school-page"
