@@ -8,6 +8,7 @@ interface NavigationHistory {
 class NavigationTracker {
   private history: NavigationHistory = {};
   private listeners: Array<(history: NavigationHistory) => void> = [];
+  private skipNextRouteTracking = false;
 
   setPreviousRoute(route: string, tab?: string) {
     this.history = {
@@ -15,6 +16,25 @@ class NavigationTracker {
       previousTab: tab
     };
     this.notifyListeners();
+  }
+
+  hasPreviousRoute(): boolean {
+    return Boolean(this.history.previousRoute);
+  }
+
+  trackRouteChange(previousRoute: string) {
+    if (this.skipNextRouteTracking) {
+      this.skipNextRouteTracking = false;
+      return;
+    }
+
+    if (previousRoute) {
+      this.setPreviousRoute(previousRoute);
+    }
+  }
+
+  prepareForBackNavigation() {
+    this.skipNextRouteTracking = true;
   }
 
   getPreviousRoute(): string {
@@ -101,8 +121,12 @@ export const navigateWithTracking = (setLocation: (location: string) => void, ta
   setLocation(targetRoute);
 };
 
-export const navigateBack = (setLocation: (location: string) => void) => {
-  const backRoute = navigationTracker.getBackRoute();
+export const navigateBack = (setLocation: (location: string) => void, fallbackRoute?: string) => {
+  const backRoute = navigationTracker.hasPreviousRoute()
+    ? navigationTracker.getBackRoute()
+    : (fallbackRoute || navigationTracker.getBackRoute());
+
+  navigationTracker.prepareForBackNavigation();
   setLocation(backRoute);
   navigationTracker.clear();
 };
