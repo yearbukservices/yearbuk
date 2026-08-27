@@ -603,6 +603,50 @@ export default function DynamicYearbookViewer() {
     }
   };
 
+  const handlePageSelect = (pageNumber: number) => {
+    if (!contentPages.length) return;
+
+    const contentPageIndex = Math.max(
+      0,
+      Math.min(contentPages.length - 1, pageNumber - 1),
+    );
+    const targetPage = isSpreadView && contentPageIndex % 2 !== 0
+      ? contentPageIndex - 1
+      : contentPageIndex;
+
+    setViewMode(isSpreadView ? 'spread' : 'single');
+    setCurrentPage(targetPage);
+  };
+
+  const renderPageSelector = () => {
+    if (!contentPages.length || (viewMode !== 'single' && viewMode !== 'spread')) {
+      return null;
+    }
+
+    const displayedPage = Math.min(currentPage + 1, contentPages.length);
+
+    return (
+      <div className="flex items-center justify-center gap-2 mt-3 mb-2 text-sm text-white">
+        <label htmlFor="yearbook-page-select">Page</label>
+        <select
+          id="yearbook-page-select"
+          value={displayedPage}
+          onChange={(e) => handlePageSelect(Number(e.target.value))}
+          className="rounded-md border border-white/30 bg-white/10 px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+          aria-label="Select yearbook page"
+          data-testid="select-yearbook-page"
+        >
+          {contentPages.map((_, index) => (
+            <option key={index} value={index + 1} className="text-gray-900">
+              {index + 1}
+            </option>
+          ))}
+        </select>
+        <span>of {contentPages.length}</span>
+      </div>
+    );
+  };
+
   // Show loading state while fetching data
   if (yearbookLoading) {
     return (
@@ -811,9 +855,6 @@ export default function DynamicYearbookViewer() {
                           alt={contentPages[currentPage].title}
                           className="w-full h-full object-contain bg-gradient-to-br from-white/5 to-white/10"
                         />
-                        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
-                          {zoomLevel > 100 ? 'Drag to pan' : `Page ${currentPage + 1} of ${contentPages.length}`}
-                        </div>
                       </div>
 
                       {!isMobile && zoomLevel <= 100 && (
@@ -865,9 +906,6 @@ export default function DynamicYearbookViewer() {
                         alt={contentPages[currentPage].title}
                         className="w-full h-full object-contain bg-gradient-to-br from-white/5 to-white/10"
                       />
-                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
-                        {zoomLevel > 100 ? 'Drag to pan' : `Page ${currentPage + 1}`}
-                      </div>
                     </div>
 
                     {!isMobile && zoomLevel <= 100 && (
@@ -886,9 +924,6 @@ export default function DynamicYearbookViewer() {
                         alt={contentPages[currentPage + 1].title}
                         className="w-full h-full object-contain bg-gradient-to-br from-white/5 to-white/10"
                       />
-                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
-                        {zoomLevel > 100 ? 'Drag to pan' : `Page ${currentPage + 2}`}
-                      </div>
                     </div>
 
                     {!isMobile && zoomLevel <= 100 && (
@@ -936,9 +971,6 @@ export default function DynamicYearbookViewer() {
                         alt={contentPages[currentPage].title}
                         className="w-full h-full object-contain bg-gradient-to-br from-white/5 to-white/10"
                       />
-                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
-                        {zoomLevel > 100 ? 'Drag to pan around page' : `Page ${currentPage + 1} of ${contentPages.length}`}
-                      </div>
                     </div>
 
                     {!isMobile && zoomLevel <= 100 && (
@@ -990,9 +1022,6 @@ export default function DynamicYearbookViewer() {
                         alt={contentPages[currentPage].title}
                         className="w-full h-full object-contain bg-gradient-to-br from-white/5 to-white/10"
                       />
-                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
-                        {zoomLevel > 100 ? 'Drag to pan around page' : `Page ${currentPage + 1} of spread`}
-                      </div>
                     </div>
 
                     {!isMobile && zoomLevel <= 100 && (
@@ -1014,9 +1043,6 @@ export default function DynamicYearbookViewer() {
                         alt={contentPages[currentPage + 1].title}
                         className="w-full h-full object-contain bg-gradient-to-br from-white/5 to-white/10"
                       />
-                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
-                        {zoomLevel > 100 ? 'Drag to pan around page' : `Page ${currentPage + 2} of spread`}
-                      </div>
                     </div>
 
                     {!isMobile && zoomLevel <= 100 && (
@@ -1452,6 +1478,7 @@ export default function DynamicYearbookViewer() {
                   className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
                   <CardContent className="p-2 sm:p-4">
                     {renderPageView()}
+                    {renderPageSelector()}
                   </CardContent>
                 </Card>
               </div>
