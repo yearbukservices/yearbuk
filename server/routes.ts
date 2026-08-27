@@ -8,7 +8,7 @@ import * as fsSync from "fs";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { storage } from "./storage";
-import { insertUserSchema, insertSchoolSchema, insertMemorySchema, insertPublicUploadLinkSchema, insertSchoolGalleryImageSchema, passwordResetTokens, users, yearbooks, yearbookPages } from "@shared/schema";
+import { insertUserSchema, insertSchoolSchema, insertMemorySchema, insertPublicUploadLinkSchema, insertSchoolGalleryImageSchema, insertRecentSearchSchema, passwordResetTokens, users, yearbooks, yearbookPages } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
@@ -1312,6 +1312,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error searching users:", error);
       res.status(500).json({ message: "Failed to search users" });
+    }
+  });
+
+  app.get("/api/search/recent", requireAuth, async (req: any, res) => {
+    try {
+      const searches = await storage.getRecentSearches(req.user.id);
+      res.json(searches.map(search => ({
+        id: search.targetId,
+        kind: search.searchType,
+        username: search.targetUsername,
+        label: search.targetLabel,
+        profileImage: search.targetImage,
+      })));
+    } catch (error) {
+      console.error("Error fetching recent searches:", error);
+      res.status(500).json({ message: "Failed to fetch recent searches" });
+    }
+  });
+
+  app.post("/api/search/recent", requireAuth, async (req: any, res) => {
+    try {
+      const parsed = insertRecentSearchSchema.safeParse({
+        userId: req.user.id,
+        searchType: req.body?.kind,
+        targetId: req.body?.id,
+        targetUsername: req.body?.username,
+        targetLabel: req.body?.label,
+        targetImage: req.body?.profileImage || null,
+      });
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid recent search" });
+      }
+
+      const search = await storage.saveRecentSearch(parsed.data);
+      res.status(201).json({
+        id: search.targetId,
+        kind: search.searchType,
+        username: search.targetUsername,
+        label: search.targetLabel,
+        profileImage: search.targetImage,
+      });
+    } catch (error) {
+      console.error("Error saving recent search:", error);
+      res.status(500).json({ message: "Failed to save recent search" });
+    }
+  });
+
+  app.delete("/api/search/recent", requireAuth, async (req: any, res) => {
+    try {
+      await storage.clearRecentSearches(req.user.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error clearing recent searches:", error);
+      res.status(500).json({ message: "Failed to clear recent searches" });
     }
   });
 
