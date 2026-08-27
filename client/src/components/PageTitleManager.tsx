@@ -2,8 +2,6 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 
 const PAGE_TITLES: Record<string, string> = {
-  "/": "Dashboard",
-  "/home": "Home",
   "/search": "Search",
   "/library": "Library",
   "/profile": "Profile",
@@ -30,13 +28,19 @@ const PAGE_TITLES: Record<string, string> = {
   "/yearbook": "Yearbook",
   "/waibuk": "Yearbook",
   "/memory-upload": "Memory Upload",
-  "/verify-school-email": "Verify Email",
+  "/verify-school-email": "Verify School Email",
 };
 
 export function PageTitleManager() {
   const [location] = useLocation();
 
   useEffect(() => {
+    // Keep the public homepage title exact for SEO and browser tabs.
+    if (location === "/" || location === "/home") {
+      document.title = "Yearbuk";
+      return;
+    }
+
     // Try exact match first
     let pageTitle = PAGE_TITLES[location];
     
