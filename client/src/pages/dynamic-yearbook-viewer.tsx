@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import type { Yearbook, School, TableOfContentsItem, Notification, AlumniBadge } from "@shared/schema";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getSecureImageUrl } from "@/lib/secure-image";
-import { navigateBack } from "@/lib/navigation";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+
+const YEARBOOK_RETURN_CONTEXT_KEY = "yearbook-return-context";
 
 export default function DynamicYearbookViewer() {
   const [, setLocation] = useLocation();
@@ -407,6 +408,17 @@ export default function DynamicYearbookViewer() {
       : "/yearbook-finder";
 
     setLocation(schoolYearbooksRoute);
+  };
+
+  const handleReturnToSchoolPage = () => {
+    if (school?.username) {
+      sessionStorage.setItem(YEARBOOK_RETURN_CONTEXT_KEY, JSON.stringify({
+        schoolUsername: school.username,
+        profileTab: "yearbooks",
+      }));
+    }
+
+    setLocation("/search");
   };
 
   const handleDownload = async () => {
@@ -1101,18 +1113,6 @@ export default function DynamicYearbookViewer() {
             <div className="mx-auto px-2 sm:px-4 lg:px-8 xl:px-12 2xl:px-16 relative z-10">
               <div className="flex justify-between items-center h-12 sm:h-16">
                 <div className="flex items-center space-x-2 sm:space-x-4">
-                  {/* Back Button */}
-                  <Button 
-                    onClick={() => navigateBack(setLocation)}
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-white hover:bg-white/20 p-1 sm:p-2 mr-1 sm:mr-2"
-                    data-testid="button-back"
-                  >
-                    <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-0 sm:mr-1" />
-                    <span className="hidden sm:inline">Back</span>
-                  </Button>
-                  
                   <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                     <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                       <BookOpen className="text-white text-xs sm:text-sm" />
@@ -1454,6 +1454,18 @@ export default function DynamicYearbookViewer() {
               <div className={hasContent && !isMobile ? "lg:col-span-3 order-1 lg:order-2" : "lg:col-span-4 order-1"}>
                 <Card
                   className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+                  <div className="border-b border-white/20 p-3 sm:p-4">
+                    <Button
+                      onClick={handleReturnToSchoolPage}
+                      variant="outline"
+                      size="sm"
+                      className="text-white border-white/30 hover:bg-white/20"
+                      data-testid="button-return-to-school-page"
+                    >
+                      <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                      Return to school page
+                    </Button>
+                  </div>
                   <CardContent className="p-2 sm:p-4">
                     {renderPageView()}
                     {renderPageSelector()}
