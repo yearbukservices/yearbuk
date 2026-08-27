@@ -225,12 +225,7 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                 ) : (
                   <div className="p-8 text-center text-white/50">
                     <Search className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                    {searchTerm.trim().length > 0 && searchTerm.trim().length < MIN_SEARCH_LENGTH ? (
-                      <>
-                        <p>Type at least {MIN_SEARCH_LENGTH} characters to search</p>
-                        <p className="text-sm mt-1 text-white/30">Searches match the beginning of a name or username</p>
-                      </>
-                    ) : searchTerm ? (
+                    {searchTerm.trim().length >= MIN_SEARCH_LENGTH ? (
                       <>
                         <p>No results for &ldquo;{searchTerm}&rdquo;</p>
                         <p className="text-sm mt-1 text-white/30">Try a different name or username</p>
