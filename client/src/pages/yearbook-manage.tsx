@@ -3029,8 +3029,9 @@ function SortablePendingPage({
                 >
                   <Plus className="h-4 w-4 text-white" />
                 </Button>
-              
-            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+              </div>
+
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
               {/* Existing TOC items */}
               {yearbook?.tableOfContents?.map((item) => (
                 <div key={item.id} className="p-3 border rounded-lg">
