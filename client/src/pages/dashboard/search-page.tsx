@@ -9,6 +9,8 @@ import type { School, User } from "@shared/schema";
 import InstagramSchoolProfile from "../instagram-school-profile";
 import PublicViewerProfile from "../public-viewer-profile";
 
+const YEARBOOK_RETURN_CONTEXT_KEY = "yearbook-return-context";
+
 
 interface SearchPageProps {
   onRegisterReset?: (resetFn: () => void) => void;
@@ -31,6 +33,26 @@ export default function SearchPage({ onRegisterReset, forceSchoolProfile, forceV
     const userData = localStorage.getItem("user");
     if (userData) {
       setUser(JSON.parse(userData));
+    }
+  }, []);
+
+  // Restore the school profile and tab after returning from the yearbook viewer.
+  useEffect(() => {
+    const savedContext = sessionStorage.getItem(YEARBOOK_RETURN_CONTEXT_KEY);
+    if (!savedContext) return;
+
+    sessionStorage.removeItem(YEARBOOK_RETURN_CONTEXT_KEY);
+
+    try {
+      const context = JSON.parse(savedContext);
+      if (context?.schoolUsername && context?.profileTab === "yearbooks") {
+        setSelectedSchoolUsername(context.schoolUsername);
+        setSelectedViewerUsername(null);
+        setProfileTab("yearbooks");
+        setActiveSearchView("school-profile");
+      }
+    } catch {
+      // Ignore malformed return context and show the normal search results.
     }
   }, []);
 
@@ -124,6 +146,12 @@ export default function SearchPage({ onRegisterReset, forceSchoolProfile, forceV
         onBack={handleBackToSearch}
         showBackButton={true}
         resetAlumniFilters={resetAlumniFilters}
+        onYearbookOpen={() => {
+          sessionStorage.setItem(YEARBOOK_RETURN_CONTEXT_KEY, JSON.stringify({
+            schoolUsername: selectedSchoolUsername,
+            profileTab: "yearbooks",
+          }));
+        }}
       />
     );
   };
