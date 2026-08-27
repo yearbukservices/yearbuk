@@ -3,7 +3,7 @@ import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Download, ZoomIn, ZoomOut, Maximize2, Share2, BookOpen, FileText, Calendar, ChevronLeft, Menu, Settings, ShoppingCart, LogOut, Home, Bell, X, BookOpenCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, Maximize2, Share2, BookOpen, FileText, Calendar, ChevronLeft, Menu, Settings, ShoppingCart, LogOut, Home, Bell, X, BookOpenCheck } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import type { Yearbook, School, TableOfContentsItem, Notification, AlumniBadge } from "@shared/schema";
@@ -42,6 +42,7 @@ export default function DynamicYearbookViewer() {
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
   const [startPanPoint, setStartPanPoint] = useState({ x: 0, y: 0 });
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -614,6 +615,7 @@ export default function DynamicYearbookViewer() {
       ? contentPageIndex - 1
       : contentPageIndex;
 
+    setIsNavigationOpen(false);
     setViewMode(isSpreadView ? 'spread' : 'single');
     setCurrentPage(targetPage);
   };
@@ -1366,8 +1368,22 @@ export default function DynamicYearbookViewer() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-6">
               {/* Left Column - Navigation */}
               {hasContent && (
-                <div className="lg:col-span-1 order-2 lg:order-1">
-                  <Card className="sticky top-3 lg:top-6 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+                <div
+                  className={isPortrait
+                    ? "fixed left-0 top-1/2 z-[100] -translate-y-1/2"
+                    : "lg:col-span-1 order-2 lg:order-1"
+                  }
+                >
+                  <div
+                    className={isPortrait
+                      ? `relative transition-transform duration-300 ease-out ${isNavigationOpen ? "translate-x-0" : "-translate-x-full"}`
+                      : ""
+                    }
+                  >
+                  <Card className={isPortrait
+                    ? "w-[min(20rem,85vw)] max-h-[80vh] overflow-y-auto bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl"
+                    : "sticky top-3 lg:top-6 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl"
+                  }>
                     <CardContent className="p-3 sm:p-4">
                       <h3 className="font-semibold text-white mb-3 sm:mb-4 text-sm sm:text-base">Navigation</h3>
                       
@@ -1403,7 +1419,10 @@ export default function DynamicYearbookViewer() {
                           <Switch
                             id="page-view-toggle"
                             checked={isSpreadView}
-                            onCheckedChange={setIsSpreadView}
+                            onCheckedChange={(checked) => {
+                               setIsSpreadView(checked);
+                               setIsNavigationOpen(false);
+                             }}
                             data-testid="toggle-page-view"
                           />
                         </div>
@@ -1426,7 +1445,7 @@ export default function DynamicYearbookViewer() {
                           {/* Front Cover (always first) */}
                           {frontCover && (
                             <button
-                              onClick={() => { setViewMode('cover'); setCurrentPage(0); }}
+                              onClick={() => { setViewMode('cover'); setCurrentPage(0); setIsNavigationOpen(false); }}
                               className="w-full text-left px-2 py-1 text-sm bg-white-500/40 backdrop-blur-lg  shadow-2xl cursor-pointer transition-all hover:bg-white hover:border-black text-white hover:text-black rounded transition-colors"
                               data-testid="toc-item-front-cover"
                             >
@@ -1441,7 +1460,7 @@ export default function DynamicYearbookViewer() {
                           {tableOfContents.map((item, index) => (
                             <button
                               key={index}
-                              onClick={() => goToPage(item.pageNumber)}
+                              onClick={() => { goToPage(item.pageNumber); setIsNavigationOpen(false); }}
                               className="w-full text-left px-2 py-1 text-sm bg-white-500/40 backdrop-blur-lg  shadow-2xl cursor-pointer transition-all hover:bg-white hover:border-black text-white hover:text-black rounded transition-colors"
                               data-testid={`toc-item-${index}`}
                             >
@@ -1455,7 +1474,7 @@ export default function DynamicYearbookViewer() {
                           {/* Back Cover (always last) */}
                           {backCover && (
                             <button
-                              onClick={() => { setViewMode('back'); setCurrentPage(totalPages - 1); }}
+                              onClick={() => { setViewMode('back'); setCurrentPage(totalPages - 1); setIsNavigationOpen(false); }}
                               className="w-full text-left px-2 py-1 text-sm bg-white-500/40 backdrop-blur-lg  shadow-2xl cursor-pointer transition-all hover:bg-white hover:border-black text-white hover:text-black rounded transition-colors"
                               data-testid="toc-item-back-cover"
                             >
@@ -1469,6 +1488,23 @@ export default function DynamicYearbookViewer() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {isPortrait && (
+                    <button
+                      type="button"
+                      onClick={() => setIsNavigationOpen((open) => !open)}
+                      className="absolute top-1/2 -right-10 flex h-20 w-10 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-white/20 bg-white/10 text-white shadow-2xl backdrop-blur-lg transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+                      aria-label={isNavigationOpen ? "Close navigation menu" : "Open navigation menu"}
+                      data-testid={isNavigationOpen ? "button-close-navigation" : "button-open-navigation"}
+                    >
+                      {isNavigationOpen ? (
+                        <ChevronLeft className="h-5 w-5" />
+                      ) : (
+                        <ArrowRight className="h-5 w-5" />
+                      )}
+                    </button>
+                  )}
+                  </div>
                 </div>
               )}
 
