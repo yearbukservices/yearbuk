@@ -1509,7 +1509,7 @@ export default function DynamicYearbookViewer() {
               )}
 
               {/* Right Column - PDF Viewer */}
-              <div className={hasContent ? "lg:col-span-3 order-1 lg:order-2" : "lg:col-span-4 order-1"}>
+              <div className={hasContent && !isPortrait ? "lg:col-span-3 order-1 lg:order-2" : "lg:col-span-4 order-1"}>
                 <Card
                   className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
                   <CardContent className="p-2 sm:p-4">
