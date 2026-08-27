@@ -44,6 +44,8 @@ export default function DynamicYearbookViewer() {
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const swipeHandledRef = useRef(false);
 
   // Use both yearbook orientation and mobile detection
   const [isPortrait, setIsPortrait] = useState(true); // default portrait
@@ -217,14 +219,19 @@ export default function DynamicYearbookViewer() {
     setIsPanning(false);
   };
 
-  // Improved touch events for mobile panning
+  // Handle mobile swipes for page navigation and panning when zoomed in
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (zoomLevel > 100 && e.touches.length === 1) {
+    if (e.touches.length !== 1) return;
+
+    const point = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+    touchStartRef.current = point;
+    swipeHandledRef.current = false;
+
+    if (zoomLevel > 100) {
       setIsPanning(true);
-      const point = { 
-        x: e.touches[0].clientX, 
-        y: e.touches[0].clientY 
-      };
       setLastPanPoint(point);
       setStartPanPoint(point);
       e.preventDefault();
@@ -232,9 +239,11 @@ export default function DynamicYearbookViewer() {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (zoomLevel > 100 && e.touches.length === 1) {
+    if (e.touches.length !== 1) return;
+
+    if (zoomLevel > 100) {
       e.preventDefault();
-      
+
       if (isPanning) {
         const deltaX = e.touches[0].clientX - lastPanPoint.x;
         const deltaY = e.touches[0].clientY - lastPanPoint.y;
@@ -242,7 +251,6 @@ export default function DynamicYearbookViewer() {
         setPanOffset(prev => {
           const newX = prev.x + deltaX;
           const newY = prev.y + deltaY;
-          
           const maxOffset = (zoomLevel - 100) * 3;
           return {
             x: Math.max(-maxOffset, Math.min(maxOffset, newX)),
@@ -250,18 +258,47 @@ export default function DynamicYearbookViewer() {
           };
         });
 
-        setLastPanPoint({ 
-          x: e.touches[0].clientX, 
-          y: e.touches[0].clientY 
+        setLastPanPoint({
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY
         });
       }
+      return;
+    }
+
+    const start = touchStartRef.current;
+    if (!start) return;
+
+    const deltaX = e.touches[0].clientX - start.x;
+    const deltaY = e.touches[0].clientY - start.y;
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      swipeHandledRef.current = true;
+      e.preventDefault();
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    const touch = e.changedTouches[0];
+
+    if (zoomLevel <= 100 && start && touch) {
+      const deltaX = touch.clientX - start.x;
+      const deltaY = touch.clientY - start.y;
+
+      if (Math.abs(deltaX) >= 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        swipeHandledRef.current = true;
+        e.preventDefault();
+        if (deltaX > 0) {
+          handlePrevious();
+        } else {
+          handleNext();
+        }
+      }
+    }
+
+    touchStartRef.current = null;
     setIsPanning(false);
   };
-
   // Add mouse leave handler to stop panning if mouse leaves the area
   useEffect(() => {
     const handleMouseLeave = () => setIsPanning(false);
@@ -416,6 +453,10 @@ export default function DynamicYearbookViewer() {
   };
 
   const handleCoverClick = () => {
+    if (swipeHandledRef.current) {
+      swipeHandledRef.current = false;
+      return;
+    }
     if (!hasContent) return;
     setViewMode(isSpreadView ? 'spread' : 'single');
     setCurrentPage(0); // Start with first content page
@@ -581,7 +622,7 @@ export default function DynamicYearbookViewer() {
                 aspectRatio: pageAspectRatioStr,
                 transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                 transformOrigin: 'center center',
-                touchAction: zoomLevel > 100 ? 'none' : 'auto'
+                touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
               }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -613,7 +654,7 @@ export default function DynamicYearbookViewer() {
                 </div>
               )}
 
-              {zoomLevel <= 100 && (
+              {!isMobile && zoomLevel <= 100 && (
                 <div className="absolute inset-0 flex">
                   <div className="w-1/2 h-full z-10" onClick={handleLeftTouchArea} />
                   <div className="w-1/2 h-full z-10" onClick={handleRightTouchArea} />
@@ -621,15 +662,6 @@ export default function DynamicYearbookViewer() {
               )}
             </div>
           </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg z-20"
-            onClick={handleNext}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         </div>
       );
     } else if (viewMode === 'back') {
@@ -651,7 +683,7 @@ export default function DynamicYearbookViewer() {
                 aspectRatio: pageAspectRatioStr,
                 transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                 transformOrigin: 'center center',
-                touchAction: zoomLevel > 100 ? 'none' : 'auto'
+                touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
               }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -683,7 +715,7 @@ export default function DynamicYearbookViewer() {
                 </div>
               )}
 
-              {zoomLevel <= 100 && (
+              {!isMobile && zoomLevel <= 100 && (
                 <div className="absolute inset-0 flex">
                   <div className="w-1/2 h-full z-10" onClick={handleLeftTouchArea} />
                   <div className="w-1/2 h-full z-10" onClick={handleRightTouchArea} />
@@ -691,15 +723,6 @@ export default function DynamicYearbookViewer() {
               )}
             </div>
           </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg z-20"
-            onClick={handlePrevious}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
         </div>
       );
     } else {
@@ -725,7 +748,7 @@ export default function DynamicYearbookViewer() {
                   style={{
                     transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                     transformOrigin: 'center center',
-                    touchAction: zoomLevel > 100 ? 'none' : 'auto'
+                    touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
                   }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -748,7 +771,7 @@ export default function DynamicYearbookViewer() {
                         </div>
                       </div>
 
-                      {zoomLevel <= 100 && (
+                      {!isMobile && zoomLevel <= 100 && (
                         <div className="absolute inset-0 flex">
                           <div className="w-1/2 h-full z-10" onClick={handleLeftTouchArea} />
                           <div className="w-1/2 h-full z-10" onClick={handleRightTouchArea} />
@@ -758,23 +781,6 @@ export default function DynamicYearbookViewer() {
                   )}
                 </div>
               </div>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg z-20"
-                onClick={handlePrevious}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg z-20"
-                onClick={handleNext}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
             </div>
           );
         }
@@ -795,7 +801,7 @@ export default function DynamicYearbookViewer() {
                 style={{
                   transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                   transformOrigin: 'center center',
-                  touchAction: zoomLevel > 100 ? 'none' : 'auto'
+                  touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
                 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
@@ -819,7 +825,7 @@ export default function DynamicYearbookViewer() {
                       </div>
                     </div>
 
-                    {zoomLevel <= 100 && (
+                    {!isMobile && zoomLevel <= 100 && (
                       <div className="absolute inset-0 z-10" onClick={handleLeftTouchArea} />
                     )}
                   </div>
@@ -840,30 +846,13 @@ export default function DynamicYearbookViewer() {
                       </div>
                     </div>
 
-                    {zoomLevel <= 100 && (
+                    {!isMobile && zoomLevel <= 100 && (
                       <div className="absolute inset-0 z-10" onClick={handleRightTouchArea} />
                     )}
                   </div>
                 )}
               </div>
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg z-20"
-              onClick={handlePrevious}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg z-20"
-              onClick={handleNext}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
           </div>
         );
       } else if (viewMode === 'single') {
@@ -884,7 +873,7 @@ export default function DynamicYearbookViewer() {
                   transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                   transformOrigin: 'center center',
                   cursor: zoomLevel > 100 ? (isPanning ? 'grabbing' : 'grab') : 'pointer',
-                  touchAction: zoomLevel > 100 ? 'none' : 'auto'
+                  touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
                 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
@@ -907,7 +896,7 @@ export default function DynamicYearbookViewer() {
                       </div>
                     </div>
 
-                    {zoomLevel <= 100 && (
+                    {!isMobile && zoomLevel <= 100 && (
                       <div className="absolute inset-0 flex">
                         <div className="w-1/2 h-full z-10" onClick={handleLeftTouchArea} />
                         <div className="w-1/2 h-full z-10" onClick={handleRightTouchArea} />
@@ -917,23 +906,6 @@ export default function DynamicYearbookViewer() {
                 )}
               </div>
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg z-20"
-              onClick={handlePrevious}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg z-20"
-              onClick={handleNext}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
           </div>
         );
       } else {
@@ -954,7 +926,7 @@ export default function DynamicYearbookViewer() {
                   transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                   transformOrigin: 'center center',
                   cursor: zoomLevel > 100 ? (isPanning ? 'grabbing' : 'grab') : 'pointer',
-                  touchAction: zoomLevel > 100 ? 'none' : 'auto'
+                  touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
                 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
@@ -978,7 +950,7 @@ export default function DynamicYearbookViewer() {
                       </div>
                     </div>
 
-                    {zoomLevel <= 100 && (
+                    {!isMobile && zoomLevel <= 100 && (
                       <div className="absolute inset-0 z-10" onClick={handleLeftTouchArea} />
                     )}
                   </div>
@@ -1002,30 +974,13 @@ export default function DynamicYearbookViewer() {
                       </div>
                     </div>
 
-                    {zoomLevel <= 100 && (
+                    {!isMobile && zoomLevel <= 100 && (
                       <div className="absolute inset-0 z-10" onClick={handleRightTouchArea} />
                     )}
                   </div>
                 )}
               </div>
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg z-20"
-              onClick={handlePrevious}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg z-20"
-              onClick={handleNext}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
           </div>
         );
       }
