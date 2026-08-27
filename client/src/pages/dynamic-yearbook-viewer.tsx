@@ -1381,7 +1381,7 @@ export default function DynamicYearbookViewer() {
                     }
                   >
                   <Card className={isPortrait
-                    ? "w-[min(20rem,85vw)] max-h-[80vh] overflow-y-auto bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl"
+                    ? "w-[min(20rem,85vw)] h-screen max-h-screen overflow-y-auto !rounded-none !bg-blue-950/95 backdrop-blur-lg border-r border-blue-800/80 shadow-2xl"
                     : "sticky top-3 lg:top-6 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl"
                   }>
                     <CardContent className="p-3 sm:p-4">
@@ -1411,7 +1411,7 @@ export default function DynamicYearbookViewer() {
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between space-x-2 py-2 px-3 bg-white/5 rounded-md border border-white/10">
+                        <div className="flex items-center justify-between space-x-2 py-2 px-3 bg-blue-900/90 rounded-md border border-blue-700/80">
                           <Label htmlFor="page-view-toggle" className="text-xs sm:text-sm text-white cursor-pointer flex items-center gap-2">
                             <BookOpen className="h-4 w-4" />
                             <span>{isSpreadView ? 'Landscape Screens' : 'Portrait Screens'}</span>
@@ -1430,7 +1430,7 @@ export default function DynamicYearbookViewer() {
                         <Button
                           onClick={handleFullscreen}
                           variant="outline"
-                          className="w-full bg-white-500/40 backdrop-blur-lg border border-whhite shadow-2xl cursor-pointer transition-all hover:bg-white hover:scale-105 hover:border-black text-white hover:text-black"
+                          className="w-full bg-blue-900/90 backdrop-blur-lg border border-blue-700/80 shadow-2xl cursor-pointer transition-all hover:bg-blue-700 hover:scale-105 hover:border-blue-400 text-white"
                           size="sm"
                         >
                           <Maximize2 className="h-4 w-4 mr-2" />
@@ -1446,7 +1446,7 @@ export default function DynamicYearbookViewer() {
                           {frontCover && (
                             <button
                               onClick={() => { setViewMode('cover'); setCurrentPage(0); setIsNavigationOpen(false); }}
-                              className="w-full text-left px-2 py-1 text-sm bg-white-500/40 backdrop-blur-lg  shadow-2xl cursor-pointer transition-all hover:bg-white hover:border-black text-white hover:text-black rounded transition-colors"
+                              className="w-full text-left px-2 py-1 text-sm bg-blue-900/90 backdrop-blur-lg border border-blue-700/80 shadow-2xl cursor-pointer transition-all hover:bg-blue-700 hover:border-blue-400 text-white rounded transition-colors"
                               data-testid="toc-item-front-cover"
                             >
                               <div className="flex justify-between">
@@ -1461,7 +1461,7 @@ export default function DynamicYearbookViewer() {
                             <button
                               key={index}
                               onClick={() => { goToPage(item.pageNumber); setIsNavigationOpen(false); }}
-                              className="w-full text-left px-2 py-1 text-sm bg-white-500/40 backdrop-blur-lg  shadow-2xl cursor-pointer transition-all hover:bg-white hover:border-black text-white hover:text-black rounded transition-colors"
+                              className="w-full text-left px-2 py-1 text-sm bg-blue-900/90 backdrop-blur-lg border border-blue-700/80 shadow-2xl cursor-pointer transition-all hover:bg-blue-700 hover:border-blue-400 text-white rounded transition-colors"
                               data-testid={`toc-item-${index}`}
                             >
                               <div className="flex justify-between">
@@ -1475,7 +1475,7 @@ export default function DynamicYearbookViewer() {
                           {backCover && (
                             <button
                               onClick={() => { setViewMode('back'); setCurrentPage(totalPages - 1); setIsNavigationOpen(false); }}
-                              className="w-full text-left px-2 py-1 text-sm bg-white-500/40 backdrop-blur-lg  shadow-2xl cursor-pointer transition-all hover:bg-white hover:border-black text-white hover:text-black rounded transition-colors"
+                              className="w-full text-left px-2 py-1 text-sm bg-blue-900/90 backdrop-blur-lg border border-blue-700/80 shadow-2xl cursor-pointer transition-all hover:bg-blue-700 hover:border-blue-400 text-white rounded transition-colors"
                               data-testid="toc-item-back-cover"
                             >
                               <div className="flex justify-between">
@@ -1494,7 +1494,7 @@ export default function DynamicYearbookViewer() {
                     <button
                       type="button"
                       onClick={() => setIsNavigationOpen((open) => !open)}
-                      className={`pointer-events-auto absolute top-1/2 ${isNavigationOpen ? "left-full" : "left-0"} flex h-20 w-10 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-white/20 bg-white/10 text-white shadow-2xl backdrop-blur-lg transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60`}
+                      className={`pointer-events-auto absolute top-1/2 ${isNavigationOpen ? "left-full" : "left-0"} flex h-20 w-10 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-blue-700/80 bg-blue-900/95 text-white shadow-2xl backdrop-blur-lg transition-colors hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-white/60`}
                       aria-label={isNavigationOpen ? "Close navigation menu" : "Open navigation menu"}
                       data-testid={isNavigationOpen ? "button-close-navigation" : "button-open-navigation"}
                     >
