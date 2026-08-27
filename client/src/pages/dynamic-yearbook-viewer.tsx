@@ -10,6 +10,7 @@ import type { Yearbook, School, TableOfContentsItem, Notification, AlumniBadge }
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getSecureImageUrl } from "@/lib/secure-image";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { navigationTracker } from "@/lib/navigation";
 
 const YEARBOOK_RETURN_CONTEXT_KEY = "yearbook-return-context";
 
@@ -411,6 +412,18 @@ export default function DynamicYearbookViewer() {
   };
 
   const handleReturnToSchoolPage = () => {
+    const previousRoute = navigationTracker.hasPreviousRoute()
+      ? navigationTracker.getPreviousRoute()
+      : undefined;
+
+    if (previousRoute === "/library") {
+      sessionStorage.removeItem(YEARBOOK_RETURN_CONTEXT_KEY);
+      navigationTracker.prepareForBackNavigation();
+      setLocation("/library");
+      navigationTracker.clear();
+      return;
+    }
+
     if (school?.username) {
       sessionStorage.setItem(YEARBOOK_RETURN_CONTEXT_KEY, JSON.stringify({
         schoolUsername: school.username,
