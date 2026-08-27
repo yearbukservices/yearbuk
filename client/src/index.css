@@ -604,3 +604,30 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
     padding-bottom: calc(6rem + env(safe-area-inset-bottom)) !important;
   }
 }
+
+
+/* Touch-friendly Table of Contents scrolling. */
+.toc-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(255, 255, 255, 0.55) rgba(15, 23, 42, 0.35);
+  scrollbar-width: thin;
+}
+
+.toc-scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.toc-scroll-container::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.35);
+  border-radius: 9999px;
+}
+
+.toc-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 9999px;
+}
+
+.toc-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.75);
+}
