@@ -1534,7 +1534,7 @@ text-white">
                   {allMemories[selectedMemoryIndex].uploadedBy && (
                     <div className="flex items-center gap-1.5 ml-auto">
                       <UserIcon className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
-                      <span className="text-xs text-white/50">Uploaded by</span>
+                      <span className="text-xs text-white/50">Uploaded By:</span>
                       <span className="text-xs font-semibold text-white/90">{allMemories[selectedMemoryIndex].uploadedBy}</span>
                     </div>
                   )}
