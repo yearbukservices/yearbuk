@@ -396,8 +396,13 @@ export default function DynamicYearbookViewer() {
   }, [isSpreadView]);
 
   const handleBack = () => {
-    // The viewer is opened from a school's Yearbooks tab. Always return there
-    // instead of relying on a potentially stale global history entry.
+    // Browser history preserves the exact school yearbook tab URL.
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    // Directly opened viewers have no in-app page to return to.
     const schoolYearbooksRoute = school?.username
       ? `/${school.username}/yearbooks`
       : "/yearbook-finder";
