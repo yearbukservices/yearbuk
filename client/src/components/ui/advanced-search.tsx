@@ -19,6 +19,11 @@ interface RecentSearch {
 const startsWithSearchTerm = (value: string | null | undefined, term: string) =>
   value?.toLowerCase().split(/\s+/).some(word => word.startsWith(term)) ?? false;
 
+const normalizeImageUrl = (imageUrl: string) =>
+  /^(?:https?:|data:|blob:)/i.test(imageUrl) || imageUrl.startsWith("/")
+    ? imageUrl
+    : `/${imageUrl}`;
+
 interface SearchUser {
   id: string;
   username: string;
@@ -249,7 +254,7 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                         <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden bg-white/10 border border-white/20 ${recentSearch.kind === "school" ? "rounded-lg" : ""}`}>
                           {recentSearch.profileImage ? (
                             <img
-                              src={recentSearch.profileImage.startsWith("http") ? recentSearch.profileImage : (recentSearch.profileImage.startsWith("/") ? recentSearch.profileImage : `/${recentSearch.profileImage}`)}
+                              src={normalizeImageUrl(recentSearch.profileImage)}
                               alt={recentSearch.label}
                               className="w-full h-full object-cover"
                             />
@@ -324,7 +329,7 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                             <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden bg-white/10 border border-white/20">
                               {u.profileImage ? (
                                 <img
-                                  src={u.profileImage.startsWith('http') ? u.profileImage : (u.profileImage.startsWith('/') ? u.profileImage : `/${u.profileImage}`)}
+                                  src={normalizeImageUrl(u.profileImage)}
                                   alt={u.fullName}
                                   className="w-full h-full object-cover"
                                 />
