@@ -3,7 +3,7 @@ import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Download, ZoomIn, ZoomOut, Maximize2, Share2, BookOpen, FileText, Calendar, ChevronLeft, ChevronRight, Menu, Settings, ShoppingCart, LogOut, Home, Bell, X, BookOpenCheck } from 'lucide-react';
+import { ArrowLeft, Download, ZoomIn, ZoomOut, Maximize2, Share2, BookOpen, FileText, Calendar, ChevronLeft, Menu, Settings, ShoppingCart, LogOut, Home, Bell, X, BookOpenCheck } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import type { Yearbook, School, TableOfContentsItem, Notification, AlumniBadge } from "@shared/schema";
