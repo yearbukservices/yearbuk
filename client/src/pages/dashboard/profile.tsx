@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, type TouchEvent as ReactTouchEvent } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -19,6 +19,38 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"posts" | "tagged" | "badges">("posts");
   const [selectedPostIndex, setSelectedPostIndex] = useState<number | null>(null);
   const [selectedTaggedIndex, setSelectedTaggedIndex] = useState<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+
+  const handleMemoryTouchStart = (event: ReactTouchEvent) => {
+    touchStartX.current = event.touches[0]?.clientX ?? null;
+  };
+
+  const handleMemoryTouchEnd = (event: ReactTouchEvent, collection: "posts" | "tagged") => {
+    const startX = touchStartX.current;
+    const endX = event.changedTouches[0]?.clientX;
+    touchStartX.current = null;
+
+    if (startX === null || endX === undefined) return;
+
+    const distance = startX - endX;
+    if (Math.abs(distance) < 50) return;
+
+    if (collection === "posts") {
+      setSelectedPostIndex(current => {
+        if (current === null) return current;
+        return distance > 0
+          ? Math.min(current + 1, publicMemories.length - 1)
+          : Math.max(current - 1, 0);
+      });
+    } else {
+      setSelectedTaggedIndex(current => {
+        if (current === null) return current;
+        return distance > 0
+          ? Math.min(current + 1, taggedMemories.length - 1)
+          : Math.max(current - 1, 0);
+      });
+    }
+  };
   const [showAlumniRequestDialog, setShowAlumniRequestDialog] = useState(false);
   const { toast } = useToast();
 
@@ -423,7 +455,12 @@ export default function ProfilePage() {
                   <ChevronRight className="h-6 w-6" />
                 </Button>
               )}
-              <div className="overflow-hidden">
+              <div
+                className="overflow-hidden"
+                style={{ touchAction: "pan-y" }}
+                onTouchStart={handleMemoryTouchStart}
+                onTouchEnd={(event) => handleMemoryTouchEnd(event, "posts")}
+              >
                 <div
                   className="flex transition-transform duration-300 ease-out"
                   style={{ transform: `translateX(-${selectedPostIndex * 100}%)` }}
@@ -495,7 +532,12 @@ export default function ProfilePage() {
                   <ChevronRight className="h-6 w-6" />
                 </Button>
               )}
-              <div className="overflow-hidden">
+              <div
+                className="overflow-hidden"
+                style={{ touchAction: "pan-y" }}
+                onTouchStart={handleMemoryTouchStart}
+                onTouchEnd={(event) => handleMemoryTouchEnd(event, "tagged")}
+              >
                 <div
                   className="flex transition-transform duration-300 ease-out"
                   style={{ transform: `translateX(-${selectedTaggedIndex * 100}%)` }}
