@@ -201,7 +201,7 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
           {isExpanded && (
             <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
               <CardContent className="p-0">
-                {searchTerm.trim().length === 0 && recentSearches.length > 0 ? (
+                {searchTerm.trim().length === 0 && !!isAuthenticated ? (
                   <div>
                     <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
                       <div className="flex items-center gap-2 text-sm font-semibold text-white">
@@ -219,6 +219,13 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                         Clear
                       </button>
                     </div>
+                    {recentSearches.length === 0 && (
+                      <div className="p-8 text-center text-white/50">
+                        <Clock3 className="w-8 h-8 mx-auto mb-3 opacity-40" />
+                        <p>No recent searches yet</p>
+                        <p className="text-sm mt-1 text-white/30">Select a school or viewer to see it here</p>
+                      </div>
+                    )}
                     {recentSearches.map((recentSearch, index) => (
                       <button
                         key={`recent-${recentSearch.kind}-${recentSearch.username}`}
