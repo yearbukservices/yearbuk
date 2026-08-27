@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
+import { useEffect, useRef } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,6 +9,7 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { RootRedirect, GuestOnlyRoute } from "@/components/RouteGuards";
 import { YearbookProtection } from "@/components/YearbookProtection";
 import { PageTitleManager } from "@/components/PageTitleManager";
+import { navigationTracker } from "./lib/navigation";
 
 import NotFound from "@/pages/not-found";
 import HomePage from "@/pages/home";
@@ -46,6 +48,20 @@ import SchoolMemories from "@/pages/school-dashboard-tabs/memories";
 import SchoolOrders from "@/pages/school-dashboard-tabs/orders";
 import SchoolSettingsTab from "@/pages/school-dashboard-tabs/settings";
 import SchoolAlumni from "@/pages/school-dashboard-tabs/alumni";
+
+function NavigationHistorySync() {
+  const [location] = useLocation();
+  const previousLocationRef = useRef(location);
+
+  useEffect(() => {
+    if (previousLocationRef.current !== location) {
+      navigationTracker.trackRouteChange(previousLocationRef.current);
+      previousLocationRef.current = location;
+    }
+  }, [location]);
+
+  return null;
+}
 
 function Router() {
   return (
@@ -158,6 +174,7 @@ function App() {
       <ThemeProvider>
         <CurrencyProvider>
           <TooltipProvider>
+            <NavigationHistorySync />
             <PageTitleManager />
             <YearbookProtection />
             <Toaster />
