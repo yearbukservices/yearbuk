@@ -396,7 +396,11 @@ export default function DynamicYearbookViewer() {
   }, [isSpreadView]);
 
   const handleBack = () => {
-    navigateBack(setLocation);
+    const fallbackRoute = school?.username
+      ? `/${school.username}/yearbooks`
+      : "/yearbook-finder";
+
+    navigateBack(setLocation, fallbackRoute);
   };
 
   const handleDownload = async () => {
