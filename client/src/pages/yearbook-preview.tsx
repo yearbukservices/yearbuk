@@ -3,7 +3,7 @@ import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Download, ZoomIn, ZoomOut, Maximize2, BookOpen, FileText, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Download, ZoomIn, ZoomOut, BookOpen, FileText, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import type { Yearbook, School, TableOfContentsItem} from "@shared/schema";
@@ -25,7 +25,6 @@ export default function YearbookPreview() {
   const [user, setUser] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(100);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [viewMode, setViewMode] = useState('cover');
   const [isSpreadView, setIsSpreadView] = useState(true); // Manual toggle for single vs spread view
 
@@ -279,9 +278,6 @@ export default function YearbookPreview() {
     });
   };
 
-  const handleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
 
   
 
@@ -862,64 +858,9 @@ export default function YearbookPreview() {
     }
   };
 
-  const renderFullscreenView = () => {
-    return (
-      <div className="fixed inset-0 bg-black z-50 flex flex-col">
-        <div className="bg-black/80 text-white p-4 flex justify-between items-center">
-          <Button
-            onClick={handleFullscreen}
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-white/20"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Exit Fullscreen
-          </Button>
-
-          <div className="text-sm">
-            {viewMode === 'cover' ? 'Cover' : 
-             viewMode === 'back' ? 'Back Cover' : 
-             `Pages ${currentPage} - ${currentPage + 1}`}
-          </div>
-        </div>
-
-        <div className="flex-1 flex items-center justify-center relative bg-black">
-          {renderPageView()}
-        </div>
-
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/80 rounded-full px-6 py-3">
-          <Button
-            onClick={handleZoomOut}
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-white/20"
-            disabled={zoomLevel <= 50}
-          >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-
-          <span className="text-white text-sm">{zoomLevel}%</span>
-
-          <Button
-            onClick={handleZoomIn}
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-white/20"
-            disabled={zoomLevel >= 500}
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
-      {isFullscreen ? (
-        renderFullscreenView()
-      ) : (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
           {/* Animated Background Pattern */}
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-0 left-0 w-full h-full">
@@ -1029,15 +970,7 @@ export default function YearbookPreview() {
                           />
                         </div>
 
-                        <Button
-                          onClick={handleFullscreen}
-                          variant="outline"
-                          className="w-full bg-white-500/40 backdrop-blur-lg border border-whhite shadow-2xl cursor-pointer transition-all hover:bg-white hover:scale-105 hover:border-black text-white hover:text-black"
-                          size="sm"
-                        >
-                          <Maximize2 className="h-4 w-4 mr-2" />
-                          Fullscreen
-                        </Button>
+                        
                       </div>
 
                       {/* Table of Contents */}
@@ -1104,8 +1037,7 @@ export default function YearbookPreview() {
               </div>
             </div>
           </div>
-        </div>
-      )}
+      </div>
     </>
   );
 }
