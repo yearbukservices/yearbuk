@@ -1306,7 +1306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/search", async (req, res) => {
     try {
       const q = (req.query.q as string) || "";
-      if (q.trim().length < 1) return res.json([]);
+      if (q.trim().length < 2) return res.json([]);
       const results = await storage.searchUsersByName(q);
       res.json(results.map(u => ({ id: u.id, username: u.username, fullName: u.fullName, profileImage: u.profileImage, userType: u.userType })));
     } catch (error) {
