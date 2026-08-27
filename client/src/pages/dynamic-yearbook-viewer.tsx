@@ -1476,7 +1476,7 @@ export default function DynamicYearbookViewer() {
                       data-testid="button-return-to-school-page"
                     >
                       <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                      Return to school page
+                      Return
                     </Button>
                   </div>
                   <CardContent className="p-2 sm:p-4">
