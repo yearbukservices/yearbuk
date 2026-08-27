@@ -396,11 +396,13 @@ export default function DynamicYearbookViewer() {
   }, [isSpreadView]);
 
   const handleBack = () => {
-    const fallbackRoute = school?.username
+    // The viewer is opened from a school's Yearbooks tab. Always return there
+    // instead of relying on a potentially stale global history entry.
+    const schoolYearbooksRoute = school?.username
       ? `/${school.username}/yearbooks`
       : "/yearbook-finder";
 
-    navigateBack(setLocation, fallbackRoute);
+    setLocation(schoolYearbooksRoute);
   };
 
   const handleDownload = async () => {
