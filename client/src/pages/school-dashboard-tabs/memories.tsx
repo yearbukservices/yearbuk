@@ -48,6 +48,16 @@ export default function SchoolMemories() {
     },
   });
 
+  const { data: approvedMemories = [], isLoading: isMemoriesLoading } = useQuery<Memory[]>({
+    queryKey: ["/api/schools", school?.id, "memories-all"],
+    enabled: !!school?.id,
+    queryFn: async () => {
+      if (!school?.id) return [];
+      const res = await fetch(`/api/schools/${school.id}/memories-all`);
+      if (!res.ok) throw new Error("Failed to fetch memories");
+      return res.json();
+    },
+  });
   const { data: purchasedYears = [], isLoading: isPurchaseDataLoading } = useQuery({
     queryKey: ["/api/year-purchases", school?.id],
     enabled: !!school,
@@ -123,6 +133,9 @@ export default function SchoolMemories() {
             <div className="space-y-3">
               {filteredYears.map((year: any) => {
               if (!year) return null;
+              const yearMemoryCount = approvedMemories.filter(
+                (memory) => memory.year?.toString() === year.year?.toString(),
+              ).length;
               return (
               <div key={year.year || 'unknown'} className="flex items-center justify-between p-4 bg-white/5 backdrop-blur border border-white/20 rounded-lg hover:bg-white/10">
                 <div className="flex-1">
@@ -130,7 +143,9 @@ export default function SchoolMemories() {
                     <div className="flex flex-col">
                       <h3 className="text-lg font-medium text-white">Year {year.year || 'Unknown'}</h3>
                       <p className="text-sm text-blue-200">
-                        Photos & memories
+                        {isMemoriesLoading
+                          ? "Loading memories..."
+                          : `${yearMemoryCount} ${yearMemoryCount === 1 ? "memory" : "memories"}`}
                       </p>
                     </div>
                   </div>
