@@ -128,6 +128,7 @@ export default function SearchPage({ onRegisterReset, forceSchoolProfile, forceV
             
             <AdvancedSearch
               schools={schools}
+              isAuthenticated={!!user}
               onSchoolClick={handleSchoolSelect}
               onUserClick={handleUserSelect}
             />
