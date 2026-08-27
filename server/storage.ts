@@ -3294,8 +3294,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async searchUsersByName(query: string): Promise<User[]> {
-    if (!query || query.trim().length < 1) return [];
-    const q = `%${query.trim().toLowerCase()}%`;
+    const normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.length < 2) return [];
+
+    const prefixQuery = `${normalizedQuery}%`;
+    const wordPrefixQuery = `% ${normalizedQuery}%`;
     return await db
       .select()
       .from(users)
@@ -3306,8 +3309,9 @@ export class DatabaseStorage implements IStorage {
             eq(users.userType, 'school')
           ),
           or(
-            ilike(users.fullName, q),
-            ilike(users.username, q)
+            ilike(users.fullName, prefixQuery),
+            ilike(users.fullName, wordPrefixQuery),
+            ilike(users.username, prefixQuery)
           )
         )
       )
