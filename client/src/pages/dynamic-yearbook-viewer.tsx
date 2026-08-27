@@ -1319,18 +1319,18 @@ export default function DynamicYearbookViewer() {
               {/* Left Column - Navigation */}
               {hasContent && (
                 <div
-                  className={isPortrait
+                  className={isMobile
                     ? "fixed left-0 top-1/2 z-[100] -translate-y-1/2 w-[min(20rem,85vw)] pointer-events-none"
                     : "lg:col-span-1 order-2 lg:order-1"
                   }
                 >
                   <div
-                    className={isPortrait
+                    className={isMobile
                       ? `relative w-full transition-transform duration-300 ease-out ${isNavigationOpen ? "translate-x-0 pointer-events-auto" : "-translate-x-full pointer-events-none"}`
                       : ""
                     }
                   >
-                  <Card className={isPortrait
+                  <Card className={isMobile
                     ? "w-[min(20rem,85vw)] h-screen max-h-screen overflow-y-auto !rounded-none !bg-blue-950/95 backdrop-blur-lg border-r border-blue-800/80 shadow-2xl"
                     : "sticky top-3 lg:top-6 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl"
                   }>
@@ -1432,7 +1432,7 @@ export default function DynamicYearbookViewer() {
                   </Card>
                   </div>
 
-                  {isPortrait && (
+                  {isMobile && (
                     <button
                       type="button"
                       onClick={() => setIsNavigationOpen((open) => !open)}
@@ -1451,7 +1451,7 @@ export default function DynamicYearbookViewer() {
               )}
 
               {/* Right Column - PDF Viewer */}
-              <div className={hasContent && !isPortrait ? "lg:col-span-3 order-1 lg:order-2" : "lg:col-span-4 order-1"}>
+              <div className={hasContent && !isMobile ? "lg:col-span-3 order-1 lg:order-2" : "lg:col-span-4 order-1"}>
                 <Card
                   className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
                   <CardContent className="p-2 sm:p-4">
