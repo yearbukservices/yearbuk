@@ -1941,7 +1941,6 @@ export default function YearbookManage() {
 interface SortablePageProps {
   page: YearbookPage;
   index: number;
-  onPreview: (pageId: string) => void;
   onDelete: (pageId: string) => void;
   reorderPending: boolean;
   totalPages: number;
@@ -1959,7 +1958,6 @@ interface SortablePageProps {
 function SortablePage({ 
   page, 
   index, 
-  onPreview,
   onDelete,
   reorderPending,
   totalPages,
@@ -2132,19 +2130,6 @@ function SortablePage({
         <div className="flex items-center gap-1">
           <Button
             size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPreview(page.id);
-            }}
-            className="p-1 h-5 w-5"
-            title="Preview page"
-            data-testid={`button-preview-${page.id}`}
-          >
-            <Eye className="h-2 w-2" />
-          </Button>
-          <Button
-            size="sm"
             variant="destructive"
             onClick={(e) => {
               e.stopPropagation();
@@ -2174,7 +2159,6 @@ interface PendingPageUpload {
 function SortablePendingPage({ 
   pendingPage,
   onDelete,
-  onPreview,
   onMoveLeft,
   onMoveRight,
   totalPages,
@@ -2187,7 +2171,6 @@ function SortablePendingPage({
 }: {
   pendingPage: PendingPageUpload;
   onDelete: () => void;
-  onPreview: () => void;
   onMoveLeft: () => void;
   onMoveRight: () => void;
   totalPages: number;
@@ -2337,19 +2320,6 @@ function SortablePendingPage({
         </div>
         
         <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPreview();
-            }}
-            className="p-1 h-5 w-5"
-            title="Preview page"
-            data-testid={`button-preview-${pendingPage.tempId}`}
-          >
-            <Eye className="h-2 w-2" />
-          </Button>
           <Button
             size="sm"
             variant="destructive"
@@ -3529,10 +3499,6 @@ function SortablePendingPage({
                                   key={page.id}
                                   page={{...page, pageNumber: visualPageNumber}}
                                   index={index}
-                                  onPreview={(pageId: string) => {
-                                    setPreviewPageId(pageId);
-                                    setShowPreviewDialog(true);
-                                  }}
                                   onDelete={(pageId: string) => deletePageMutation.mutate(pageId)}
                                   reorderPending={reorderPageMutation.isPending}
                                   totalPages={allPages.length}
@@ -3559,93 +3525,6 @@ function SortablePendingPage({
                                   onStartEditingPageNumber={startEditingPageNumber}
                                   onCancelEditingPageNumber={cancelEditingPageNumber}
                                   onManualPageChange={handleManualPageChange}
-                                  onPreview={() => {
-                                    setPreviewPendingUrl(pendingPage.tempUrl);
-                                    setPreviewPageId(null);
-                                    setShowPreviewDialog(true);
-                                  }}
-                                  onMoveLeft={() => {
-                                    // Find current position in allPages
-                                    const currentIndex = allPages.findIndex(p => p.id === pendingPage.tempId);
-                                    if (currentIndex > 0) {
-                                      // Swap with previous item
-                                      const targetItem = allPages[currentIndex - 1];
-                                      const currentPageNumber = pendingPage.pageNumber;
-                                      const targetPageNumber = targetItem.pageNumber;
-                                      
-                                      // If swapping with another pending page
-                                      if (targetItem.type === 'pending') {
-                                        const updatedPending = pendingPageUploads.map(p => {
-                                          if (p.tempId === pendingPage.tempId) {
-                                            return { ...p, pageNumber: targetPageNumber };
-                                          } else if (p.tempId === targetItem.id) {
-                                            return { ...p, pageNumber: currentPageNumber };
-                                          }
-                                          return p;
-                                        });
-                                        setPendingPageUploads(updatedPending);
-                                      } 
-                                      // If swapping with a published page
-                                      else if (targetItem.type === 'published') {
-                                        // Update pending page
-                                        const updatedPending = pendingPageUploads.map(p => {
-                                          if (p.tempId === pendingPage.tempId) {
-                                            return { ...p, pageNumber: targetPageNumber };
-                                          }
-                                          return p;
-                                        });
-                                        setPendingPageUploads(updatedPending);
-                                        
-                                        // Update published page to swap positions
-                                        apiRequest("PATCH", `/api/yearbooks/pages/${targetItem.id}/reorder`, {
-                                          pageNumber: currentPageNumber
-                                        }).then(() => {
-                                          queryClient.invalidateQueries({ queryKey: ["/api/yearbooks", schoolId, year] });
-                                        });
-                                      }
-                                    }
-                                  }}
-                                  onMoveRight={() => {
-                                    // Find current position in allPages
-                                    const currentIndex = allPages.findIndex(p => p.id === pendingPage.tempId);
-                                    if (currentIndex < allPages.length - 1) {
-                                      // Swap with next item
-                                      const targetItem = allPages[currentIndex + 1];
-                                      const currentPageNumber = pendingPage.pageNumber;
-                                      const targetPageNumber = targetItem.pageNumber;
-                                      
-                                      // If swapping with another pending page
-                                      if (targetItem.type === 'pending') {
-                                        const updatedPending = pendingPageUploads.map(p => {
-                                          if (p.tempId === pendingPage.tempId) {
-                                            return { ...p, pageNumber: targetPageNumber };
-                                          } else if (p.tempId === targetItem.id) {
-                                            return { ...p, pageNumber: currentPageNumber };
-                                          }
-                                          return p;
-                                        });
-                                        setPendingPageUploads(updatedPending);
-                                      }
-                                      // If swapping with a published page
-                                      else if (targetItem.type === 'published') {
-                                        // Update pending page
-                                        const updatedPending = pendingPageUploads.map(p => {
-                                          if (p.tempId === pendingPage.tempId) {
-                                            return { ...p, pageNumber: targetPageNumber };
-                                          }
-                                          return p;
-                                        });
-                                        setPendingPageUploads(updatedPending);
-                                        
-                                        // Update published page to swap positions
-                                        apiRequest("PATCH", `/api/yearbooks/pages/${targetItem.id}/reorder`, {
-                                          pageNumber: currentPageNumber
-                                        }).then(() => {
-                                          queryClient.invalidateQueries({ queryKey: ["/api/yearbooks", schoolId, year] });
-                                        });
-                                      }
-                                    }
-                                  }}
                                   onDelete={() => {
                                     setPendingPageUploads(prev => prev.filter(p => p.tempId !== pendingPage.tempId));
                                     URL.revokeObjectURL(pendingPage.tempUrl);
