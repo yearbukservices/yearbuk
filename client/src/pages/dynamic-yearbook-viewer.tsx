@@ -1370,13 +1370,13 @@ export default function DynamicYearbookViewer() {
               {hasContent && (
                 <div
                   className={isPortrait
-                    ? "fixed left-0 top-1/2 z-[100] -translate-y-1/2"
+                    ? "fixed left-0 top-1/2 z-[100] -translate-y-1/2 pointer-events-none"
                     : "lg:col-span-1 order-2 lg:order-1"
                   }
                 >
                   <div
                     className={isPortrait
-                      ? `relative transition-transform duration-300 ease-out ${isNavigationOpen ? "translate-x-0" : "-translate-x-full"}`
+                      ? `relative transition-transform duration-300 ease-out ${isNavigationOpen ? "translate-x-0 pointer-events-auto" : "-translate-x-full pointer-events-none"}`
                       : ""
                     }
                   >
@@ -1493,7 +1493,7 @@ export default function DynamicYearbookViewer() {
                     <button
                       type="button"
                       onClick={() => setIsNavigationOpen((open) => !open)}
-                      className="absolute top-1/2 -right-10 flex h-20 w-10 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-white/20 bg-white/10 text-white shadow-2xl backdrop-blur-lg transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+                      className="pointer-events-auto absolute top-1/2 -right-10 flex h-20 w-10 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-white/20 bg-white/10 text-white shadow-2xl backdrop-blur-lg transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
                       aria-label={isNavigationOpen ? "Close navigation menu" : "Open navigation menu"}
                       data-testid={isNavigationOpen ? "button-close-navigation" : "button-open-navigation"}
                     >
