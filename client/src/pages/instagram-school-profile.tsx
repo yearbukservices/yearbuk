@@ -93,6 +93,7 @@ interface InstagramSchoolProfileProps {
   resetAlumniFilters?: boolean;
   onBack?: () => void;
   showBackButton?: boolean;
+  onYearbookOpen?: () => void;
 }
 
 export default function InstagramSchoolProfile({ 
@@ -101,7 +102,8 @@ export default function InstagramSchoolProfile({
   inDashboard = false,
   resetAlumniFilters = false,
   onBack,
-  showBackButton = false
+  showBackButton = false,
+  onYearbookOpen
 }: InstagramSchoolProfileProps) {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
@@ -913,10 +915,12 @@ text-white">
                         <Button
                           onClick={() => {
                             if (yearbook.isFree) {
+                              onYearbookOpen?.();
                               setLocation(`/yearbook/${school.id}/${yearbook.year}`);
                             } else if (!user) {
                               setShowLoginDialog(true);
                             } else if (accessible) {
+                              onYearbookOpen?.();
                               setLocation(`/yearbook/${school.id}/${yearbook.year}`);
                             } else if (canPurchase) {
                               setSelectedYearForCart({
