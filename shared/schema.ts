@@ -32,6 +32,17 @@ export const users: PgTableWithColumns<any> = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const recentSearches = pgTable("recent_searches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references((): any => users.id).notNull(),
+  searchType: text("search_type").notNull(),
+  targetId: varchar("target_id").notNull(),
+  targetUsername: text("target_username").notNull(),
+  targetLabel: text("target_label").notNull(),
+  targetImage: text("target_image"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const schools: PgTableWithColumns<any> = pgTable("schools", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
@@ -364,6 +375,15 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+export const insertRecentSearchSchema = createInsertSchema(recentSearches).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  searchType: z.enum(["school", "user"]),
+  targetUsername: z.string().min(1).max(100),
+  targetLabel: z.string().min(1).max(200),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -526,6 +546,9 @@ export const insertPhotoTagSchema = createInsertSchema(photoTags).omit({
   id: true,
   createdAt: true,
 });
+
+export type InsertRecentSearch = z.infer<typeof insertRecentSearchSchema>;
+export type RecentSearch = typeof recentSearches.$inferSelect;
 
 export type InsertPhotoTag = z.infer<typeof insertPhotoTagSchema>;
 export type PhotoTag = typeof photoTags.$inferSelect;
