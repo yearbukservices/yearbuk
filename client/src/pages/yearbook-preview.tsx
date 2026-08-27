@@ -270,7 +270,7 @@ export default function YearbookPreview() {
 
   const handleZoomOut = () => {
     setZoomLevel(prev => {
-      const newZoom = Math.max(prev - 25, 50);
+      const newZoom = Math.max(prev - 25, 100);
       if (newZoom <= 100) {
         setPanOffset({ x: 0, y: 0 });
       }
@@ -940,7 +940,7 @@ export default function YearbookPreview() {
                             onClick={handleZoomOut}
                             variant="outline"
                             size="sm"
-                            disabled={zoomLevel <= 50}
+                            disabled={zoomLevel <= 100}
                             className="px-2 sm:px-3 bg-gre-200 text-white"
                           >
                             <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
