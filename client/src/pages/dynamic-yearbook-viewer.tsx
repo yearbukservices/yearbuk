@@ -279,8 +279,8 @@ export default function DynamicYearbookViewer() {
       e.preventDefault();
 
       if (isPanning) {
-        const deltaX = e.touches[0].clientX - lastPanPoint.x;
-        const deltaY = e.touches[0].clientY - lastPanPoint.y;
+        const deltaX = (e.touches[0].clientX - lastPanPoint.x) * 0.5;
+        const deltaY = (e.touches[0].clientY - lastPanPoint.y) * 0.5;
 
         setPanOffset(prev => {
           const newX = prev.x + deltaX;
