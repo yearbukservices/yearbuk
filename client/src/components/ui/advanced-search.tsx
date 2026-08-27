@@ -1,12 +1,12 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock3, Search, Trash2, X } from "lucide-react";
 import type { School } from "@shared/schema";
 
 const MIN_SEARCH_LENGTH = 2;
-const RECENT_SEARCHES_KEY = "yearbuk-recent-searches";
-const MAX_RECENT_SEARCHES = 5;
 
 interface RecentSearch {
   kind: "school" | "user";
@@ -15,30 +15,6 @@ interface RecentSearch {
   label: string;
   profileImage: string | null;
 }
-
-const readRecentSearches = (): RecentSearch[] => {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
-    if (!stored) return [];
-
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .filter((item): item is RecentSearch =>
-        item &&
-        (item.kind === "school" || item.kind === "user") &&
-        typeof item.id === "string" &&
-        typeof item.username === "string" &&
-        typeof item.label === "string"
-      )
-      .slice(0, MAX_RECENT_SEARCHES);
-  } catch {
-    return [];
-  }
-};
 
 const startsWithSearchTerm = (value: string | null | undefined, term: string) =>
   value?.toLowerCase().split(/\s+/).some(word => word.startsWith(term)) ?? false;
@@ -61,21 +37,37 @@ interface AdvancedSearchProps {
   onUserClick?: (username: string) => void;
   onSchoolSelect?: (schoolId: string) => void;
   selectedSchool?: string;
+  isAuthenticated?: boolean;
 }
 
-export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, onSchoolSelect, selectedSchool }: AdvancedSearchProps) {
+export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, onSchoolSelect, selectedSchool, isAuthenticated }: AdvancedSearchProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [userResults, setUserResults] = useState<SearchUser[]>([]);
-  const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
+  const { data: recentSearches = [] } = useQuery<RecentSearch[]>({
+    queryKey: ["/api/search/recent"],
+    enabled: !!isAuthenticated,
+  });
+  const saveRecentSearchMutation = useMutation({
+    mutationFn: async (recentSearch: RecentSearch) => {
+      await apiRequest("POST", "/api/search/recent", recentSearch);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/search/recent"] });
+    },
+  });
+  const clearRecentSearchesMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/search/recent");
+    },
+    onSuccess: () => {
+      queryClient.setQueryData<RecentSearch[]>(["/api/search/recent"], []);
+    },
+  });
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedSchoolData = schools.find(s => s.id === selectedSchool);
-
-  useEffect(() => {
-    setRecentSearches(readRecentSearches());
-  }, []);
 
   useEffect(() => {
     if (!selectedSchoolData && searchInputRef.current) {
@@ -123,22 +115,8 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
     return items.slice(0, 8);
   }, [filteredSchools, userResults]);
 
-  const addRecentSearch = (recentSearch: RecentSearch) => {
-    setRecentSearches(current => {
-      const next = [
-        recentSearch,
-        ...current.filter(item => !(item.kind === recentSearch.kind && item.username === recentSearch.username)),
-      ].slice(0, MAX_RECENT_SEARCHES);
-
-      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
-
   const handleRecentSearchClick = (recentSearch: RecentSearch) => {
-    setSearchTerm("");
-    setIsExpanded(false);
-
+    saveRecentSearchMutation.mutate(recentSearch);
     if (recentSearch.kind === "school") {
       onSchoolClick?.(recentSearch.username);
     } else {
@@ -147,8 +125,7 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
   };
 
   const handleClearRecentSearches = () => {
-    setRecentSearches([]);
-    localStorage.removeItem(RECENT_SEARCHES_KEY);
+    clearRecentSearchesMutation.mutate();
   };
 
   const handleClearSelection = () => {
@@ -234,7 +211,8 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                       <button
                         type="button"
                         onClick={handleClearRecentSearches}
-                        className="flex items-center gap-1 text-xs text-white/50 hover:text-white/80 transition-colors"
+                        disabled={clearRecentSearchesMutation.isPending}
+                        className="flex items-center gap-1 text-xs text-white/50 hover:text-white/80 transition-colors disabled:opacity-50"
                         data-testid="button-clear-recent-searches"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -280,7 +258,7 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                           <button
                             key={`school-${s.id}`}
                             onClick={() => {
-                              addRecentSearch({
+                              saveRecentSearchMutation.mutate({
                                 kind: "school",
                                 id: String(s.id),
                                 username: s.username,
@@ -318,7 +296,7 @@ export default function AdvancedSearch({ schools, onSchoolClick, onUserClick, on
                           <button
                             key={`user-${u.id}`}
                             onClick={() => {
-                              addRecentSearch({
+                              saveRecentSearchMutation.mutate({
                                 kind: "user",
                                 id: String(u.id),
                                 username: u.username,
