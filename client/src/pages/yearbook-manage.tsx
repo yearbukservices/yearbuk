@@ -3017,8 +3017,7 @@ function SortablePendingPage({
             </div>
 
             {/* Table of Contents Card */}
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-lg p-4 lg:p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="flex h-[32rem] max-h-[32rem] flex-col overflow-hidden bg-white/10 backdrop-blur-lg border border-whit<div className="flex shrink-0 items-center justify-between mb-4">lex items-center justify-between mb-4">
                 <h3 className="font-semibold text-white">Table of Contents</h3>
                 <Button
                   
@@ -3028,10 +3027,7 @@ function SortablePendingPage({
                   data-testid="button-add-toc-item"
                 >
                   <Plus className="h-4 w-4 text-white" />
-                </Button>
-              </div>
-            
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+                </Button<div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1"> className="space-y-2 max-h-96 overflow-y-auto">
               {/* Existing TOC items */}
               {yearbook?.tableOfContents?.map((item) => (
                 <div key={item.id} className="p-3 border rounded-lg">
