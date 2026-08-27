@@ -1472,7 +1472,7 @@ export default function DynamicYearbookViewer() {
                       onClick={handleReturnToSchoolPage}
                       variant="outline"
                       size="sm"
-                      className="text-white border-white/30 hover:bg-white/20"
+                      className="text-white bg-white/10 backdrop-blur-lg border border-white/30 hover:bg-white/20"
                       data-testid="button-return-to-school-page"
                     >
                       <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
