@@ -1452,7 +1452,7 @@ export default function DynamicYearbookViewer() {
                       {/* Table of Contents */}
                       <div>
                         <h4 className="font-medium text-white mb-3">Table of Contents</h4>
-                        <div className="space-y-1 max-h-64 overflow-y-auto">
+                        <div className="toc-scroll-container h-64 max-h-64 space-y-1 overflow-y-auto overscroll-contain pr-1 touch-pan-y" tabIndex={0} aria-label="Table of Contents">
                           {/* Front Cover (always first) */}
                           {frontCover && (
                             <button
