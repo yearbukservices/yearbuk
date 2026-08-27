@@ -46,6 +46,8 @@ export default function DynamicYearbookViewer() {
   const viewportRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipeHandledRef = useRef(false);
+  const pinchStartDistanceRef = useRef<number | null>(null);
+  const pinchStartZoomRef = useRef(100);
 
   // Use both yearbook orientation and mobile detection
   const [isPortrait, setIsPortrait] = useState(true); // default portrait
@@ -219,8 +221,23 @@ export default function DynamicYearbookViewer() {
     setIsPanning(false);
   };
 
-  // Handle mobile swipes for page navigation and panning when zoomed in
+  // Handle mobile pinch zoom, panning, and page swipes
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const firstTouch = e.touches[0];
+      const secondTouch = e.touches[1];
+      pinchStartDistanceRef.current = Math.hypot(
+        secondTouch.clientX - firstTouch.clientX,
+        secondTouch.clientY - firstTouch.clientY,
+      );
+      pinchStartZoomRef.current = zoomLevel;
+      touchStartRef.current = null;
+      swipeHandledRef.current = true;
+      setIsPanning(false);
+      e.preventDefault();
+      return;
+    }
+
     if (e.touches.length !== 1) return;
 
     const point = {
@@ -239,6 +256,23 @@ export default function DynamicYearbookViewer() {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartDistanceRef.current !== null) {
+      const firstTouch = e.touches[0];
+      const secondTouch = e.touches[1];
+      const currentDistance = Math.hypot(
+        secondTouch.clientX - firstTouch.clientX,
+        secondTouch.clientY - firstTouch.clientY,
+      );
+      const rawZoom = pinchStartZoomRef.current * (currentDistance / pinchStartDistanceRef.current);
+      const nextZoom = rawZoom < 100
+        ? 100 - (100 - rawZoom) * 0.35
+        : Math.min(rawZoom, 500);
+
+      setZoomLevel(nextZoom);
+      e.preventDefault();
+      return;
+    }
+
     if (e.touches.length !== 1) return;
 
     if (zoomLevel > 100) {
@@ -260,7 +294,7 @@ export default function DynamicYearbookViewer() {
 
         setLastPanPoint({
           x: e.touches[0].clientX,
-          y: e.touches[0].clientY
+          y: e.touches[0].clientY,
         });
       }
       return;
@@ -278,6 +312,17 @@ export default function DynamicYearbookViewer() {
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (pinchStartDistanceRef.current !== null) {
+      pinchStartDistanceRef.current = null;
+      touchStartRef.current = null;
+      if (zoomLevel < 100) {
+        setZoomLevel(100);
+        setPanOffset({ x: 0, y: 0 });
+      }
+      setIsPanning(false);
+      return;
+    }
+
     const start = touchStartRef.current;
     const touch = e.changedTouches[0];
 
@@ -622,7 +667,7 @@ export default function DynamicYearbookViewer() {
                 aspectRatio: pageAspectRatioStr,
                 transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                 transformOrigin: 'center center',
-                touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
+                touchAction: isMobile ? 'none' : (zoomLevel > 100 ? 'none' : 'auto')
               }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -683,7 +728,7 @@ export default function DynamicYearbookViewer() {
                 aspectRatio: pageAspectRatioStr,
                 transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                 transformOrigin: 'center center',
-                touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
+                touchAction: isMobile ? 'none' : (zoomLevel > 100 ? 'none' : 'auto')
               }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -748,7 +793,7 @@ export default function DynamicYearbookViewer() {
                   style={{
                     transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                     transformOrigin: 'center center',
-                    touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
+                    touchAction: isMobile ? 'none' : (zoomLevel > 100 ? 'none' : 'auto')
                   }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -801,7 +846,7 @@ export default function DynamicYearbookViewer() {
                 style={{
                   transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                   transformOrigin: 'center center',
-                  touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
+                  touchAction: isMobile ? 'none' : (zoomLevel > 100 ? 'none' : 'auto')
                 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
@@ -873,7 +918,7 @@ export default function DynamicYearbookViewer() {
                   transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                   transformOrigin: 'center center',
                   cursor: zoomLevel > 100 ? (isPanning ? 'grabbing' : 'grab') : 'pointer',
-                  touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
+                  touchAction: isMobile ? 'none' : (zoomLevel > 100 ? 'none' : 'auto')
                 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
@@ -926,7 +971,7 @@ export default function DynamicYearbookViewer() {
                   transform: `scale(${zoomLevel / 100}) translate(${panOffset.x}px, ${panOffset.y}px)`,
                   transformOrigin: 'center center',
                   cursor: zoomLevel > 100 ? (isPanning ? 'grabbing' : 'grab') : 'pointer',
-                  touchAction: zoomLevel > 100 ? 'none' : 'pan-y'
+                  touchAction: isMobile ? 'none' : (zoomLevel > 100 ? 'none' : 'auto')
                 }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
@@ -1012,29 +1057,31 @@ export default function DynamicYearbookViewer() {
           {renderPageView()}
         </div>
 
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/80 rounded-full px-6 py-3">
-          <Button
-            onClick={handleZoomOut}
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-white/20"
-            disabled={zoomLevel <= 50}
-          >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
+        {!isMobile && (
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/80 rounded-full px-6 py-3">
+            <Button
+              onClick={handleZoomOut}
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20"
+              disabled={zoomLevel <= 50}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
 
-          <span className="text-white text-sm">{zoomLevel}%</span>
+            <span className="text-white text-sm">{zoomLevel}%</span>
 
-          <Button
-            onClick={handleZoomIn}
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-white/20"
-            disabled={zoomLevel >= 500}
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-        </div>
+            <Button
+              onClick={handleZoomIn}
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20"
+              disabled={zoomLevel >= 500}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     );
   };
@@ -1300,27 +1347,27 @@ export default function DynamicYearbookViewer() {
                       
                       {/* Page Controls */}
                       <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-                        <div className="flex items-center space-x-1 sm:space-x-2">
-                          <Button
-                            onClick={handleZoomOut}
-                            variant="outline"
-                            size="sm"
-                            disabled={zoomLevel <= 50}
-                            className="px-2 sm:px-3 bg-gre-200 text-white"
-                          >
-                            <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                          <span className="text-xs sm:text-sm font-medium flex-1 text-center text-white">{zoomLevel}%</span>
-                          <Button
-                            onClick={handleZoomIn}
-                            variant="outline"
-                            size="sm"
-                            disabled={zoomLevel >= 500}
-                            className="px-2 sm:px-3 bg-gre-200 text-white"
-                          >
-                            <ZoomIn className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                        </div>
+                        {!isMobile && (
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            <Button
+                              onClick={handleZoomOut}
+                              variant="outline"
+                              size="sm"
+                              disabled={zoomLevel <= 50}
+                              className="px-2 sm:px-3 bg-gre-200 text-white">
+                              <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                            <span className="text-xs sm:text-sm font-medium flex-1 text-center text-white">{zoomLevel}%</span>
+                            <Button
+                              onClick={handleZoomIn}
+                              variant="outline"
+                              size="sm"
+                              disabled={zoomLevel >= 500}
+                              className="px-2 sm:px-3 bg-gre-200 text-white">
+                              <ZoomIn className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                          </div>
+                        )}
 
                         <div className="flex items-center justify-between space-x-2 py-2 px-3 bg-white/5 rounded-md border border-white/10">
                           <Label htmlFor="page-view-toggle" className="text-xs sm:text-sm text-white cursor-pointer flex items-center gap-2">
