@@ -2402,7 +2402,7 @@ function SortablePendingPage({
 
             <div className="flex gap-2 pt-2">
               <Button
-                onClick={() => setLocation("/school-dashboard?tab=years")}
+                onClick={() => setLocation("/yearbooks")}
                 variant="outline"
                 className="flex-1 bg-white/10 border-white/20 text-white"
                 data-testid="button-back-to-dashboard"
