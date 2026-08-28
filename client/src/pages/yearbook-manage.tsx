@@ -2385,7 +2385,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
       data-testid="mobile-delete-drop-zone"
     >
       <Trash2 className="h-5 w-5" />
-      <span>Drop page here to delete</span>
+      <span>DELETE</span>
     </div>
   );
 }
@@ -3603,7 +3603,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                         </div>
                       </div>
                     </SortableContext>
-                    {activePageId && isPortraitViewport && (
+                    {isPortraitViewport && (
                       <MobileDeleteDropZone isOver={overId === MOBILE_DELETE_DROP_ZONE_ID} />
                     )}
                   </DndContext>
