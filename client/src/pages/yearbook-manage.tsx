@@ -3552,7 +3552,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                         <img
                           src={getSecureImageUrl(yearbook.pages.find(p => p.pageType === "front_cover")?.imageUrl) || ''}
                           alt="Front Cover"
-                          className="w-full h-20 object-cover rounded mb-2 pointer-events-none"
+                          className="w-full h-auto max-h-64 object-contain rounded mb-2 pointer-events-none"
                         />
                         <div className="flex justify-center">
                           <Button
@@ -3601,7 +3601,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                         <img
                           src={getSecureImageUrl(yearbook.pages.find(p => p.pageType === "back_cover")?.imageUrl) || ''}
                           alt="Back Cover"
-                          className="w-full h-20 object-cover rounded mb-2"
+                          className="w-full h-auto max-h-64 object-contain rounded mb-2"
                         />
                         <div className="flex justify-center">
                           <Button
