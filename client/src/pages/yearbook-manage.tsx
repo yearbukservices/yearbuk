@@ -2253,6 +2253,7 @@ function SortablePage({
               imageUrl={getSecureImageUrl(page.imageUrl) || ''}
               imageAlt={`Preview of page ${page.pageNumber}`}
               totalPages={totalPages}
+              isPortraitViewport={isPortraitViewport}
               editingPageId={editingPageId}
               tempPageNumber={tempPageNumber}
               onStartEditingPageNumber={onStartEditingPageNumber}
@@ -2357,6 +2358,7 @@ function SortablePendingPage({
   onMoveLeft,
   onMoveRight,
   totalPages,
+  isPortraitViewport,
   editingPageId,
   tempPageNumber,
   onStartEditingPageNumber,
@@ -2424,6 +2426,7 @@ function SortablePendingPage({
               imageUrl={pendingPage.tempUrl}
               imageAlt={`Preview of page ${pendingPage.pageNumber}`}
               totalPages={totalPages}
+              isPortraitViewport={isPortraitViewport}
               editingPageId={editingPageId}
               tempPageNumber={tempPageNumber}
               onStartEditingPageNumber={onStartEditingPageNumber}
