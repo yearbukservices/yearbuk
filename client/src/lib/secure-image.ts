@@ -2,10 +2,11 @@
 export function getSecureImageUrl(imageUrl: string | null | undefined): string | null {
   if (!imageUrl) return null;
   
-  // Cloudinary URLs are already watermarked server-side for viewers
-  // Return them directly without modification
+  // Cloudinary URLs are already watermarked server-side for viewers.
+  // Convert HEIC/HEIF uploads to JPEG because many desktop browsers cannot
+  // decode HEIC in an <img>, even though iPhone browsers commonly can.
   if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
-    return imageUrl;
+    return getBrowserSafeCloudinaryUrl(imageUrl);
   }
   
   // Get user ID from localStorage for authentication
@@ -47,7 +48,7 @@ export function getPublicFrontCoverUrl(imageUrl: string | null | undefined): str
   
   // Front covers are publicly accessible - return the URL directly
   // No authentication needed since yearbook front covers are meant to be visible for purchase decisions
-  return imageUrl;
+  return getBrowserSafeCloudinaryUrl(imageUrl);
 }
 
 // Helper function for public memory images (no authentication required)
@@ -56,7 +57,7 @@ export function getPublicMemoryUrl(imageUrl: string | null | undefined): string 
   
   // Cloudinary URLs are already publicly accessible
   if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary.com')) {
-    return imageUrl;
+    return getBrowserSafeCloudinaryUrl(imageUrl);
   }
   
   // Local upload URLs are also publicly accessible for memories
