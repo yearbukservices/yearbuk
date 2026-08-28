@@ -2665,7 +2665,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cloudinaryPublicId: m.cloudinaryPublicId,
           eventDate: m.eventDate,
           year: m.year,
-          category: m.category
+          category: m.category,
+          uploadedBy: m.uploadedBy
         }));
       
       res.json(approvedMemories);
