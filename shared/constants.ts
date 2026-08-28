@@ -2,7 +2,7 @@
 // This file can be imported by both client and server
 
 // Current academic year - change this value to update the current year throughout the entire app
-export const CURRENT_YEAR = 2026;
+export const CURRENT_YEAR = 2027;
 
 // Default prices (in USD - base currency) - now from environment variables with fallback values
 // Check if we're in a server environment (Node.js) before accessing process.env
