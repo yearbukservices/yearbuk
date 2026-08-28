@@ -107,7 +107,22 @@ export default function YearbookManage() {
   
   // Drag and drop state
   const [activePageId, setActivePageId] = useState<string | null>(null);
+  const [isPortraitViewport, setIsPortraitViewport] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(orientation: portrait)").matches
+  );
   
+  useEffect(() => {
+    const portraitQuery = window.matchMedia("(orientation: portrait)");
+    const handleOrientationChange = (event: MediaQueryListEvent) => {
+      setIsPortraitViewport(event.matches);
+    };
+
+    setIsPortraitViewport(portraitQuery.matches);
+    portraitQuery.addEventListener("change", handleOrientationChange);
+
+    return () => portraitQuery.removeEventListener("change", handleOrientationChange);
+  }, []);
+
   // Manual page assignment state
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [tempPageNumber, setTempPageNumber] = useState<number>(0);
@@ -3496,7 +3511,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                     >
                       <div 
                         ref={scrollContainerRef}
-                        className="pages-grid grid gap-4 p-4 justify-items-center"
+                        className={`pages-grid grid gap-4 p-4 justify-items-center ${isPortraitViewport ? 'portrait-grid' : ''}`}
                         style={{
                           display: 'grid',
                           gridTemplateColumns: 'repeat(auto-fill, 200px)',
@@ -3588,7 +3603,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                         </div>
                       </div>
                     </SortableContext>
-                    {activePageId && (
+                    {activePageId && isPortraitViewport && (
                       <MobileDeleteDropZone isOver={overId === MOBILE_DELETE_DROP_ZONE_ID} />
                     )}
                   </DndContext>
