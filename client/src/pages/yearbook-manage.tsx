@@ -4567,7 +4567,6 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                     <ScanLine className="h-6 w-6 text-white/50" />
                   </div>
                   <span className="text-xs font-semibold text-white/70">Detect ratio</span>
-                  <span className="text-[10px] text-white/40">From cover</span>
                 </button>
                 {/* Custom ratio button */}
                 {(() => {
