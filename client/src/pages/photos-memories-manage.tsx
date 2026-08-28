@@ -2454,7 +2454,7 @@ function PublicUploadLinksManager({ schoolId, year }: { schoolId: string; year: 
 
   return (
     <div className="space-y-4">
-      <p className="text-blue-100 text-sm mb-4">
+      <p className="text-blue-100 text-sm mb-4 px-6">
         Manage your existing public upload links. You can view details, copy links, and activate/deactivate them.
       </p>
       
