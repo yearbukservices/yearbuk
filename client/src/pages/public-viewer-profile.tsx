@@ -1,9 +1,12 @@
 import { useState, useMemo, useRef, type TouchEvent as ReactTouchEvent } from "react";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { LoginDialog } from "@/components/LoginDialog";
+import logoImage from "@assets/logo_background_null.png";
 import { Award, Heart, ChevronLeft, ChevronRight, X, ArrowLeft } from "lucide-react";
 import type { AlumniBadge, Memory, School } from "@shared/schema";
 
@@ -21,6 +24,8 @@ interface PublicViewerProfileProps {
 }
 
 export default function PublicViewerProfile({ username, onBack }: PublicViewerProfileProps) {
+  const [, setLocation] = useLocation();
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"posts" | "tagged" | "badges">("posts");
   const [selectedPostIndex, setSelectedPostIndex] = useState<number | null>(null);
   const [selectedTaggedIndex, setSelectedTaggedIndex] = useState<number | null>(null);
@@ -113,29 +118,70 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase();
 
+  const navigation = (
+    <div className="fixed top-0 left-0 right-0 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-2xl z-30">
+      <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+        <button
+          onClick={() => setLocation("/home")}
+          className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+          data-testid="link-logo-home"
+        >
+          <img src={logoImage} alt="Yearbuk Logo" className="h-12 w-auto" />
+          <span className="text-2xl font-bold text-white">Yearbuk</span>
+        </button>
+
+        <div className="flex items-center space-x-4">
+          <LoginDialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
+            <Button
+              variant="outline"
+              className="bg-white/20 backdrop-blur-lg border border-white/30 text-white hover:bg-white/30"
+              data-testid="button-home-login"
+            >
+              Login
+            </Button>
+          </LoginDialog>
+          <Button
+            onClick={() => setLocation("/signup")}
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg hover:from-blue-600 hover:to-cyan-600 border-0"
+            data-testid="button-home-signup"
+          >
+            Sign Up
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen">
+        {navigation}
+        <div className="min-h-screen flex items-center justify-center pt-20">
         <div className="text-white/60">Loading profile...</div>
+        </div>
       </div>
     );
   }
 
   if (isError || !profileUser) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen">
+        {navigation}
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 pt-20">
         <p className="text-white/60">User not found</p>
         {onBack && (
           <Button variant="ghost" className="text-white/60" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" /> Back
           </Button>
         )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-0 sm:py-2">
+    <div className="min-h-screen pt-24 pb-2">
+      {navigation}
       <div className="max-w-3xl mx-auto px-4">
         {/* Header Section */}
         <div className="text-center mb-12 space-y-5">
