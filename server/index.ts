@@ -107,6 +107,22 @@ app.get("/api/alumni-badges/:userId", async (req, res) => {
   
   // Schedule cleanup every 30 minutes
   setInterval(cleanupExpiredNotifications, 30 * 60 * 1000);
+
+  // Background job: Permanently remove upload links 24 hours after expiry
+  const cleanupExpiredUploadLinks = async () => {
+    try {
+      const deletedCount = await storage.deleteExpiredPublicUploadLinks();
+      if (deletedCount > 0) {
+        console.log(`Cleaned up ${deletedCount} upload links expired for more than 24 hours`);
+      }
+    } catch (error) {
+      console.error('Error cleaning up expired upload links:', error);
+    }
+  };
+
+  // Run cleanup immediately on startup and then every 30 minutes
+  await cleanupExpiredUploadLinks();
+  setInterval(cleanupExpiredUploadLinks, 30 * 60 * 1000);
   
   const server = await registerRoutes(app);
 
