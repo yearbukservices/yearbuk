@@ -711,3 +711,23 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
   border-color: rgb(254, 202, 202);
   background: rgb(220, 38, 38);
 }
+
+
+/* Keep the portrait delete tab aligned with the full image grid height. */
+.portrait-grid-layout {
+  position: relative;
+}
+
+.portrait-grid-layout--portrait .portrait-delete-drop-zone {
+  position: absolute;
+  top: 1rem;
+  bottom: 1rem;
+  left: 0;
+  height: auto;
+  max-height: none;
+  transform: none;
+}
+
+.portrait-grid-layout--portrait .portrait-delete-drop-zone.is-over {
+  transform: scale(1.04);
+}
