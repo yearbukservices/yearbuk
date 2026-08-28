@@ -4417,7 +4417,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
         }
         setShowSettingsDialog(open);
       }}>
-        <DialogContent className="bg-slate-900 border-white/20 text-white max-w-lg">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden bg-slate-900 border-white/20 text-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
