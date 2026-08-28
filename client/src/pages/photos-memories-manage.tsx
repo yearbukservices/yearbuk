@@ -212,8 +212,8 @@ export default function PhotosMemoriesManage() {
   };
 
   const handleBackToSchool = () => {
-    // Navigate to school dashboard with photos/memories tab active
-    setLocation("/school-dashboard?tab=memories");
+    // Return to the school account home with the Memories tab active
+    setLocation("/memories");
   };
 
   const handleLogout = () => {
