@@ -3494,7 +3494,8 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                       acceleration: 10,
                     }}
                   >
-                    <SortableContext
+                    <div className={`portrait-grid-layout ${isPortraitViewport ? 'portrait-grid-layout--portrait' : ''}`}>
+                      <SortableContext
                       items={(() => {
                         const publishedPages = (yearbook?.pages?.filter(p => p.pageType === "content") || []).map(p => ({ 
                           id: p.id, 
@@ -3602,10 +3603,11 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                           </Button>
                         </div>
                       </div>
-                    </SortableContext>
-                    {isPortraitViewport && (
-                      <MobileDeleteDropZone isOver={overId === MOBILE_DELETE_DROP_ZONE_ID} />
-                    )}
+                      </SortableContext>
+                      {isPortraitViewport && (
+                        <MobileDeleteDropZone isOver={overId === MOBILE_DELETE_DROP_ZONE_ID} />
+                      )}
+                    </div>
                   </DndContext>
                   </>
                   )}
