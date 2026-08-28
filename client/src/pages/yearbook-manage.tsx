@@ -3456,7 +3456,7 @@ function SortablePendingPage({
                     >
                       <div 
                         ref={scrollContainerRef}
-                        className="grid gap-4 p-4 justify-items-center"
+                        className="pages-grid grid gap-4 p-4 justify-items-center"
                         style={{
                           display: 'grid',
                           gridTemplateColumns: 'repeat(auto-fill, 200px)',
