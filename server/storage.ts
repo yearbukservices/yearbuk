@@ -296,6 +296,7 @@ export interface IStorage {
   getPublicUploadLinkById(linkId: string): Promise<PublicUploadLink | undefined>;
   updatePublicUploadLinkStatus(linkId: string, isActive: boolean): Promise<PublicUploadLink | undefined>;
   deletePublicUploadLink(linkId: string): Promise<boolean>;
+  deleteExpiredPublicUploadLinks(): Promise<number>;
   incrementUploadCount(linkId: string): Promise<boolean>;
   updateMemoryStatus(memoryId: string, status: 'pending' | 'approved' | 'rejected'): Promise<Memory | undefined>;
 
@@ -1589,6 +1590,17 @@ export class MemStorage implements IStorage {
 
   async deletePublicUploadLink(linkId: string): Promise<boolean> {
     return this.publicUploadLinks.delete(linkId);
+  }
+
+  async deleteExpiredPublicUploadLinks(): Promise<number> {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const expiredLinks = Array.from(this.publicUploadLinks.values()).filter((link) => {
+      const expiresAt = new Date(link.expiresAt).getTime();
+      return Number.isFinite(expiresAt) && expiresAt <= cutoff;
+    });
+
+    expiredLinks.forEach((link) => this.publicUploadLinks.delete(link.id));
+    return expiredLinks.length;
   }
 
   async incrementUploadCount(linkId: string): Promise<boolean> {
@@ -3212,6 +3224,25 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return result.length > 0;
+  }
+
+  async deleteExpiredPublicUploadLinks(): Promise<number> {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const expiredLinks = await db.select({ id: publicUploadLinks.id })
+      .from(publicUploadLinks)
+      .where(sql`${publicUploadLinks.expiresAt} <= ${cutoff}`);
+
+    for (const link of expiredLinks) {
+      await this.deleteUploadCodeNotifications(link.id);
+    }
+
+    if (expiredLinks.length === 0) return 0;
+
+    const deletedLinks = await db.delete(publicUploadLinks)
+      .where(sql`${publicUploadLinks.expiresAt} <= ${cutoff}`)
+      .returning({ id: publicUploadLinks.id });
+
+    return deletedLinks.length;
   }
 
   // School gallery image operations
