@@ -2154,13 +2154,6 @@ function PageNumberSwapDialog({
           <DialogHeader>
             <DialogTitle>Swap page position</DialogTitle>
           </DialogHeader>
-          <div className="rounded-lg border border-white/10 bg-black/20 p-2">
-            <img
-              src={imageUrl}
-              alt={imageAlt}
-              className="max-h-64 w-full rounded-md object-contain"
-            />
-          </div>
           <div className="space-y-4">
             <p className="text-sm text-white/70">Enter the page you want this current one to swap with</p>
             <div className="space-y-2">
@@ -2210,7 +2203,14 @@ function PageNumberSwapDialog({
               </Button>
             </div>
           </div>
-        </DialogContent>
+          <div className="rounded-lg border border-white/10 bg-black/20 p-2">
+            <img
+              src={imageUrl}
+              alt={imageAlt}
+              className="max-h-64 w-full rounded-md object-contain"
+            />
+          </div>
+</DialogContent>
       </Dialog>
     </>
   ) : inlineEditor;
