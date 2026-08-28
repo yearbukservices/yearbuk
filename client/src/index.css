@@ -648,28 +648,48 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
   object-fit: contain !important;
 }
 
-/* Portrait-only page-card controls and drag-to-delete target. */
+/* Portrait-only page-card controls and permanent drag-to-delete tab. */
+.pages-grid.portrait-grid {
+  margin-left: 3.5rem;
+  width: calc(100% - 3.5rem);
+  box-sizing: border-box;
+}
+
 .pages-grid.portrait-grid .page-card-actions {
   display: none !important;
 }
 
+.pages-grid.portrait-grid > * {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100%;
+  aspect-ratio: 3 / 5 !important;
+}
+
+.pages-grid.portrait-grid > * img {
+  object-fit: contain !important;
+}
+
 .portrait-delete-drop-zone {
   position: fixed;
-  left: calc(0.75rem + env(safe-area-inset-left, 0px));
+  left: 0;
   top: 50%;
-  bottom: auto;
   z-index: 10000;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  width: min(calc(100vw - 2rem), 20rem);
-  min-height: 3.5rem;
-  padding: 0.75rem 1rem;
+  width: 3.5rem;
+  height: clamp(12rem, 46vw, 24rem);
+  max-height: calc(100vh - 2rem);
+  padding: 0.75rem 0.35rem;
   transform: translateY(-50%);
-  border: 2px dashed rgba(248, 113, 113, 0.9);
-  border-radius: 0.75rem;
-  background: rgba(127, 29, 29, 0.96);
+  transform-origin: left center;
+  border: 2px solid rgba(248, 113, 113, 0.95);
+  border-left: none;
+  border-radius: 0 0.75rem 0.75rem 0;
+  background: rgba(185, 28, 28, 0.98);
   color: white;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
   pointer-events: auto;
@@ -678,8 +698,16 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
   transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease;
 }
 
+.portrait-delete-drop-zone span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
 .portrait-delete-drop-zone.is-over {
   transform: translateY(-50%) scale(1.04);
   border-color: rgb(254, 202, 202);
-  background: rgba(185, 28, 28, 0.98);
+  background: rgb(220, 38, 38);
 }
