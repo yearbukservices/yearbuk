@@ -1257,141 +1257,6 @@ export default function PhotosMemoriesManage() {
               </CardContent>
             </Card>
           )}
-          {/* Existing Memories */}
-          {memoriesData.length > 0 && (
-            <Card className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
-              <CardHeader className="space-y-4">
-                <CardTitle className="flex items-center text-white">
-                  <FolderOpen className="h-5 w-5 mr-2" />
-                  Uploaded Memories ({memoriesData.length})
-                </CardTitle>
-                
-                {/* Search Bar */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
-                  <Input
-                    placeholder="Search memories..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 bg-white/10 backdrop-blur-lg text-white placeholder-white/60 border-white/20 focus-visible:ring-white/30 focus-visible:ring-offset-0 placeholder:text-white/90"
-                    data-testid="input-search-memories"
-                  />
-                </div>
-                
-                {/* Category Filter Tabs */}
-                <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-white/[0.045] backdrop-blur-2xl border border-white/10">
-                    {availableCategories.map((category) => (
-                      <TabsTrigger
-                        key={category}
-                        value={category}
-                        className="text-white/70 data-[state=active]:text-white data-[state=active]:bg-white/20 text-xs px-2 py-1"
-                        data-testid={`tab-category-${category}`}
-                      >
-                        {categoryDisplayNames[category] || category}
-                        {category !== "all" && (
-                          <span className="ml-1 text-xs opacity-70">
-                            ({memoriesData.filter((m: any) => m.category === category).length})
-                          </span>
-                        )}
-                        {category === "all" && (
-                          <span className="ml-1 text-xs opacity-70">
-                            ({memoriesData.length})
-                          </span>
-                        )}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-              </CardHeader>
-              <CardContent>
-                {/* Show filtered results count */}
-                {filteredMemories.length !== memoriesData.length && (
-                  <div className="mb-4 text-center">
-                    <p className="text-white/70 text-sm">
-                      Showing {filteredMemories.length} of {memoriesData.length} memories
-                      {searchTerm && (
-                        <span className="ml-1">matching "{searchTerm}"</span>
-                      )}
-                    </p>
-                  </div>
-                )}
-                
-                {filteredMemories.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-white/70">
-                      {searchTerm || selectedCategory !== "all" ? 
-                        "No memories match your current filters." : 
-                        "No memories uploaded yet."
-                      }
-                    </p>
-                    {(searchTerm || selectedCategory !== "all") && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSearchTerm("");
-                          setSelectedCategory("all");
-                        }}
-                        className="mt-2 text-white/70 hover:text-white"
-                        data-testid="button-clear-filters"
-                      >
-                        Clear filters
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-4 sm:gap-6">
-                    {filteredMemories.map((memory: any) => (
-                    <div key={memory.id} className="min-w-0 w-full relative">
-                      {memory.mediaType === 'image' ? (
-                        <div
-                          className="group relative cursor-pointer"
-                          onClick={() => {
-                            setPreviewMemory(memory);
-                            setShowPreviewDialog(true);
-                          }}
-                        >
-                          <EnhancedImageViewer
-                            src={memory.imageUrl}
-                            alt={memory.title}
-                        
-                            squarePreview={true}
-                            className="border bg-white/5 hover:bg-white/10 transition-colors"
-                          />
-                          {/* Footer showing Title and Category */}
-                          
-                        </div>
-                      ) : (
-                        <div className="group relative bg-white/5 hover:bg-white/10 transition-colors rounded-lg border cursor-pointer"
-                             onClick={() => {
-                               setPreviewMemory(memory);
-                               setShowPreviewDialog(true);
-                             }}
-                             data-testid={`memory-preview-${memory.id}`}
-                        >
-                          <EnhancedVideoPlayer
-                            src={memory.videoUrl || ''}
-                            title={memory.title}
-                            className="w-full"
-                            muted={true}
-                            onVideoClick={() => {
-                              setPreviewMemory(memory);
-                              setShowPreviewDialog(true);
-                            }}
-                          />
-                          {/* Footer showing Title and Category */}
-                          
-                        </div>
-                      )}
-                    </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-          
           {/* Public Upload Link Section */}
           <Card className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
             <CardHeader>
@@ -1913,6 +1778,141 @@ export default function PhotosMemoriesManage() {
               </Tabs>
             </CardContent>
           </Card>
+
+          {/* Existing Memories */}
+          {memoriesData.length > 0 && (
+            <Card className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl">
+              <CardHeader className="space-y-4">
+                <CardTitle className="flex items-center text-white">
+                  <FolderOpen className="h-5 w-5 mr-2" />
+                  Uploaded Memories ({memoriesData.length})
+                </CardTitle>
+                
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
+                  <Input
+                    placeholder="Search memories..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-white/10 backdrop-blur-lg text-white placeholder-white/60 border-white/20 focus-visible:ring-white/30 focus-visible:ring-offset-0 placeholder:text-white/90"
+                    data-testid="input-search-memories"
+                  />
+                </div>
+                
+                {/* Category Filter Tabs */}
+                <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-white/[0.045] backdrop-blur-2xl border border-white/10">
+                    {availableCategories.map((category) => (
+                      <TabsTrigger
+                        key={category}
+                        value={category}
+                        className="text-white/70 data-[state=active]:text-white data-[state=active]:bg-white/20 text-xs px-2 py-1"
+                        data-testid={`tab-category-${category}`}
+                      >
+                        {categoryDisplayNames[category] || category}
+                        {category !== "all" && (
+                          <span className="ml-1 text-xs opacity-70">
+                            ({memoriesData.filter((m: any) => m.category === category).length})
+                          </span>
+                        )}
+                        {category === "all" && (
+                          <span className="ml-1 text-xs opacity-70">
+                            ({memoriesData.length})
+                          </span>
+                        )}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              </CardHeader>
+              <CardContent>
+                {/* Show filtered results count */}
+                {filteredMemories.length !== memoriesData.length && (
+                  <div className="mb-4 text-center">
+                    <p className="text-white/70 text-sm">
+                      Showing {filteredMemories.length} of {memoriesData.length} memories
+                      {searchTerm && (
+                        <span className="ml-1">matching "{searchTerm}"</span>
+                      )}
+                    </p>
+                  </div>
+                )}
+                
+                {filteredMemories.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-white/70">
+                      {searchTerm || selectedCategory !== "all" ? 
+                        "No memories match your current filters." : 
+                        "No memories uploaded yet."
+                      }
+                    </p>
+                    {(searchTerm || selectedCategory !== "all") && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSearchTerm("");
+                          setSelectedCategory("all");
+                        }}
+                        className="mt-2 text-white/70 hover:text-white"
+                        data-testid="button-clear-filters"
+                      >
+                        Clear filters
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-4 sm:gap-6">
+                    {filteredMemories.map((memory: any) => (
+                    <div key={memory.id} className="min-w-0 w-full relative">
+                      {memory.mediaType === 'image' ? (
+                        <div
+                          className="group relative cursor-pointer"
+                          onClick={() => {
+                            setPreviewMemory(memory);
+                            setShowPreviewDialog(true);
+                          }}
+                        >
+                          <EnhancedImageViewer
+                            src={memory.imageUrl}
+                            alt={memory.title}
+                        
+                            squarePreview={true}
+                            className="border bg-white/5 hover:bg-white/10 transition-colors"
+                          />
+                          {/* Footer showing Title and Category */}
+                          
+                        </div>
+                      ) : (
+                        <div className="group relative bg-white/5 hover:bg-white/10 transition-colors rounded-lg border cursor-pointer"
+                             onClick={() => {
+                               setPreviewMemory(memory);
+                               setShowPreviewDialog(true);
+                             }}
+                             data-testid={`memory-preview-${memory.id}`}
+                        >
+                          <EnhancedVideoPlayer
+                            src={memory.videoUrl || ''}
+                            title={memory.title}
+                            className="w-full"
+                            muted={true}
+                            onVideoClick={() => {
+                              setPreviewMemory(memory);
+                              setShowPreviewDialog(true);
+                            }}
+                          />
+                          {/* Footer showing Title and Category */}
+                          
+                        </div>
+                      )}
+                    </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
         </div>
       </div>
