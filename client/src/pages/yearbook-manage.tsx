@@ -24,6 +24,7 @@ import {
   DragEndEvent,
   DragStartEvent,
   MeasuringStrategy,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -41,6 +42,8 @@ import { CSS } from '@dnd-kit/utilities';
 const navigateToSchoolDashboardYears = (setLocation: any) => {
   setLocation("/yearbooks");
 };
+
+const MOBILE_DELETE_DROP_ZONE_ID = 'mobile-delete-drop-zone';
 
 interface User {
   id: string;
@@ -1462,6 +1465,15 @@ export default function YearbookManage() {
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
 
 
+  const handleDeletePendingPage = (tempId: string) => {
+    const pendingPage = pendingPageUploads.find(page => page.tempId === tempId);
+    if (!pendingPage) return;
+
+    setPendingPageUploads(prev => prev.filter(page => page.tempId !== tempId));
+    URL.revokeObjectURL(pendingPage.tempUrl);
+    if (pendingPageUploads.length === 1) setHasUnsavedChanges(false);
+  };
+
   // Drag and drop handlers
   const handleDragStart = (event: DragStartEvent) => {
     setActivePageId(event.active.id as string);
@@ -1473,11 +1485,22 @@ export default function YearbookManage() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    const activeId = String(active.id);
+    const dropTargetId = over?.id == null ? null : String(over.id);
     
     setActivePageId(null);
     setOverId(null);
     
-    if (!over || active.id === over.id) {
+    if (dropTargetId === MOBILE_DELETE_DROP_ZONE_ID) {
+      if (yearbook?.pages?.some(page => page.id === activeId)) {
+        deletePageMutation.mutate(activeId);
+      } else {
+        handleDeletePendingPage(activeId);
+      }
+      return;
+    }
+    
+    if (!over || activeId === String(over.id)) {
       return;
     }
     
@@ -2092,8 +2115,8 @@ function SortablePage({
         />
       </div>
      
-      {/* Action buttons */}
-      <div className="flex justify-between items-center">
+      {/* Action buttons - hidden on portrait screens; use drag-to-delete there */}
+      <div className="page-card-actions flex justify-between items-center">
         <div className="flex items-center gap-1">
           <Button
             size="sm"
@@ -2284,8 +2307,8 @@ function SortablePendingPage({
         />
       </div>
       
-      {/* Action buttons */}
-      <div className="flex justify-between items-center">
+      {/* Action buttons - hidden on portrait screens; use drag-to-delete there */}
+      <div className="page-card-actions flex justify-between items-center">
         <div className="flex items-center gap-1">
           <Button
             size="sm"
@@ -2331,6 +2354,23 @@ function SortablePendingPage({
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
+  const { setNodeRef } = useDroppable({ id: MOBILE_DELETE_DROP_ZONE_ID });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`portrait-delete-drop-zone ${isOver ? 'is-over' : ''}`}
+      role="button"
+      aria-label="Drop page here to delete"
+      data-testid="mobile-delete-drop-zone"
+    >
+      <Trash2 className="h-5 w-5" />
+      <span>Drop page here to delete</span>
     </div>
   );
 }
@@ -3520,11 +3560,7 @@ function SortablePendingPage({
                                   onStartEditingPageNumber={startEditingPageNumber}
                                   onCancelEditingPageNumber={cancelEditingPageNumber}
                                   onManualPageChange={handleManualPageChange}
-                                  onDelete={() => {
-                                    setPendingPageUploads(prev => prev.filter(p => p.tempId !== pendingPage.tempId));
-                                    URL.revokeObjectURL(pendingPage.tempUrl);
-                                    if (pendingPageUploads.length === 1) setHasUnsavedChanges(false);
-                                  }}
+                                  onDelete={() => handleDeletePendingPage(pendingPage.tempId)}
                                   aspectRatio={yearbook?.detectedAspectRatio || null}
                                 />
                               );
@@ -3552,6 +3588,9 @@ function SortablePendingPage({
                         </div>
                       </div>
                     </SortableContext>
+                    {activePageId && (
+                      <MobileDeleteDropZone isOver={overId === MOBILE_DELETE_DROP_ZONE_ID} />
+                    )}
                   </DndContext>
                   </>
                   )}
