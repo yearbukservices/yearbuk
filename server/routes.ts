@@ -3975,7 +3975,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deletedNotifications = await storage.deleteUploadCodeNotifications(linkId);
       console.log(`Deleted ${deletedNotifications} upload code notifications for link ${linkId}`);
 
-      await storage.deletePublicUploadLink(linkId);
+      const deleted = await storage.deletePublicUploadLink(linkId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Upload link not found" });
+      }
+
       res.json({ message: "Upload link deleted successfully" });
     } catch (error) {
       console.error("Error deleting upload link:", error);
