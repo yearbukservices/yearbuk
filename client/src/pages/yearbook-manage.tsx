@@ -2470,7 +2470,7 @@ function SortablePendingPage({
               <Button
                 variant="ghost"
                 onClick={handleBackNavigation}
-                disabled={!hasNavigationHistory}
+
                 className="sm:hidden mr-2 text-white hover:bg-white/20"
                 size="sm"
                 data-testid="button-mobile-back"
