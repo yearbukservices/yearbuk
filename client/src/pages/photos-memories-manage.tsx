@@ -1552,7 +1552,7 @@ export default function PhotosMemoriesManage() {
             
             {/* Existing Links Management - moved from separate card */}
             <div className="mt-6 border-t border-white/20 pt-6">
-              <div className="flex items-center space-x-2 mb-4 px-6">
+              <div className="flex items-center space-x-2 mb-4 px-6 ml-1">
                 <Share2 className="h-4 w-4 text-white" />
                 <h3 className="text-white font-medium">Existing Upload Links</h3>
               </div>
