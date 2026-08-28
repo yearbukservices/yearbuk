@@ -39,7 +39,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Navigation utility import - placed after other imports
 const navigateToSchoolDashboardYears = (setLocation: any) => {
-  setLocation("/school-dashboard?tab=years");
+  setLocation("/yearbooks");
 };
 
 interface User {
