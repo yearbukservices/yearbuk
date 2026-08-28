@@ -55,22 +55,34 @@ export default function UnifiedDashboard({ forceSchoolProfile, forceViewerProfil
 
   // Determine which tab to show based on URL
   useEffect(() => {
-    if (location === "/") setActiveTab("home");
-    else if (location === "/search") {
+    const pathname = location.split("?")[0];
+    if (pathname === "/") setActiveTab("home");
+    else if (pathname === "/search") {
       setActiveTab("search");
-      // Don't reset forcedProfile/forcedViewerProfile here — only reset on tab click
+
+      // A targeted search URL opens the requested school profile and tab.
+      const params = new URLSearchParams(window.location.search);
+      const schoolUsername = params.get("school");
+      const requestedTab = params.get("tab");
+      if (schoolUsername) {
+        setForcedProfile(schoolUsername);
+        setForcedViewerProfile(undefined);
+        if (requestedTab === "memories" || requestedTab === "yearbooks" || requestedTab === "alumni") {
+          setProfileTab(requestedTab);
+        }
+      }
     }
-    else if (location === "/library") setActiveTab("library");
-    else if (location === "/profile") setActiveTab("profile");
-    else if (location === "/memory-upload") setActiveTab("memory-upload");
-    else if (location === "/yearbooks") setActiveTab("yearbooks");
-    else if (location === "/memories") setActiveTab("memories");
-    else if (location === "/alumni") setActiveTab("alumni");
-    else if (location === "/orders") setActiveTab("orders");
-    else if (location === "/settings") setActiveTab("settings");
-    else if (location === "/school-profile") setActiveTab("profile");
-    else if (location.startsWith("/") && location !== "/") {
-      const username = location.substring(1);
+    else if (pathname === "/library") setActiveTab("library");
+    else if (pathname === "/profile") setActiveTab("profile");
+    else if (pathname === "/memory-upload") setActiveTab("memory-upload");
+    else if (pathname === "/yearbooks") setActiveTab("yearbooks");
+    else if (pathname === "/memories") setActiveTab("memories");
+    else if (pathname === "/alumni") setActiveTab("alumni");
+    else if (pathname === "/orders") setActiveTab("orders");
+    else if (pathname === "/settings") setActiveTab("settings");
+    else if (pathname === "/school-profile") setActiveTab("profile");
+    else if (pathname.startsWith("/") && pathname !== "/") {
+      const username = pathname.substring(1);
       if (!username.includes("/")) {
         setActiveTab("search");
       }
