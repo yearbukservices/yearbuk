@@ -167,8 +167,12 @@ export default function LibraryPage() {
                       size="sm" 
                       className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={() => {
-                        const schoolParam = schoolInfo?.id ? `?school=${schoolInfo.id}` : '';
-                        setLocation(`/yearbook-finder${schoolParam}`);
+                        const schoolUsername = schoolInfo?.username;
+                        if (schoolUsername) {
+                          setLocation(`/search?school=${encodeURIComponent(schoolUsername)}&tab=yearbooks`);
+                        } else {
+                          setLocation("/search");
+                        }
                       }}
                       data-testid={`button-add-more-${schoolName.replace(/\s+/g, '-').toLowerCase()}`}
                     >
