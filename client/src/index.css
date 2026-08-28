@@ -631,3 +631,16 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
 .toc-scroll-container::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.75);
 }
+
+/* Keep page thumbnails compact on portrait screens without changing landscape layout. */
+@media (orientation: portrait) {
+  .pages-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .pages-grid > * {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100%;
+  }
+}
