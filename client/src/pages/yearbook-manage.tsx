@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { getSecureImageUrl } from "@/lib/secure-image";
-import { ArrowLeft, Upload, Plus, Trash2, Settings, Eye, BookOpen, FileText, Layers, Send as Publish, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Edit, Menu, ShoppingCart, LogOut, Home, Undo2, GripVertical, DollarSign, Check, X, AlertCircle, Bell } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Trash2, Settings, Eye, BookOpen, FileText, Layers, Send as Publish, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Edit, Menu, ShoppingCart, LogOut, Home, Undo2, GripVertical, DollarSign, Check, X, AlertCircle, Bell, ScanLine } from "lucide-react";
 import type { Notification } from "@shared/schema";
 import { BETA_VERSION } from "@shared/constants";
 import {
@@ -435,6 +435,63 @@ export default function YearbookManage() {
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 
+  const getCoverImageUrl = (pageType: "front_cover" | "back_cover"): string | null => {
+    const coverPage = yearbook?.pages?.find(
+      (page) => page.pageType === pageType && page.status !== "draft_deleted" && !!page.imageUrl
+    );
+
+    if (coverPage?.imageUrl) return coverPage.imageUrl;
+    return pageType === "front_cover" ? yearbook?.frontCoverUrl || null : yearbook?.backCoverUrl || null;
+  };
+
+  const loadImageDimensions = (imageUrl: string): Promise<{ width: number; height: number } | null> =>
+    new Promise((resolve) => {
+      const image = new Image();
+      const timeoutId = window.setTimeout(() => resolve(null), 5000);
+
+      image.onload = () => {
+        window.clearTimeout(timeoutId);
+        const width = image.naturalWidth || image.width;
+        const height = image.naturalHeight || image.height;
+        resolve(width > 0 && height > 0 ? { width, height } : null);
+      };
+      image.onerror = () => {
+        window.clearTimeout(timeoutId);
+        resolve(null);
+      };
+      image.crossOrigin = "anonymous";
+      image.src = getSecureImageUrl(imageUrl) || imageUrl;
+    });
+
+  const handleDetectRatio = async () => {
+    const imageUrl = getCoverImageUrl("front_cover") || getCoverImageUrl("back_cover");
+
+    if (!imageUrl) {
+      window.alert("Neither the front nor back cover was uploaded.");
+      return;
+    }
+
+    const dimensions = await loadImageDimensions(imageUrl);
+    if (!dimensions) {
+      window.alert("Unable to detect the cover resolution. Please check that the cover image is available and try again.");
+      return;
+    }
+
+    const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+    const divisor = gcd(dimensions.width, dimensions.height);
+    const ratio = String(dimensions.width / divisor) + "/" + String(dimensions.height / divisor);
+
+    setSettingsAspectRatio(ratio);
+    if (isCustomRatio(ratio)) {
+      setCustomModeActive(true);
+      setCustomWidth(String(dimensions.width));
+      setCustomHeight(String(dimensions.height));
+    } else {
+      setCustomModeActive(false);
+      setCustomWidth('');
+      setCustomHeight('');
+    }
+  };
   // Initialize price input when yearbook loads
   useEffect(() => {
     if (yearbook?.price) {
@@ -4500,6 +4557,18 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                   );
                 })}
 
+                {/* Detect ratio action */}
+                <button
+                  type="button"
+                  onClick={handleDetectRatio}
+                  className="flex flex-col items-center gap-1.5 p-2 rounded-lg border transition-all border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/40"
+                >
+                  <div className="flex items-center justify-center" style={{ width: 44, height: 44 }}>
+                    <ScanLine className="h-6 w-6 text-white/50" />
+                  </div>
+                  <span className="text-xs font-semibold text-white/70">Detect ratio</span>
+                  <span className="text-[10px] text-white/40">From cover</span>
+                </button>
                 {/* Custom ratio button */}
                 {(() => {
                   const isSelected = customModeActive || isCustomRatio(settingsAspectRatio);
