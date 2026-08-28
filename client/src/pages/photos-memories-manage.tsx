@@ -2004,7 +2004,7 @@ export default function PhotosMemoriesManage() {
                   </div>
                 )}
                 
-                <div className="flex gap-6">
+                <div className="space-y-2">
                   <div>
                     <span className="font-semibold text-blue-50">Category:</span>
                     <span className="ml-2 capitalize text-green-50">{previewMemory.category?.replace('_', ' ')}</span>
