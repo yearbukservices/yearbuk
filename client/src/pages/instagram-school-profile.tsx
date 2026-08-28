@@ -600,7 +600,43 @@ export default function InstagramSchoolProfile({
 
   const { school } = profileData;
   return (
-    <div className="w-full">
+    <div className={user ? "w-full" : "w-full pt-20"}>
+      {!user && (
+        <div className="fixed top-0 left-0 right-0 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-2xl z-30">
+          <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setLocation("/home")}
+              className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+              data-testid="link-logo-home"
+            >
+              <img src="/assets/tab_logo_good-DMtYn3M_.png" alt="Yearbuk Logo" className="h-12 w-auto" />
+              <span className="text-2xl font-bold text-white">Yearbuk</span>
+            </button>
+
+            <div className="flex items-center space-x-4">
+              <Button
+                type="button"
+                onClick={() => setShowLoginDialog(true)}
+                variant="outline"
+                className="bg-white/20 backdrop-blur-lg border border-white/30 text-white hover:bg-white/30"
+                data-testid="button-home-login"
+              >
+                Login
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setLocation("/signup")}
+                className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg hover:from-blue-600 hover:to-cyan-600 border-0"
+                data-testid="button-home-signup"
+              >
+                Sign Up
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Banner Section */}
       <div className="relative w-full aspect-[3/1] bg-muted overflow-hidden group">
         {school.coverPhoto ? (
