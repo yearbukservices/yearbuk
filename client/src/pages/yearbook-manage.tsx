@@ -1989,6 +1989,8 @@ export default function YearbookManage() {
 interface PageNumberSwapDialogProps {
   pageId: string;
   currentPageNumber: number;
+  imageUrl: string;
+  imageAlt: string;
   totalPages: number;
   editingPageId: string | null;
   tempPageNumber: number;
@@ -2001,6 +2003,8 @@ interface PageNumberSwapDialogProps {
 function PageNumberSwapDialog({
   pageId,
   currentPageNumber,
+  imageUrl,
+  imageAlt,
   totalPages,
   editingPageId,
   tempPageNumber,
@@ -2042,6 +2046,13 @@ function PageNumberSwapDialog({
           <DialogHeader>
             <DialogTitle>Swap page position</DialogTitle>
           </DialogHeader>
+          <div className="rounded-lg border border-white/10 bg-black/20 p-2">
+            <img
+              src={imageUrl}
+              alt={imageAlt}
+              className="max-h-64 w-full rounded-md object-contain"
+            />
+          </div>
           <div className="space-y-4">
             <p className="text-sm text-white/70">Enter the page you want this current one to swap with</p>
             <div className="space-y-2">
@@ -2186,6 +2197,8 @@ function SortablePage({
             <PageNumberSwapDialog
               pageId={page.id}
               currentPageNumber={page.pageNumber}
+              imageUrl={getSecureImageUrl(page.imageUrl) || ''}
+              imageAlt={`Preview of page ${page.pageNumber}`}
               totalPages={totalPages}
               editingPageId={editingPageId}
               tempPageNumber={tempPageNumber}
@@ -2354,6 +2367,8 @@ function SortablePendingPage({
             <PageNumberSwapDialog
               pageId={pendingPage.tempId}
               currentPageNumber={pendingPage.pageNumber}
+              imageUrl={pendingPage.tempUrl}
+              imageAlt={`Preview of page ${pendingPage.pageNumber}`}
               totalPages={totalPages}
               editingPageId={editingPageId}
               tempPageNumber={tempPageNumber}
