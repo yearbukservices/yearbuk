@@ -1341,15 +1341,17 @@ export default function PhotosMemoriesManage() {
                     {filteredMemories.map((memory: any) => (
                     <div key={memory.id} className="min-w-0 w-full relative">
                       {memory.mediaType === 'image' ? (
-                        <div className="group relative">
+                        <div
+                          className="group relative cursor-pointer"
+                          onClick={() => {
+                            setPreviewMemory(memory);
+                            setShowPreviewDialog(true);
+                          }}
+                        >
                           <EnhancedImageViewer
                             src={memory.imageUrl}
                             alt={memory.title}
                         
-                            onImageClick={() => {
-                              setPreviewMemory(memory);
-                              setShowPreviewDialog(true);
-                            }}
                             squarePreview={true}
                             className="border bg-white/5 hover:bg-white/10 transition-colors"
                           />
