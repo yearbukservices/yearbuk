@@ -1356,10 +1356,7 @@ export default function PhotosMemoriesManage() {
                             className="border bg-white/5 hover:bg-white/10 transition-colors"
                           />
                           {/* Footer showing Title and Category */}
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 text-white">
-                            <div className="font-medium text-sm truncate drop-shadow-sm">{memory.title}</div>
-                            <div className="text-xs text-white/70 capitalize mt-0.5">{memory.category?.replace('_', ' ')}</div>
-                          </div>
+                          
                         </div>
                       ) : (
                         <div className="group relative bg-white/5 hover:bg-white/10 transition-colors rounded-lg border cursor-pointer"
@@ -1380,10 +1377,7 @@ export default function PhotosMemoriesManage() {
                             }}
                           />
                           {/* Footer showing Title and Category */}
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 text-white rounded-b-lg">
-                            <div className="font-medium text-sm truncate drop-shadow-sm">{memory.title}</div>
-                            <div className="text-xs text-white/70 capitalize mt-0.5">{memory.category?.replace('_', ' ')}</div>
-                          </div>
+                          
                         </div>
                       )}
                     </div>
