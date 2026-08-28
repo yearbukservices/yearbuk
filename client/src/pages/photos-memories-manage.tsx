@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Upload, FolderOpen, HardDrive, X, FileImage, Menu, Home, Settings, ShoppingCart, LogOut, Share2, Copy, Calendar, Clock, Check, XCircle, AlertTriangle, Eye, Edit2, Trash2, Search, Filter, Bell } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Upload, FolderOpen, HardDrive, X, FileImage, Menu, Home, Settings, ShoppingCart, LogOut, Share2, Copy, Calendar, Clock, Check, XCircle, AlertTriangle, Edit2, Trash2, Search, Filter, Bell } from "lucide-react";
 import EnhancedImageViewer from "@/components/ui/enhanced-image-viewer";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -1353,51 +1353,6 @@ export default function PhotosMemoriesManage() {
                             squarePreview={true}
                             className="border bg-white/5 hover:bg-white/10 transition-colors"
                           />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-80 transition-opacity flex flex-col justify-between p-2 rounded-lg pointer-events-none">
-                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPreviewMemory(memory);
-                                  setShowPreviewDialog(true);
-                                }}
-                                data-testid={`button-preview-${memory.id}`}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary" 
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditMemory(memory);
-                                  setEditTitle(memory.title);
-                                  setEditCategory(memory.category || 'graduation');
-                                  setShowEditDialog(true);
-                                }}
-                                data-testid={`button-rename-${memory.id}`}
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setMemoryToDelete(memory);
-                                  setShowDeleteDialog(true);
-                                }}
-                                data-testid={`button-delete-${memory.id}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
                           {/* Footer showing Title and Category */}
                           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 text-white">
                             <div className="font-medium text-sm truncate drop-shadow-sm">{memory.title}</div>
@@ -1422,51 +1377,6 @@ export default function PhotosMemoriesManage() {
                               setShowPreviewDialog(true);
                             }}
                           />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-80 transition-opacity flex flex-col justify-between p-2 rounded-lg pointer-events-none">
-                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPreviewMemory(memory);
-                                  setShowPreviewDialog(true);
-                                }}
-                                data-testid={`button-preview-${memory.id}`}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary" 
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditMemory(memory);
-                                  setEditTitle(memory.title);
-                                  setEditCategory(memory.category || 'graduation');
-                                  setShowEditDialog(true);
-                                }}
-                                data-testid={`button-rename-${memory.id}`}
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setMemoryToDelete(memory);
-                                  setShowDeleteDialog(true);
-                                }}
-                                data-testid={`button-delete-${memory.id}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
                           {/* Footer showing Title and Category */}
                           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 text-white rounded-b-lg">
                             <div className="font-medium text-sm truncate drop-shadow-sm">{memory.title}</div>
