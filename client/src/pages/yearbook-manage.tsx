@@ -1986,7 +1986,118 @@ export default function YearbookManage() {
                     yearbook?.pages?.some(p => p.pageType === "back_cover") &&
                     (BETA_VERSION || (yearbook?.price && parseFloat(yearbook.price) >= 1.99 && parseFloat(yearbook.price) <= 49.99));
 
-// Sortable Page Component (with drag and drop)
+interface PageNumberSwapDialogProps {
+  pageId: string;
+  currentPageNumber: number;
+  totalPages: number;
+  editingPageId: string | null;
+  tempPageNumber: number;
+  onStartEditingPageNumber: (pageId: string, currentPageNumber: number) => void;
+  onCancelEditingPageNumber: () => void;
+  onManualPageChange: (pageId: string, newPageNumber: number) => void;
+  accentClassName?: string;
+}
+
+function PageNumberSwapDialog({
+  pageId,
+  currentPageNumber,
+  totalPages,
+  editingPageId,
+  tempPageNumber,
+  onStartEditingPageNumber,
+  onCancelEditingPageNumber,
+  onManualPageChange,
+  accentClassName = 'hover:text-blue-300',
+}: PageNumberSwapDialogProps) {
+  const isOpen = editingPageId === pageId;
+  const isValidTarget = Number.isInteger(tempPageNumber) && tempPageNumber >= 1 && tempPageNumber <= totalPages;
+  const canSwap = isValidTarget && tempPageNumber !== currentPageNumber && totalPages > 1;
+
+  const handleSubmit = () => {
+    if (canSwap) {
+      onManualPageChange(pageId, tempPageNumber);
+    }
+  };
+
+  return (
+    <>
+      <span
+        className={`text-xs font-medium text-white cursor-pointer transition-colors ${accentClassName}`} 
+        role="button"
+        tabIndex={0}
+        onClick={() => onStartEditingPageNumber(pageId, currentPageNumber)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onStartEditingPageNumber(pageId, currentPageNumber);
+          }
+        }}
+        title="Click to edit page number"
+        data-testid={`text-page-number-${pageId}`}
+      >
+        Page {currentPageNumber}
+      </span>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onCancelEditingPageNumber()}>
+        <DialogContent className="bg-slate-900 border-white/20 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Swap page position</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-white/70">Enter the page you want this current one to swap with</p>
+            <div className="space-y-2">
+              <Label htmlFor={`page-number-swap-${pageId}`} className="text-white">Target page number</Label>
+              <Input
+                id={`page-number-swap-${pageId}`}
+                type="number"
+                min={1}
+                max={totalPages}
+                step={1}
+                inputMode="numeric"
+                value={tempPageNumber || ''}
+                onChange={(e) => {
+                  const rawValue = e.target.value;
+                  if (rawValue === '') {
+                    onStartEditingPageNumber(pageId, 0);
+                    return;
+                  }
+                  const nextValue = Number(rawValue);
+                  if (Number.isInteger(nextValue) && nextValue >= 1 && nextValue <= totalPages) {
+                    onStartEditingPageNumber(pageId, nextValue);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                    e.preventDefault();
+                  } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSubmit();
+                  } else if (e.key === 'Escape') {
+                    onCancelEditingPageNumber();
+                  }
+                }}
+                onFocus={(e) => e.currentTarget.select()}
+                autoFocus
+                className="bg-white/10 border-white/30 text-white placeholder:text-white/50"
+                data-testid={`input-page-number-${pageId}`}
+              />
+              <p className="text-xs text-white/50">Enter a whole number from 1 to {totalPages}.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={onCancelEditingPageNumber} className="text-white bg-white/10 border-white/20 hover:bg-white/20">
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleSubmit} disabled={!canSwap} className="bg-blue-600 hover:bg-blue-700">
+                Swap page
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// Sortable Page Component (with drag and drop)// Sortable Page Component (with drag and drop)
 interface SortablePageProps {
   page: YearbookPage;
   index: number;
@@ -2071,59 +2182,28 @@ function SortablePage({
       {/* Page Number and Drag Handle */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          {editingPageId === page.id ? (
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-white">Page</span>
-              <Input
-                type="number"
-                min="1"
-                max={totalPages}
-                value={tempPageNumber || ''}
-                onChange={(e) => {
-                  const newValue = e.target.value === '' ? 0 : parseInt(e.target.value);
-                  onStartEditingPageNumber(page.id, newValue);
-                }}
-                onBlur={() => {
-                  if (tempPageNumber !== page.pageNumber && tempPageNumber >= 1 && tempPageNumber <= totalPages) {
-                    onManualPageChange(page.id, tempPageNumber);
-                  } else {
-                    onCancelEditingPageNumber();
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.currentTarget.blur();
-                  } else if (e.key === 'Escape') {
-                    onCancelEditingPageNumber();
-                  }
-                }}
-                className="w-12 h-6 text-xs px-1 bg-white/20 border-white/30 text-white"
-                autoFocus
-                data-testid={`input-page-number-${page.id}`}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <span 
-                className="text-xs font-medium text-white cursor-pointer hover:text-blue-300 transition-colors"
-                onClick={() => onStartEditingPageNumber(page.id, page.pageNumber)}
-                title="Click to edit page number"
-                data-testid={`text-page-number-${page.id}`}
-              >
-                Page {page.pageNumber}
+          <div className="flex items-center gap-1.5">
+            <PageNumberSwapDialog
+              pageId={page.id}
+              currentPageNumber={page.pageNumber}
+              totalPages={totalPages}
+              editingPageId={editingPageId}
+              tempPageNumber={tempPageNumber}
+              onStartEditingPageNumber={onStartEditingPageNumber}
+              onCancelEditingPageNumber={onCancelEditingPageNumber}
+              onManualPageChange={onManualPageChange}
+            />
+            {page.status === 'draft' && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-semibold">
+                DRAFT
               </span>
-              {page.status === 'draft' && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-semibold">
-                  DRAFT
-                </span>
-              )}
-              {page.status === 'draft_deleted' && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500 text-white font-semibold">
-                  DELETED
-                </span>
-              )}
-            </div>
-          )}
+            )}
+            {page.status === 'draft_deleted' && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500 text-white font-semibold">
+                DELETED
+              </span>
+            )}
+          </div>
         </div>
         <div 
           className="cursor-grab active:cursor-grabbing text-white/80 hover:text-white hover:bg-white/30 p-1.5 rounded-md transition-all"
@@ -2270,55 +2350,22 @@ function SortablePendingPage({
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          {editingPageId === pendingPage.tempId ? (
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-white">Page</span>
-              <Input
-                type="number"
-                min="1"
-                max={totalPages}
-                value={tempPageNumber || ''}
-                onChange={(e) => {
-                  const newValue = e.target.value === '' ? 0 : parseInt(e.target.value);
-                  onStartEditingPageNumber(pendingPage.tempId, newValue);
-                }}
-                onBlur={() => {
-                  if (tempPageNumber !== pendingPage.pageNumber && tempPageNumber >= 1 && tempPageNumber <= totalPages) {
-                    onManualPageChange(pendingPage.tempId, tempPageNumber);
-                  } else {
-                    onCancelEditingPageNumber();
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.currentTarget.blur();
-                  } else if (e.key === 'Escape') {
-                    onCancelEditingPageNumber();
-                  }
-                }}
-                className="w-12 h-6 text-xs px-1 bg-white/20 border-white/30 text-white"
-                autoFocus
-                data-testid={`input-page-number-${pendingPage.tempId}`}
-              />
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-semibold">
-                UNSAVED
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <span 
-                className="text-xs font-medium text-white cursor-pointer hover:text-orange-300 transition-colors"
-                onClick={() => onStartEditingPageNumber(pendingPage.tempId, pendingPage.pageNumber)}
-                title="Click to edit page number"
-                data-testid={`text-page-number-${pendingPage.tempId}`}
-              >
-                Page {pendingPage.pageNumber}
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-semibold">
-                UNSAVED
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5">
+            <PageNumberSwapDialog
+              pageId={pendingPage.tempId}
+              currentPageNumber={pendingPage.pageNumber}
+              totalPages={totalPages}
+              editingPageId={editingPageId}
+              tempPageNumber={tempPageNumber}
+              onStartEditingPageNumber={onStartEditingPageNumber}
+              onCancelEditingPageNumber={onCancelEditingPageNumber}
+              onManualPageChange={onManualPageChange}
+              accentClassName="hover:text-orange-300"
+            />
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-semibold">
+              UNSAVED
+            </span>
+          </div>
         </div>
         <div 
           {...attributes} 
