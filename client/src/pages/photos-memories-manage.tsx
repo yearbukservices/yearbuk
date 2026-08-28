@@ -1939,7 +1939,7 @@ export default function PhotosMemoriesManage() {
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="shrink-0 bg-white/[0.07] text-white hover:bg-white/20"
+                      className="hidden sm:flex shrink-0 bg-white/[0.07] text-white hover:bg-white/20"
                       onClick={() => navigatePreviewMemory("previous")}
                       disabled={previewMemoryIndex === 0}
                       aria-label="Previous pending memory"
@@ -1979,7 +1979,7 @@ export default function PhotosMemoriesManage() {
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="shrink-0 bg-white/[0.07] text-white hover:bg-white/20"
+                      className="hidden sm:flex shrink-0 bg-white/[0.07] text-white hover:bg-white/20"
                       onClick={() => navigatePreviewMemory("next")}
                       disabled={previewMemoryIndex === previewMemories.length - 1}
                       aria-label="Next pending memory"
