@@ -17,6 +17,8 @@ import { BETA_VERSION } from "@shared/constants";
 import {
   DndContext,
   closestCenter,
+  pointerWithin,
+  type CollisionDetection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -44,6 +46,19 @@ const navigateToSchoolDashboardYears = (setLocation: any) => {
 };
 
 const MOBILE_DELETE_DROP_ZONE_ID = 'mobile-delete-drop-zone';
+
+const collisionDetectionStrategy: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  const deleteZoneCollision = pointerCollisions.find(
+    ({ id }) => id === MOBILE_DELETE_DROP_ZONE_ID,
+  );
+
+  if (deleteZoneCollision) {
+    return [deleteZoneCollision];
+  }
+
+  return closestCenter(args);
+};
 
 interface User {
   id: string;
@@ -3480,7 +3495,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                   {/* Drag and Drop Grid Layout */}
                   <DndContext
                     sensors={sensors}
-                    collisionDetection={closestCenter}
+                    collisionDetection={collisionDetectionStrategy}
                     onDragStart={handleDragStart}
                     onDragOver={handleDragOver}
                     onDragEnd={handleDragEnd}
