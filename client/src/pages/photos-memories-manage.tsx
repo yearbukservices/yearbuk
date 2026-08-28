@@ -395,7 +395,11 @@ export default function PhotosMemoriesManage() {
     const deltaY = touch.clientY - start.y;
 
     if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
-    navigatePendingMemory(deltaX > 0 ? "previous" : "next");
+    navigatePreviewMemory(deltaX > 0 ? "previous" : "next");
+  };
+
+  const handlePreviewTouchCancel = () => {
+    previewTouchStart.current = null;
   };
 
   // Optimistic memory upload mutation
@@ -1931,8 +1935,10 @@ export default function PhotosMemoriesManage() {
                 {/* Image/Video Preview */}
                 <div
                   className="flex w-full min-w-0 items-center justify-center gap-2"
+                  style={{ touchAction: "pan-y" }}
                   onTouchStart={handlePreviewTouchStart}
                   onTouchEnd={handlePreviewTouchEnd}
+                  onTouchCancel={handlePreviewTouchCancel}
                 >
                   {isNavigablePreview && previewMemories.length > 1 && (
                     <Button
