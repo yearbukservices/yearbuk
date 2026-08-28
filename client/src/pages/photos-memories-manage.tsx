@@ -2408,7 +2408,10 @@ function PublicUploadLinksManager({ schoolId, year }: { schoolId: string; year: 
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_data, deletedLinkId) => {
+      queryClient.setQueryData<any[]>(['/api/public-upload-links/school', schoolId, year], (links) =>
+        (links || []).filter((link) => link.id !== deletedLinkId)
+      );
       queryClient.invalidateQueries({ queryKey: ['/api/public-upload-links/school', schoolId, year] });
       toast({
         className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
@@ -2526,6 +2529,7 @@ function PublicUploadLinksManager({ schoolId, year }: { schoolId: string; year: 
               
               <div className="flex flex-col gap-2 ml-4">
                 <Button
+                  type="button"
                   size="sm"
                   variant="destructive"
                   onClick={() => {
@@ -2554,8 +2558,9 @@ function PublicUploadLinksManager({ schoolId, year }: { schoolId: string; year: 
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete" className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl text-white">Cancel</AlertDialogCancel>
+            <AlertDialogCancel type="button" data-testid="button-cancel-delete" className="bg-white/[0.07] backdrop-blur-2xl border border-white/15 shadow-[0_20px_70px_-28px_rgba(0,0,0,0.6)] rounded-2xl text-white">Cancel</AlertDialogCancel>
             <AlertDialogAction
+              type="button"
               data-testid="button-confirm-delete"
               onClick={() => {
                 if (linkToDelete) {
