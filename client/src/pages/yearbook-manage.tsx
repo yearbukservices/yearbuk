@@ -233,8 +233,6 @@ export default function YearbookManage() {
   const isCustomRatio = (r: string | null): boolean =>
     !!r && !(PRESET_RATIOS as readonly string[]).includes(r);
 
-  // Track navigation history for back button
-  const [hasNavigationHistory, setHasNavigationHistory] = useState(false);
   
   // Track unsaved changes (only for published yearbooks)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -298,8 +296,6 @@ export default function YearbookManage() {
       setLocation("/");
     }
     
-    // Check if there's navigation history
-    setHasNavigationHistory(window.history.length > 1);
   }, [setLocation]);
   
   // Add beforeunload warning when uploading or has unsaved changes
@@ -2462,8 +2458,7 @@ function SortablePendingPage({
                 <Button
                   variant="ghost"
                   onClick={handleBackNavigation}
-                  disabled={!hasNavigationHistory}
-                  className="mr-2 text-white hover:bg-white/20"
+                   className="mr-2 text-white hover:bg-white/20"
                   data-testid="button-back"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
