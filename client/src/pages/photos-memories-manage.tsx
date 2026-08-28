@@ -347,21 +347,25 @@ export default function PhotosMemoriesManage() {
     refetchInterval: 15000,
   });
 
+  // Navigate within the list that the current preview came from.
+  // Pending memories use their approval queue; other memories use the active filters.
+  const previewMemories = previewMemory?.status === 'pending' ? pendingMemories : filteredMemories;
   const previewMemoryIndex = previewMemory
-    ? pendingMemories.findIndex((memory: any) => memory.id === previewMemory.id)
+    ? previewMemories.findIndex((memory: any) => memory.id === previewMemory.id)
     : -1;
   const isPendingPreview = previewMemoryIndex !== -1 && previewMemory?.status === 'pending';
+  const isNavigablePreview = previewMemoryIndex !== -1;
   const previewTouchStart = useRef<{ x: number; y: number } | null>(null);
 
-  const navigatePendingMemory = (direction: "previous" | "next") => {
-    if (!isPendingPreview) return;
+  const navigatePreviewMemory = (direction: "previous" | "next") => {
+    if (!isNavigablePreview) return;
 
     const nextIndex = direction === "previous"
       ? previewMemoryIndex - 1
       : previewMemoryIndex + 1;
 
-    if (nextIndex < 0 || nextIndex >= pendingMemories.length) return;
-    setPreviewMemory(pendingMemories[nextIndex]);
+    if (nextIndex < 0 || nextIndex >= previewMemories.length) return;
+    setPreviewMemory(previewMemories[nextIndex]);
   };
 
   const showNextPendingMemoryOrClose = (memoryId: string) => {
@@ -384,7 +388,7 @@ export default function PhotosMemoriesManage() {
     const start = previewTouchStart.current;
     previewTouchStart.current = null;
 
-    if (!start || !isPendingPreview) return;
+    if (!start || !isNavigablePreview) return;
 
     const touch = event.changedTouches[0];
     const deltaX = touch.clientX - start.x;
@@ -1930,13 +1934,13 @@ export default function PhotosMemoriesManage() {
                   onTouchStart={handlePreviewTouchStart}
                   onTouchEnd={handlePreviewTouchEnd}
                 >
-                  {isPendingPreview && pendingMemories.length > 1 && (
+                  {isNavigablePreview && previewMemories.length > 1 && (
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
                       className="shrink-0 bg-white/[0.07] text-white hover:bg-white/20"
-                      onClick={() => navigatePendingMemory("previous")}
+                      onClick={() => navigatePreviewMemory("previous")}
                       disabled={previewMemoryIndex === 0}
                       aria-label="Previous pending memory"
                       data-testid="button-previous-pending-memory"
@@ -1970,14 +1974,14 @@ export default function PhotosMemoriesManage() {
                   </div>
                 )}
                   </div>
-                  {isPendingPreview && pendingMemories.length > 1 && (
+                  {isNavigablePreview && previewMemories.length > 1 && (
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
                       className="shrink-0 bg-white/[0.07] text-white hover:bg-white/20"
-                      onClick={() => navigatePendingMemory("next")}
-                      disabled={previewMemoryIndex === pendingMemories.length - 1}
+                      onClick={() => navigatePreviewMemory("next")}
+                      disabled={previewMemoryIndex === previewMemories.length - 1}
                       aria-label="Next pending memory"
                       data-testid="button-next-pending-memory"
                     >
