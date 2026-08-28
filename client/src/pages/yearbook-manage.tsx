@@ -1992,6 +1992,7 @@ interface PageNumberSwapDialogProps {
   imageUrl: string;
   imageAlt: string;
   totalPages: number;
+  isPortraitViewport: boolean;
   editingPageId: string | null;
   tempPageNumber: number;
   onStartEditingPageNumber: (pageId: string, currentPageNumber: number) => void;
@@ -2006,6 +2007,7 @@ function PageNumberSwapDialog({
   imageUrl,
   imageAlt,
   totalPages,
+  isPortraitViewport,
   editingPageId,
   tempPageNumber,
   onStartEditingPageNumber,
@@ -2023,24 +2025,73 @@ function PageNumberSwapDialog({
     }
   };
 
-  return (
-    <>
-      <span
-        className={`text-xs font-medium text-white cursor-pointer transition-colors ${accentClassName}`} 
-        role="button"
-        tabIndex={0}
-        onClick={() => onStartEditingPageNumber(pageId, currentPageNumber)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onStartEditingPageNumber(pageId, currentPageNumber);
+  const pageNumberLabel = (
+    <span
+      className={`text-xs font-medium text-white cursor-pointer transition-colors ${accentClassName}`} 
+      role="button"
+      tabIndex={0}
+      onClick={() => onStartEditingPageNumber(pageId, currentPageNumber)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onStartEditingPageNumber(pageId, currentPageNumber);
+        }
+      }}
+      title="Click to edit page number"
+      data-testid={`text-page-number-${pageId}`}
+    >
+      Page {currentPageNumber}
+    </span>
+  );
+
+  const inlineEditor = editingPageId === pageId ? (
+    <div className="flex items-center gap-1">
+      <span className="text-xs text-white">Page</span>
+      <Input
+        type="number"
+        min={1}
+        max={totalPages}
+        step={1}
+        inputMode="numeric"
+        value={tempPageNumber || ''}
+        onChange={(e) => {
+          const rawValue = e.target.value;
+          if (rawValue === '') {
+            onStartEditingPageNumber(pageId, 0);
+            return;
+          }
+          const nextValue = Number(rawValue);
+          if (Number.isInteger(nextValue) && nextValue >= 1 && nextValue <= totalPages) {
+            onStartEditingPageNumber(pageId, nextValue);
           }
         }}
-        title="Click to edit page number"
-        data-testid={`text-page-number-${pageId}`}
-      >
-        Page {currentPageNumber}
-      </span>
+        onBlur={() => {
+          if (canSwap) {
+            onManualPageChange(pageId, tempPageNumber);
+          } else {
+            onCancelEditingPageNumber();
+          }
+        }}
+        onKeyDown={(e) => {
+          if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+            e.preventDefault();
+          } else if (e.key === 'Enter') {
+            e.currentTarget.blur();
+          } else if (e.key === 'Escape') {
+            onCancelEditingPageNumber();
+          }
+        }}
+        onFocus={(e) => e.currentTarget.select()}
+        className="w-12 h-6 text-xs px-1 bg-white/20 border-white/30 text-white"
+        autoFocus
+        data-testid={`input-page-number-${pageId}`}
+      />
+    </div>
+  ) : pageNumberLabel;
+
+  return isPortraitViewport ? (
+    <>
+      {pageNumberLabel}
       <Dialog open={isOpen} onOpenChange={(open) => !open && onCancelEditingPageNumber()}>
         <DialogContent className="bg-slate-900 border-white/20 text-white sm:max-w-md">
           <DialogHeader>
@@ -2105,7 +2156,7 @@ function PageNumberSwapDialog({
         </DialogContent>
       </Dialog>
     </>
-  );
+  ) : inlineEditor;
 }
 
 // Sortable Page Component (with drag and drop)// Sortable Page Component (with drag and drop)
@@ -2115,6 +2166,7 @@ interface SortablePageProps {
   onDelete: (pageId: string) => void;
   reorderPending: boolean;
   totalPages: number;
+  isPortraitViewport: boolean;
   isDragging?: boolean;
   editingPageId: string | null;
   tempPageNumber: number;
@@ -2132,6 +2184,7 @@ function SortablePage({
   onDelete,
   reorderPending,
   totalPages,
+  isPortraitViewport,
   isDragging = false,
   editingPageId,
   tempPageNumber,
@@ -2316,6 +2369,7 @@ function SortablePendingPage({
   onMoveLeft: () => void;
   onMoveRight: () => void;
   totalPages: number;
+  isPortraitViewport: boolean;
   editingPageId: string | null;
   tempPageNumber: number;
   onStartEditingPageNumber: (pageId: string, currentPageNumber: number) => void;
@@ -3630,6 +3684,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                                   onDelete={(pageId: string) => deletePageMutation.mutate(pageId)}
                                   reorderPending={reorderPageMutation.isPending}
                                   totalPages={allPages.length}
+                                   isPortraitViewport={isPortraitViewport}
                                   isDragging={activePageId === page.id}
                                   editingPageId={editingPageId}
                                   tempPageNumber={tempPageNumber}
@@ -3648,6 +3703,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                                   key={pendingPage.tempId}
                                   pendingPage={{...pendingPage, pageNumber: visualPageNumber}}
                                   totalPages={allPages.length}
+                                   isPortraitViewport={isPortraitViewport}
                                   editingPageId={editingPageId}
                                   tempPageNumber={tempPageNumber}
                                   onStartEditingPageNumber={startEditingPageNumber}
