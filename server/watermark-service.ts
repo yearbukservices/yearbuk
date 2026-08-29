@@ -16,7 +16,8 @@ export const shouldApplyWatermark = (userType: string | undefined): boolean => {
 export const getImageUrl = (
   imageUrl: string,
   cloudinaryPublicId: string | null | undefined,
-  userType: string | undefined
+  userType: string | undefined,
+  transformation: any[] = []
 ): string => {
   // If no Cloudinary ID, return the original URL (local file)
   if (!cloudinaryPublicId) {
@@ -26,31 +27,32 @@ export const getImageUrl = (
   // For Cloudinary images, generate signed URLs with appropriate transformations
   // Authenticated images require signed URLs to access
   
-  // If image is from Cloudinary and user is a viewer, apply watermark and sign URL
+  const watermarkTransformation = {
+    overlay: {
+      font_family: "Arial",
+      font_size: 24,
+      font_weight: "bold",
+      text: encodeURIComponent("© Yearbuk") // URL encode special characters
+    },
+    gravity: "south_east",
+    opacity: 40,
+    x: 15,
+    y: 15,
+    color: "#FFFFFF"
+  };
+
+  // If image is from Cloudinary and user is a viewer, apply watermark and sign URL.
   if (shouldApplyWatermark(userType)) {
     return generateSignedUrl(cloudinaryPublicId, {
       expirySeconds: 3600, // 1 hour expiry
-      transformation: [
-        {
-          overlay: {
-            font_family: "Arial",
-            font_size: 24,
-            font_weight: "bold",
-            text: encodeURIComponent("© Yearbuk") // URL encode special characters
-          },
-          gravity: "south_east",
-          opacity: 40,
-          x: 15,
-          y: 15,
-          color: "#FFFFFF"
-        }
-      ]
+      transformation: [...transformation, watermarkTransformation]
     });
   }
   
-  // For school admins and super admins, return signed URL without watermark
+  // For school admins and super admins, return signed URL without watermark.
   return generateSignedUrl(cloudinaryPublicId, {
-    expirySeconds: 3600 // 1 hour expiry
+    expirySeconds: 3600, // 1 hour expiry
+    transformation
   });
 };
 
