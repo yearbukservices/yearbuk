@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -160,12 +160,13 @@ export default function YearbookManage() {
     })
   );
 
-  // Measuring configuration for better performance
-  const measuringConfig = {
+  // Measure droppable cards once before a drag instead of on every render.
+  // Continuous measurement becomes increasingly expensive as the page count grows.
+  const measuringConfig = useMemo(() => ({
     droppable: {
-      strategy: MeasuringStrategy.Always,
+      strategy: MeasuringStrategy.BeforeDragging,
     },
-  };
+  }), []);
   
   // Autoscroll hook - handles scrolling when dragging near edges (touch & pointer aware)
   useEffect(() => {
@@ -442,6 +443,39 @@ export default function YearbookManage() {
     retry: false, // Don't retry failed requests to avoid cache issues
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
+
+  // Build the sortable grid once per page-list change. The previous inline IIFEs
+  // filtered, mapped, and sorted the complete list twice on every render.
+  const contentPageItems = useMemo(() => {
+    const publishedPages = (yearbook?.pages ?? [])
+      .filter((page) => page.pageType === "content")
+      .map((page) => ({
+        type: "published" as const,
+        data: page,
+        pageNumber: page.pageNumber,
+        id: page.id,
+      }));
+    const pendingPages = pendingPageUploads
+      .filter((page) => page.pageType === "content")
+      .map((page) => ({
+        type: "pending" as const,
+        data: page,
+        pageNumber: page.pageNumber,
+        id: page.tempId,
+      }));
+
+    return [...publishedPages, ...pendingPages]
+      .sort((a, b) => a.pageNumber - b.pageNumber)
+      .map((item, index) => ({
+        ...item,
+        data: { ...item.data, pageNumber: index + 1 },
+      }));
+  }, [yearbook?.pages, pendingPageUploads]);
+
+  const contentPageIds = useMemo(
+    () => contentPageItems.map((item) => item.id),
+    [contentPageItems]
+  );
 
   const getCoverImageUrl = (pageType: "front_cover" | "back_cover"): string | null => {
     const coverPage = yearbook?.pages?.find(
@@ -2313,11 +2347,23 @@ function SortablePage({
   };
 
   const isDraftPage = page.status === 'draft' || page.status === 'draft_deleted';
+  const secureImageUrl = useMemo(
+    () => getSecureImageUrl(page.imageUrl) || '',
+    [page.imageUrl]
+  );
+  const previewImageUrl = useMemo(
+    () => getSecureImageUrl(page.thumbnailUrl || page.imageUrl) || '',
+    [page.thumbnailUrl, page.imageUrl]
+  );
   
   return (
     <div
       ref={setNodeRef}
-      style={{ ...style, aspectRatio: aspectRatio || '3/4' }}
+      style={{
+        ...style,
+        aspectRatio: aspectRatio || '3/4',
+        contentVisibility: 'auto',
+      }}
       className={`relative border-2 rounded-lg p-3 backdrop-blur-lg min-w-[160px] flex flex-col
         ${isSortableDragging 
           ? (isDraftPage 
@@ -2345,7 +2391,7 @@ function SortablePage({
             <PageNumberSwapDialog
               pageId={page.id}
               currentPageNumber={page.pageNumber}
-              imageUrl={getSecureImageUrl(page.imageUrl) || ''}
+              imageUrl={secureImageUrl}
               imageAlt={`Preview of page ${page.pageNumber}`}
               totalPages={totalPages}
               isPortraitViewport={isPortraitViewport}
@@ -2508,7 +2554,7 @@ function SortablePendingPage({
   return (
     <div
       ref={setNodeRef}
-      style={cardStyle}
+      style={{ ...cardStyle, contentVisibility: 'auto' }}
       className={`border-2 rounded-lg p-2 w-[200px] flex flex-col
         ${isDragging 
           ? 'bg-orange-400/60 border-orange-500 shadow-2xl ring-4 ring-orange-400/80 shadow-orange-500/60' 
@@ -3744,18 +3790,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                   >
                     <div className={`portrait-grid-layout ${isPortraitViewport ? 'portrait-grid-layout--portrait' : ''}`}>
                       <SortableContext
-                      items={(() => {
-                        const publishedPages = (yearbook?.pages?.filter(p => p.pageType === "content") || []).map(p => ({ 
-                          id: p.id, 
-                          pageNumber: p.pageNumber
-                        }));
-                        const pendingPages = pendingPageUploads.filter(p => p.pageType === "content").map(p => ({ 
-                          id: p.tempId, 
-                          pageNumber: p.pageNumber
-                        }));
-                        const allPages = [...publishedPages, ...pendingPages].sort((a, b) => a.pageNumber - b.pageNumber);
-                        return allPages.map(p => p.id);
-                      })()}
+                      items={contentPageIds}
                       strategy={rectSortingStrategy}
                     >
                       <div 
@@ -3770,71 +3805,51 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                         }}
                         data-testid="pages-grid"
                       >
-                        {/* Render pages and pending uploads in sorted order by page number */}
-                        {(() => {
-                          const publishedPages = (yearbook?.pages?.filter(p => p.pageType === "content") || []).map(p => ({ 
-                            type: 'published' as const, 
-                            data: p, 
-                            pageNumber: p.pageNumber,
-                            id: p.id
-                          }));
-                          
-                          const pendingPages = pendingPageUploads.filter(p => p.pageType === "content").map(p => ({ 
-                            type: 'pending' as const, 
-                            data: p, 
-                            pageNumber: p.pageNumber,
-                            id: p.tempId
-                          }));
-                          
-                          const allPages = [...publishedPages, ...pendingPages].sort((a, b) => a.pageNumber - b.pageNumber);
-                          
-                          return allPages.map((item, index) => {
-                            const visualPageNumber = index + 1; // Sequential visual numbering
-                            
-                            if (item.type === 'published') {
-                              const page = item.data;
-                              return (
-                                <SortablePage 
-                                  key={page.id}
-                                  page={{...page, pageNumber: visualPageNumber}}
-                                  index={index}
-                                  onDelete={(pageId: string) => deletePageMutation.mutate(pageId)}
-                                  reorderPending={reorderPageMutation.isPending}
-                                  totalPages={allPages.length}
-                                   isPortraitViewport={isPortraitViewport}
-                                  isDragging={activePageId === page.id}
-                                  editingPageId={editingPageId}
-                                  tempPageNumber={tempPageNumber}
-                                  onStartEditingPageNumber={startEditingPageNumber}
-                                  onCancelEditingPageNumber={cancelEditingPageNumber}
-                                  onManualPageChange={handleManualPageChange}
-                                  onMoveLeft={handleMovePageLeft}
-                                  onMoveRight={handleMovePageRight}
-                                  aspectRatio={yearbook?.detectedAspectRatio || null}
-                                />
-                              );
-                            } else {
-                              const pendingPage = item.data;
-                              return (
-                                <SortablePendingPage
-                                  key={pendingPage.tempId}
-                                  pendingPage={{...pendingPage, pageNumber: visualPageNumber}}
-                                  totalPages={allPages.length}
-                                   isPortraitViewport={isPortraitViewport}
-                                  editingPageId={editingPageId}
-                                  tempPageNumber={tempPageNumber}
-                                  onStartEditingPageNumber={startEditingPageNumber}
-                                  onCancelEditingPageNumber={cancelEditingPageNumber}
-                                  onManualPageChange={handleManualPageChange}
-                                  onDelete={() => handleDeletePendingPage(pendingPage.tempId)}
-                                  aspectRatio={yearbook?.detectedAspectRatio || null}
-                                />
-                              );
-                            }
-                          });
-                        })()}
-                        
-                        {/* Add Page Button */}
+                                                 {/* Render pages from the memoized, sorted grid model */}
+                         {contentPageItems.map((item, index) => {
+                           if (item.type === 'published') {
+                             const page = item.data;
+                             return (
+                               <SortablePage
+                                 key={page.id}
+                                 page={page}
+                                 index={index}
+                                 onDelete={(pageId: string) => deletePageMutation.mutate(pageId)}
+                                 reorderPending={reorderPageMutation.isPending}
+                                 totalPages={contentPageItems.length}
+                                 isPortraitViewport={isPortraitViewport}
+                                 isDragging={activePageId === page.id}
+                                 editingPageId={editingPageId}
+                                 tempPageNumber={tempPageNumber}
+                                 onStartEditingPageNumber={startEditingPageNumber}
+                                 onCancelEditingPageNumber={cancelEditingPageNumber}
+                                 onManualPageChange={handleManualPageChange}
+                                 onMoveLeft={handleMovePageLeft}
+                                 onMoveRight={handleMovePageRight}
+                                 aspectRatio={yearbook?.detectedAspectRatio || null}
+                               />
+                             );
+                           }
+
+                           const pendingPage = item.data;
+                           return (
+                             <SortablePendingPage
+                               key={pendingPage.tempId}
+                               pendingPage={pendingPage}
+                               totalPages={contentPageItems.length}
+                               isPortraitViewport={isPortraitViewport}
+                               editingPageId={editingPageId}
+                               tempPageNumber={tempPageNumber}
+                               onStartEditingPageNumber={startEditingPageNumber}
+                               onCancelEditingPageNumber={cancelEditingPageNumber}
+                               onManualPageChange={handleManualPageChange}
+                               onDelete={() => handleDeletePendingPage(pendingPage.tempId)}
+                               aspectRatio={yearbook?.detectedAspectRatio || null}
+                             />
+                           );
+                         })}
+
+{/* Add Page Button */}
                         <div
                           className="border-2 border-dashed border-white/30 rounded-lg p-4 flex items-center justify-center w-[200px]"
                           style={{ aspectRatio: yearbook?.detectedAspectRatio || '3/4' }}
@@ -3937,14 +3952,14 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                               style={{ aspectRatio: yearbook?.detectedAspectRatio || '3/4' }}
                             >
                               <img
-                                src={getSecureImageUrl(page.thumbnailUrl || page.imageUrl) || ''}
+                                src={previewImageUrl}
                                 alt={`Page ${page.pageNumber}`}
                                 className="w-full h-full object-cover"
                                 loading="lazy"
                                 decoding="async"
                                 onError={(event) => {
                                   const image = event.currentTarget;
-                                  image.src = getSecureImageUrl(page.imageUrl) || '';
+                                  image.src = secureImageUrl;
                                   image.onerror = null;
                                 }}
                               />
