@@ -373,12 +373,11 @@ const mockMemories = [
       // Skip years before the school was founded or after current year
       if (year < startYear || year > endYear) return null;
     
-    // Check if this year has been purchased
+    // An existing yearbook record is enough to manage that year, even if its purchase row is missing.
     const yearPurchase = purchasedYears.find((p: any) => p.year === year);
-    const purchased = !!yearPurchase?.purchased;
     
-    // Check if this year's yearbook is free
     const yearbook = schoolYearbooks.find((yb: any) => yb.year === year);
+    const purchased = !!yearPurchase?.purchased || !!yearbook;
     const isFree = yearbook?.isFree || false;
     const priceExplicitlySet = yearbook?.price != null; // Check if price was explicitly set
     // Only use yearbook price if explicitly set, otherwise use system default for non-purchased years
