@@ -261,7 +261,6 @@ export default function YearbookManage() {
   });
   
   // Setup state for when yearbook record doesn't exist yet (beta unlock recovery)
-  const [setupUploadType, setSetupUploadType] = useState<'image' | 'pdf' | null>(null);
 
   // Settings dialog — aspect ratio selection
   const [settingsAspectRatio, setSettingsAspectRatio] = useState<string | null>(null);
@@ -2828,87 +2827,33 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
   }
 
   if (yearbookError) {
-    const canSetup = !!schoolId && !!year;
-    const isSetupComplete = setupUploadType !== null;
-
-    const handleCreateYearbook = async () => {
-      if (!isSetupComplete || !schoolId || !year) return;
-      try {
-        const res = await fetch("/api/yearbooks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            schoolId,
-            year: parseInt(year),
-            title: `${year} Yearbook`,
-            uploadType: setupUploadType,
-            isInitialized: true
-          })
-        });
-        if (!res.ok) throw new Error("Failed");
-        queryClient.invalidateQueries({ queryKey: ["/api/yearbooks", schoolId, year] });
-        window.location.reload();
-      } catch {
-        alert("Something went wrong. Please try again.");
-      }
-    };
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
         <Card className="max-w-md w-full bg-white/10 backdrop-blur-lg border border-white/20">
           <CardHeader>
             <CardTitle className="text-xl text-white flex items-center gap-2">
-              <Settings className="h-6 w-6 text-purple-400" />
-              Complete Yearbook Setup
+              <Home className="h-6 w-6 text-purple-400" />
+              Yearbook unavailable
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             <p className="text-white/70 text-sm">
-              Your yearbook was unlocked but needs one more step. Select your preferences to finish setup.
+              We couldn't load the {year} yearbook. Return to Yearbooks to choose another year.
             </p>
-
-            <div className="space-y-2">
-              <Label className="text-white text-sm font-semibold">Yearbook Type</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {(['image', 'pdf'] as const).map(type => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setSetupUploadType(type)}
-                    className={`p-3 rounded-lg border text-sm font-medium transition-colors ${setupUploadType === type ? 'bg-purple-600/40 border-purple-400 text-white' : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'}`}
-                  >
-                    {type === 'image' ? '🖼 Image Upload' : '📄 PDF Upload'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={() => setLocation("/yearbooks")}
-                variant="outline"
-                className="flex-1 bg-white/10 border-white/20 text-white"
-                data-testid="button-back-to-dashboard"
-              >
-                <Home className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-              <Button
-                onClick={handleCreateYearbook}
-                disabled={!isSetupComplete}
-                className="flex-1 bg-purple-600/60 border border-purple-400/50 text-white hover:bg-purple-600/80 disabled:opacity-50"
-                data-testid="button-complete-setup"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Complete Setup
-              </Button>
-            </div>
+            <Button
+              onClick={handleBackNavigation}
+              variant="outline"
+              className="w-full bg-white/10 border-white/20 text-white"
+              data-testid="button-back-to-yearbooks"
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Back to Yearbooks
+            </Button>
           </CardContent>
         </Card>
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
       {/* Main Animated Background Pattern */}
