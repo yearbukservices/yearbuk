@@ -4356,20 +4356,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Yearbook not found" });
       }
       
-      // Apply watermarks for viewer accounts
+      // Resolve original and grid-sized signed URLs together. The client keeps
+      // imageUrl for full-page preview and uses thumbnailUrl only in grids.
       let userId = req.headers['x-user-id'] as string || req.query.userId as string;
       if (!userId && req.headers['authorization']) {
         const authHeader = req.headers['authorization'] as string;
         userId = authHeader.replace('Bearer ', '');
       }
-      if (userId) {
-        const user = await storage.getUserById(userId);
-        if (user && (yearbook as any).pages) {
-          (yearbook as any).pages = (yearbook as any).pages.map((page: any) => ({
+      const user = userId ? await storage.getUserById(userId) : undefined;
+      const thumbnailTransformation = [
+        { width: 400, crop: 'limit', quality: 'auto', fetch_format: 'auto' }
+      ];
+
+      if ((yearbook as any).pages) {
+        (yearbook as any).pages = (yearbook as any).pages.map((page: any) => {
+          if (!user) return page;
+
+          return {
             ...page,
-            imageUrl: getImageUrl(page.imageUrl, page.cloudinaryPublicId, user.userType)
-          }));
-        }
+            imageUrl: getImageUrl(page.imageUrl, page.cloudinaryPublicId, user.userType),
+            thumbnailUrl: getImageUrl(
+              page.imageUrl,
+              page.cloudinaryPublicId,
+              user.userType,
+              thumbnailTransformation
+            )
+          };
+        });
       }
       
       res.json(yearbook);
