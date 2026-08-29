@@ -3786,10 +3786,10 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                       <p className="text-xs text-white/80">Required</p>
                     </div>
                     
-                    {yearbook?.pages?.find(p => p.pageType === "front_cover") ? (
+                    {getCoverImageUrl("front_cover") ? (
                       <div>
                         <img
-                          src={getSecureImageUrl(yearbook.pages.find(p => p.pageType === "front_cover")?.imageUrl) || ''}
+                          src={getSecureImageUrl(getCoverImageUrl("front_cover")) || ''}
                           alt="Front Cover"
                           className="w-full h-auto max-h-64 object-contain rounded mb-2 pointer-events-none"
                         />
@@ -3835,10 +3835,10 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                       <p className="text-xs text-white/80">Required</p>
                     </div>
                     
-                    {yearbook?.pages?.find(p => p.pageType === "back_cover") ? (
+                    {getCoverImageUrl("back_cover") ? (
                       <div>
                         <img
-                          src={getSecureImageUrl(yearbook.pages.find(p => p.pageType === "back_cover")?.imageUrl) || ''}
+                          src={getSecureImageUrl(getCoverImageUrl("back_cover")) || ''}
                           alt="Back Cover"
                           className="w-full h-auto max-h-64 object-contain rounded mb-2"
                         />
