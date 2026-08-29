@@ -17,7 +17,8 @@ export const getImageUrl = (
   imageUrl: string,
   cloudinaryPublicId: string | null | undefined,
   userType: string | undefined,
-  transformation: any[] = []
+  transformation: any[] = [],
+  pageType?: string
 ): string => {
   // If no Cloudinary ID, return the original URL (local file)
   if (!cloudinaryPublicId) {
@@ -41,18 +42,24 @@ export const getImageUrl = (
     color: "#FFFFFF"
   };
 
-  // If image is from Cloudinary and user is a viewer, apply watermark and sign URL.
-  if (shouldApplyWatermark(userType)) {
-    return generateSignedUrl(cloudinaryPublicId, {
-      expirySeconds: 3600, // 1 hour expiry
-      transformation: [...transformation, watermarkTransformation]
+  const isPublicCover = pageType === 'front_cover' || pageType === 'back_cover';
+  const finalTransformation = shouldApplyWatermark(userType)
+    ? [...transformation, watermarkTransformation]
+    : transformation;
+
+  // Covers are intentionally public so they can be shown before authentication.
+  // Deliver them through the public Cloudinary route even if an older database
+  // record contains an authenticated delivery URL for the same public asset.
+  if (isPublicCover) {
+    return generateCloudinaryUrl(cloudinaryPublicId, {
+      transformation: finalTransformation
     });
   }
-  
-  // For school admins and super admins, return signed URL without watermark.
+
+  // Interior pages remain protected with short-lived signed URLs.
   return generateSignedUrl(cloudinaryPublicId, {
     expirySeconds: 3600, // 1 hour expiry
-    transformation
+    transformation: finalTransformation
   });
 };
 

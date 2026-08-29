@@ -150,12 +150,13 @@ export const uploadPdfToCloudinary = async (
           secure: true
         });
 
-        // Upload this page as an authenticated asset for security
+        // Covers are public; interior pages stay authenticated.
+        const shouldAuthenticatePage = useAuthenticated && i !== 1 && i !== pageCount;
         const uploadedPage = await cloudinary.uploader.upload(pageUrl, {
           folder: folder,
           resource_type: 'image',
           format: 'jpg',
-          type: 'authenticated', // Authenticated access - requires signed URLs
+          type: shouldAuthenticatePage ? 'authenticated' : 'upload',
           public_id: `page_${i}_${Date.now()}`
         });
 

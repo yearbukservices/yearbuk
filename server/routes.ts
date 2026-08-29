@@ -4370,17 +4370,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if ((yearbook as any).pages) {
         (yearbook as any).pages = (yearbook as any).pages.map((page: any) => {
-          if (!user) return page;
+          const isPublicCover = page.pageType === 'front_cover' || page.pageType === 'back_cover';
+          if (!user && !isPublicCover) return page;
 
           return {
             ...page,
-            imageUrl: getImageUrl(page.imageUrl, page.cloudinaryPublicId, user.userType),
-            thumbnailUrl: getImageUrl(
-              page.imageUrl,
-              page.cloudinaryPublicId,
-              user.userType,
-              thumbnailTransformation
-            )
+            imageUrl: getImageUrl(page.imageUrl, page.cloudinaryPublicId, user?.userType, [], page.pageType),
+            ...(user ? {
+              thumbnailUrl: getImageUrl(
+                page.imageUrl,
+                page.cloudinaryPublicId,
+                user.userType,
+                thumbnailTransformation,
+                page.pageType
+              )
+            } : {})
           };
         });
       }
@@ -4413,14 +4417,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const authHeader = req.headers['authorization'] as string;
         userId = authHeader.replace('Bearer ', '');
       }
-      if (userId) {
-        const user = await storage.getUserById(userId);
-        if (user && (yearbook as any).pages) {
-          (yearbook as any).pages = (yearbook as any).pages.map((page: any) => ({
+      const user = userId ? await storage.getUserById(userId) : undefined;
+      if ((yearbook as any).pages) {
+        (yearbook as any).pages = (yearbook as any).pages.map((page: any) => {
+          const isPublicCover = page.pageType === 'front_cover' || page.pageType === 'back_cover';
+          if (!user && !isPublicCover) return page;
+
+          return {
             ...page,
-            imageUrl: getImageUrl(page.imageUrl, page.cloudinaryPublicId, user.userType)
-          }));
-        }
+            imageUrl: getImageUrl(page.imageUrl, page.cloudinaryPublicId, user?.userType, [], page.pageType)
+          };
+        });
       }
       
       res.json(yearbook);
