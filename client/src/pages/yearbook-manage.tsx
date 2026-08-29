@@ -146,7 +146,10 @@ export default function YearbookManage() {
   // Autoscroll state
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const previewThumbsRef = useRef<HTMLDivElement>(null);
-  const [overId, setOverId] = useState<string | null>(null);
+  // Keep the hovered sortable ID out of React state. Drag-over events fire for
+  // every pointer movement; only the mobile delete-zone state needs a rerender.
+  const overIdRef = useRef<string | null>(null);
+  const [isOverDeleteZone, setIsOverDeleteZone] = useState(false);
   
   // Set up sensors for drag and drop with enhanced responsiveness
   const sensors = useSensors(
@@ -1639,7 +1642,14 @@ export default function YearbookManage() {
   };
   
   const handleDragOver = (event: any) => {
-    setOverId(event.over?.id || null);
+    const nextOverId = event.over?.id == null ? null : String(event.over.id);
+    if (nextOverId === overIdRef.current) return;
+
+    overIdRef.current = nextOverId;
+    const nextIsOverDeleteZone = nextOverId === MOBILE_DELETE_DROP_ZONE_ID;
+    setIsOverDeleteZone((previous) => (
+      previous === nextIsOverDeleteZone ? previous : nextIsOverDeleteZone
+    ));
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -1648,7 +1658,8 @@ export default function YearbookManage() {
     const dropTargetId = over?.id == null ? null : String(over.id);
     
     setActivePageId(null);
-    setOverId(null);
+    overIdRef.current = null;
+    setIsOverDeleteZone(false);
     
     if (dropTargetId === MOBILE_DELETE_DROP_ZONE_ID) {
       if (yearbook?.pages?.some(page => page.id === activeId)) {
@@ -3870,7 +3881,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                       </div>
                       </SortableContext>
                       {isPortraitViewport && (
-                        <MobileDeleteDropZone isOver={overId === MOBILE_DELETE_DROP_ZONE_ID} />
+                        <MobileDeleteDropZone isOver={isOverDeleteZone} />
                       )}
                     </div>
                   </DndContext>
