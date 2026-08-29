@@ -1,4 +1,14 @@
 // Helper function to create secure image URLs with user authentication
+// Convert Cloudinary HEIC/HEIF assets to a format desktop browsers can render.
+function getBrowserSafeCloudinaryUrl(imageUrl: string): string {
+  if (!/\.(heic|heif)(?:[?#]|$)/i.test(imageUrl)) return imageUrl;
+
+  return imageUrl.replace(
+    "/image/upload/",
+    "/image/upload/f_jpg,q_auto/",
+  );
+}
+
 export function getSecureImageUrl(imageUrl: string | null | undefined): string | null {
   if (!imageUrl) return null;
   
