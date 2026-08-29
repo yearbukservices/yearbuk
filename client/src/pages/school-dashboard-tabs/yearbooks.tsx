@@ -78,10 +78,11 @@ export default function SchoolYearbooks() {
       
       if (year < startYear || year > endYear) return null;
     
+      // An existing yearbook record is enough to manage that year, even if its purchase row is missing.
       const yearPurchase = purchasedYears.find((p: any) => p.year === year);
-      const purchased = !!yearPurchase?.purchased;
       
       const yearbook = schoolYearbooks.find((yb: any) => yb.year === year);
+      const purchased = !!yearPurchase?.purchased || !!yearbook;
       const isFree = yearbook?.isFree || false;
       const priceExplicitlySet = yearbook?.price != null;
       const yearbookPrice = yearbook?.price ?? (priceConfig?.schoolYearPrice ?? SCHOOL_YEAR_PRICE);
