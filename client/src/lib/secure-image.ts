@@ -9,6 +9,49 @@ function getBrowserSafeCloudinaryUrl(imageUrl: string): string {
   );
 }
 
+export function createImageThumbnailUrl(file: File, maxDimension = 400): Promise<string | null> {
+  if (!file.type.startsWith('image/')) return Promise.resolve(null);
+
+  const sourceUrl = URL.createObjectURL(file);
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const width = image.naturalWidth || image.width;
+      const height = image.naturalHeight || image.height;
+      const scale = Math.min(1, maxDimension / Math.max(width, height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(width * scale));
+      canvas.height = Math.max(1, Math.round(height * scale));
+
+      const context = canvas.getContext('2d');
+      if (!context) {
+        URL.revokeObjectURL(sourceUrl);
+        resolve(null);
+        return;
+      }
+
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((webpBlob) => {
+        if (webpBlob) {
+          URL.revokeObjectURL(sourceUrl);
+          resolve(URL.createObjectURL(webpBlob));
+          return;
+        }
+
+        canvas.toBlob((jpegBlob) => {
+          URL.revokeObjectURL(sourceUrl);
+          resolve(jpegBlob ? URL.createObjectURL(jpegBlob) : null);
+        }, 'image/jpeg', 0.85);
+      }, 'image/webp', 0.82);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(sourceUrl);
+      resolve(null);
+    };
+    image.src = sourceUrl;
+  });
+}
+
 export function getSecureImageUrl(imageUrl: string | null | undefined): string | null {
   if (!imageUrl) return null;
   
