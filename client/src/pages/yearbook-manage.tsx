@@ -46,6 +46,8 @@ const navigateToSchoolDashboardYears = (setLocation: any) => {
 };
 
 const MOBILE_DELETE_DROP_ZONE_ID = 'mobile-delete-drop-zone';
+const PAGE_VIRTUALIZATION_OVERSCAN_PX = 600;
+const INITIAL_VISIBLE_PAGE_END = 24;
 
 const collisionDetectionStrategy: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
@@ -479,6 +481,66 @@ export default function YearbookManage() {
     () => contentPageItems.map((item) => item.id),
     [contentPageItems]
   );
+
+  // Keep sortable slots mounted for reliable DnD geometry, but avoid mounting
+  // image/dialog/button trees for cards outside the viewport overscan.
+  const [visiblePageRange, setVisiblePageRange] = useState({
+    start: 0,
+    end: INITIAL_VISIBLE_PAGE_END,
+  });
+
+  const updateVisiblePageRange = useCallback(() => {
+    const grid = scrollContainerRef.current;
+    if (!grid) return;
+
+    const pageNodes = grid.querySelectorAll<HTMLElement>("[data-page-index]");
+    if (pageNodes.length === 0) return;
+
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    let firstVisible = pageNodes.length;
+    let lastVisible = -1;
+
+    pageNodes.forEach((node, index) => {
+      const rect = node.getBoundingClientRect();
+      if (rect.bottom >= -PAGE_VIRTUALIZATION_OVERSCAN_PX &&
+          rect.top <= viewportHeight + PAGE_VIRTUALIZATION_OVERSCAN_PX) {
+        firstVisible = Math.min(firstVisible, index);
+        lastVisible = index;
+      }
+    });
+
+    const nextRange = lastVisible < 0
+      ? { start: 0, end: Math.min(INITIAL_VISIBLE_PAGE_END, pageNodes.length - 1) }
+      : { start: firstVisible, end: lastVisible };
+
+    setVisiblePageRange((current) => (
+      current.start === nextRange.start && current.end === nextRange.end
+        ? current
+        : nextRange
+    ));
+  }, [contentPageItems.length]);
+
+  useEffect(() => {
+    let animationFrameId: number | null = null;
+
+    const scheduleRangeUpdate = () => {
+      if (animationFrameId !== null) return;
+      animationFrameId = requestAnimationFrame(() => {
+        animationFrameId = null;
+        updateVisiblePageRange();
+      });
+    };
+
+    updateVisiblePageRange();
+    document.addEventListener("scroll", scheduleRangeUpdate, true);
+    window.addEventListener("resize", scheduleRangeUpdate);
+
+    return () => {
+      document.removeEventListener("scroll", scheduleRangeUpdate, true);
+      window.removeEventListener("resize", scheduleRangeUpdate);
+      if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+    };
+  }, [updateVisiblePageRange]);
 
   const getCoverImageUrl = (pageType: "front_cover" | "back_cover"): string | null => {
     const coverPage = yearbook?.pages?.find(
@@ -2316,6 +2378,7 @@ interface SortablePageProps {
   onMoveLeft: (pageId: string) => void;
   onMoveRight: (pageId: string) => void;
   aspectRatio?: string | null;
+  isVirtualized?: boolean;
 }
 
 function SortablePage({ 
@@ -2333,7 +2396,8 @@ function SortablePage({
   onManualPageChange,
   onMoveLeft,
   onMoveRight,
-  aspectRatio
+  aspectRatio,
+  isVirtualized = false,
 }: SortablePageProps) {
   const {
     attributes,
@@ -2366,6 +2430,34 @@ function SortablePage({
     () => getSecureImageUrl(page.thumbnailUrl || page.imageUrl) || '',
     [page.thumbnailUrl, page.imageUrl]
   );
+
+  if (isVirtualized && !isSortableDragging) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={{ ...style, aspectRatio: aspectRatio || '3/4' }}
+        className={"relative border-2 rounded-lg p-3 min-w-[160px] flex flex-col bg-white/5 border-white/10 " + (isOver ? 'ring-4 ring-blue-400/60 border-blue-400' : '')}
+        data-testid={`page-item-${page.id}`}
+        data-page-index={index}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-white/80">Page {page.pageNumber}</span>
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing text-white/50 p-1.5 rounded-md"
+            style={{ touchAction: 'none' }}
+            title="Drag to reorder"
+          >
+            <GripVertical className="h-5 w-5" />
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <span className="text-xs text-white/30">Preview loads on scroll</span>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div
@@ -2394,6 +2486,7 @@ function SortablePage({
         ${page.status === 'draft_deleted' ? 'opacity-60' : ''}
       `}
       data-testid={`page-item-${page.id}`}
+       data-page-index={index}
     >
       {/* Page Number and Drag Handle */}
       <div className="flex items-center justify-between mb-2">
@@ -2524,7 +2617,9 @@ function SortablePendingPage({
   onStartEditingPageNumber,
   onCancelEditingPageNumber,
   onManualPageChange,
-  aspectRatio
+  aspectRatio,
+  index,
+  isVirtualized = false,
 }: {
   pendingPage: PendingPageUpload;
   onDelete: () => void;
@@ -2538,6 +2633,8 @@ function SortablePendingPage({
   onCancelEditingPageNumber: () => void;
   onManualPageChange: (pageId: string, newPageNumber: number) => void;
   aspectRatio?: number | null;
+  index: number;
+  isVirtualized?: boolean;
 }) {
   const {
     attributes,
@@ -2562,10 +2659,38 @@ function SortablePendingPage({
     aspectRatio: aspectRatio || '3/4',
   };
 
+  if (isVirtualized && !isDragging) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={cardStyle}
+        className={"border-2 rounded-lg p-2 w-[200px] flex flex-col bg-orange-500/20 border-orange-400/30 " + (isOver ? 'ring-4 ring-blue-400/60 border-blue-400' : '')}
+        data-page-index={index}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-orange-100">Page {pendingPage.pageNumber}</span>
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing text-white/50 p-1.5 rounded-md"
+            style={{ touchAction: 'none' }}
+            title="Drag to reorder"
+          >
+            <GripVertical className="h-5 w-5" />
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <span className="text-xs text-orange-100/50">Preview loads on scroll</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={{ ...cardStyle, contentVisibility: 'auto' }}
+       data-page-index={index}
       className={`border-2 rounded-lg p-2 w-[200px] flex flex-col
         ${isDragging 
           ? 'bg-orange-400/60 border-orange-500 shadow-2xl ring-4 ring-orange-400/80 shadow-orange-500/60' 
@@ -3818,6 +3943,9 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                       >
                                                  {/* Render pages from the memoized, sorted grid model */}
                          {contentPageItems.map((item, index) => {
+                           const outsideVisibleRange = index < visiblePageRange.start || index > visiblePageRange.end;
+                           const isVirtualized = outsideVisibleRange && activePageId !== item.id && editingPageId !== item.id;
+
                            if (item.type === 'published') {
                              const page = item.data;
                              return (
@@ -3838,7 +3966,8 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                                  onMoveLeft={handleMovePageLeft}
                                  onMoveRight={handleMovePageRight}
                                  aspectRatio={yearbook?.detectedAspectRatio || null}
-                               />
+                               isVirtualized={isVirtualized}
+                                />
                              );
                            }
 
@@ -3848,6 +3977,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                                key={pendingPage.tempId}
                                pendingPage={pendingPage}
                                totalPages={contentPageItems.length}
+                               index={index}
                                isPortraitViewport={isPortraitViewport}
                                editingPageId={editingPageId}
                                tempPageNumber={tempPageNumber}
@@ -3856,7 +3986,8 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                                onManualPageChange={handleManualPageChange}
                                onDelete={() => handleDeletePendingPage(pendingPage.tempId)}
                                aspectRatio={yearbook?.detectedAspectRatio || null}
-                             />
+                             isVirtualized={isVirtualized}
+                                />
                            );
                          })}
 
