@@ -2491,9 +2491,11 @@ function SortablePendingPage({
               onManualPageChange={onManualPageChange}
               accentClassName="hover:text-orange-300"
             />
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-semibold">
-              UNSAVED
-            </span>
+            {!isPortraitViewport && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-semibold">
+                UNSAVED
+              </span>
+            )}
           </div>
         </div>
         <div 
