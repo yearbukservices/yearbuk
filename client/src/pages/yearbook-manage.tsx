@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { getSecureImageUrl } from "@/lib/secure-image";
+import { createImageThumbnailUrl, getSecureImageUrl } from "@/lib/secure-image";
 import { ArrowLeft, Upload, Plus, Trash2, Settings, Eye, BookOpen, FileText, Layers, Send as Publish, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Edit, Menu, ShoppingCart, LogOut, Home, Undo2, GripVertical, DollarSign, Check, X, AlertCircle, Bell, ScanLine } from "lucide-react";
 import type { Notification } from "@shared/schema";
 import { BETA_VERSION } from "@shared/constants";
@@ -79,6 +79,7 @@ interface YearbookPage {
   pageNumber: number;
   title: string;
   imageUrl: string;
+  thumbnailUrl?: string;
   pageType: "front_cover" | "back_cover" | "content";
   status: "published" | "draft" | "draft_deleted";
   pdfUploadBatchId?: string;
@@ -425,7 +426,14 @@ export default function YearbookManage() {
     queryKey: ["/api/yearbooks", schoolId, year],
     enabled: !!schoolId && !!year,
     queryFn: async () => {
-      const res = await fetch(`/api/yearbooks/${schoolId}/${year}`);
+      let userId: string | null = null;
+      try {
+        userId = JSON.parse(localStorage.getItem("user") || "{}").id || null;
+      } catch {
+        userId = null;
+      }
+      const userParam = userId ? `?userId=${encodeURIComponent(userId)}` : "";
+      const res = await fetch(`/api/yearbooks/${schoolId}/${year}${userParam}`);
       if (!res.ok) {
         throw new Error("Yearbook not found. Please purchase this year first.");
       }
@@ -658,15 +666,18 @@ export default function YearbookManage() {
       // For image upload type with published yearbook, queue for "Save Changes"
       if (yearbook?.isPublished && yearbook?.uploadType !== 'pdf') {
         // Create a local URL for immediate preview
+        const tempId = Date.now();
         const tempUrl = URL.createObjectURL(file);
         setPendingPageUploads(prev => [...prev, { 
           file, 
           pageType, 
           title, 
-          tempId: Date.now(),
-          tempUrl, // Add temp URL for immediate preview
+          tempId,
+          tempUrl, // Keep the original for full preview.
+          thumbnailUrl: tempUrl,
           pageNumber: pageType === "content" ? (yearbook?.pages?.filter(p => p.pageType === "content")?.length || 0) + prev.filter(p => p.pageType === "content").length + 1 : 0
         }]);
+        createPendingPageThumbnail(file, tempId);
         setHasUnsavedChanges(true);
         return Promise.resolve({ tempId: Date.now() });
       }
@@ -1065,7 +1076,13 @@ export default function YearbookManage() {
       return result;
     },
     onSuccess: () => {
-      setPendingPageUploads([]);
+      setPendingPageUploads(prev => {
+        prev.forEach(page => {
+          URL.revokeObjectURL(page.tempUrl);
+          if (page.thumbnailUrl && page.thumbnailUrl !== page.tempUrl) URL.revokeObjectURL(page.thumbnailUrl);
+        });
+        return [];
+      });
       setPendingTOCItems([]);
       setHasUnsavedChanges(false);
       // Force refetch to ensure UI shows published status immediately
@@ -1092,7 +1109,13 @@ export default function YearbookManage() {
     },
     onSuccess: () => {
       // Reset local pending state
-      setPendingPageUploads([]);
+      setPendingPageUploads(prev => {
+        prev.forEach(page => {
+          URL.revokeObjectURL(page.tempUrl);
+          if (page.thumbnailUrl && page.thumbnailUrl !== page.tempUrl) URL.revokeObjectURL(page.thumbnailUrl);
+        });
+        return [];
+      });
       setPendingTOCItems([]);
       setHasUnsavedChanges(false);
       queryClient.invalidateQueries({ queryKey: ["/api/yearbooks", schoolId, year] });
@@ -1230,6 +1253,15 @@ export default function YearbookManage() {
     },
   });
 
+  const createPendingPageThumbnail = (file: File, tempId: string | number) => {
+    void createImageThumbnailUrl(file).then((thumbnailUrl) => {
+      if (!thumbnailUrl) return;
+      setPendingPageUploads(prev => prev.map(page =>
+        page.tempId === tempId ? { ...page, thumbnailUrl } : page
+      ));
+    });
+  };
+
   // Enhanced upload function with progress tracking
   const uploadFileWithProgress = (file: File, pageType: string, title: string, yearbookId: string): Promise<any> => {
     return new Promise((resolve, reject) => {
@@ -1244,15 +1276,18 @@ export default function YearbookManage() {
       
       // For PUBLISHED yearbooks, queue content pages instead of uploading
       if (yearbook?.isPublished && pageType === "content") {
+        const tempId = Date.now();
         const tempUrl = URL.createObjectURL(file);
         setPendingPageUploads(prev => [...prev, { 
           file, 
           pageType, 
           title, 
-          tempId: Date.now(),
+          tempId,
           tempUrl,
+          thumbnailUrl: tempUrl,
           pageNumber: (yearbook?.pages?.filter(p => p.pageType === "content")?.length || 0) + prev.filter(p => p.pageType === "content").length + 1
         }]);
+        createPendingPageThumbnail(file, tempId);
         setHasUnsavedChanges(true);
         
         // Mark as completed immediately since we're queuing
@@ -1558,6 +1593,9 @@ export default function YearbookManage() {
 
     setPendingPageUploads(prev => prev.filter(page => page.tempId !== tempId));
     URL.revokeObjectURL(pendingPage.tempUrl);
+    if (pendingPage.thumbnailUrl && pendingPage.thumbnailUrl !== pendingPage.tempUrl) {
+      URL.revokeObjectURL(pendingPage.thumbnailUrl);
+    }
     if (pendingPageUploads.length === 1) setHasUnsavedChanges(false);
   };
 
@@ -2343,9 +2381,16 @@ function SortablePage({
       {/* Page Image */}
       <div className="flex-1 w-full mb-2 overflow-hidden rounded">
         <img
-          src={getSecureImageUrl(page.imageUrl) || ''}
+          src={getSecureImageUrl(page.thumbnailUrl || page.imageUrl) || ''}
           alt={page.title ?? ''}
           className="w-full h-full object-cover pointer-events-none"
+          loading="lazy"
+          decoding="async"
+          onError={(event) => {
+            const image = event.currentTarget;
+            image.src = getSecureImageUrl(page.imageUrl) || '';
+            image.onerror = null;
+          }}
         />
       </div>
      
@@ -2404,6 +2449,7 @@ function SortablePage({
 interface PendingPageUpload {
   tempId: string;
   tempUrl: string;
+  thumbnailUrl?: string;
   title: string;
   pageNumber: number;
   pageType: string;
@@ -2509,9 +2555,16 @@ function SortablePendingPage({
       </div>
       <div className="flex-1 flex items-center justify-center overflow-hidden rounded mb-2">
         <img
-          src={pendingPage.tempUrl || ''}
+          src={pendingPage.thumbnailUrl || pendingPage.tempUrl || ''}
           alt={pendingPage.title || ''}
           className="w-full h-full object-cover rounded"
+          loading="lazy"
+          decoding="async"
+          onError={(event) => {
+            const image = event.currentTarget;
+            image.src = pendingPage.tempUrl || '';
+            image.onerror = null;
+          }}
         />
       </div>
       
@@ -3403,6 +3456,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                   const savedContent = (yearbook?.pages?.filter(p => p.pageType === "content") || []).map(p => ({
                     id: p.id,
                     imageUrl: getSecureImageUrl(p.imageUrl) || '',
+                    thumbnailUrl: getSecureImageUrl(p.thumbnailUrl || p.imageUrl) || '',
                     pageType: p.pageType as string,
                     pageNumber: p.pageNumber,
                     isDraft: false,
@@ -3415,6 +3469,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                     : pendingPageUploads.filter(p => p.pageType === "content").map(p => ({
                         id: p.tempId,
                         imageUrl: p.tempUrl as string,
+                        thumbnailUrl: (p.thumbnailUrl || p.tempUrl) as string,
                         pageType: p.pageType as string,
                         pageNumber: p.pageNumber as number,
                         isDraft: true,
@@ -3517,7 +3572,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                               className={`flex-shrink-0 border-2 rounded overflow-hidden transition-all duration-150 ${idx === safeIndex ? 'border-blue-400 scale-110 shadow-lg' : 'border-white/20 hover:border-white/50 opacity-70 hover:opacity-100'}`}
                               style={{ width: 44, aspectRatio, scrollSnapAlign: 'center' }}
                             >
-                              <img src={page.imageUrl} alt={page.label} className="w-full h-full object-cover" draggable={false} />
+                              <img src={page.thumbnailUrl || page.imageUrl} alt={page.label} className="w-full h-full object-cover" draggable={false} loading="lazy" decoding="async" />
                             </button>
                           ))}
                         </div>
@@ -3877,11 +3932,23 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                             key={page.id}
                             className="border-2 border-white/20 rounded-lg p-2 bg-white/5"
                           >
-                            <img
-                              src={getSecureImageUrl(page.imageUrl) || ''}
-                              alt={`Page ${page.pageNumber}`}
-                              className="w-full h-auto object-cover rounded mb-2"
-                            />
+                            <div
+                              className="w-full overflow-hidden rounded mb-2"
+                              style={{ aspectRatio: yearbook?.detectedAspectRatio || '3/4' }}
+                            >
+                              <img
+                                src={getSecureImageUrl(page.thumbnailUrl || page.imageUrl) || ''}
+                                alt={`Page ${page.pageNumber}`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                decoding="async"
+                                onError={(event) => {
+                                  const image = event.currentTarget;
+                                  image.src = getSecureImageUrl(page.imageUrl) || '';
+                                  image.onerror = null;
+                                }}
+                              />
+                            </div>
                             <div className="text-center">
                               <p className="text-xs text-white/80">
                                 {page.pageType === "front_cover" ? "Front Cover" : page.pageType === "back_cover" ? "Back Cover" : `Page ${page.pageNumber}`}
