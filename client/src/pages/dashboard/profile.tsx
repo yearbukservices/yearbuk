@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const touchStartX = useRef<number | null>(null);
   const memoryZoomRef = useRef<MemoryZoomState>({ scale: 1, offsetX: 0, offsetY: 0 });
   const [memoryZoom, setMemoryZoom] = useState<MemoryZoomState>({ scale: 1, offsetX: 0, offsetY: 0 });
+  const [memoryGestureActive, setMemoryGestureActive] = useState(false);
   const pinchStart = useRef<{ distance: number; zoom: MemoryZoomState } | null>(null);
   const panStart = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   const gestureMode = useRef<"swipe" | "pinch" | "pan" | null>(null);
@@ -49,6 +50,12 @@ export default function ProfilePage() {
     gestureMode.current = null;
   };
 
+  const resetMemoryInteraction = () => {
+    clearMemoryGesture();
+    setMemoryGestureActive(false);
+    resetMemoryZoom();
+  };
+
   const getTouchDistance = (event: ReactTouchEvent) => {
     const firstTouch = event.touches[0];
     const secondTouch = event.touches[1];
@@ -66,6 +73,7 @@ export default function ProfilePage() {
       if (distance > 0) {
         pinchStart.current = { distance, zoom: memoryZoomRef.current };
         gestureMode.current = "pinch";
+        setMemoryGestureActive(true);
         touchStartX.current = null;
         panStart.current = null;
       }
@@ -83,6 +91,7 @@ export default function ProfilePage() {
         offsetY: memoryZoomRef.current.offsetY,
       };
       gestureMode.current = "pan";
+      setMemoryGestureActive(true);
       return;
     }
 
@@ -96,10 +105,10 @@ export default function ProfilePage() {
       const distance = getTouchDistance(event);
       if (!distance) return;
 
-      const nextScale = Math.min(
-        3,
-        Math.max(1, pinchStart.current.zoom.scale * (distance / pinchStart.current.distance)),
-      );
+      const rawScale = pinchStart.current.zoom.scale * (distance / pinchStart.current.distance);
+      const nextScale = rawScale < 1
+        ? 1 - Math.min(0.3, (1 - rawScale) * 0.4)
+        : 1 + Math.min(0.75, (rawScale - 1) * 0.4);
       updateMemoryZoom({ ...pinchStart.current.zoom, scale: nextScale });
       return;
     }
@@ -123,7 +132,7 @@ export default function ProfilePage() {
 
   const handleMemoryTouchEnd = (event: ReactTouchEvent, collection: "posts" | "tagged") => {
     if (pinchStart.current || gestureMode.current === "pan") {
-      clearMemoryGesture();
+      resetMemoryInteraction();
       return;
     }
 
@@ -163,8 +172,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    resetMemoryZoom();
-    clearMemoryGesture();
+    resetMemoryInteraction();
   }, [selectedPostIndex, selectedTaggedIndex]);
 
   useEffect(() => {
@@ -644,7 +652,7 @@ export default function ProfilePage() {
                 onTouchStart={handleMemoryTouchStart}
                 onTouchMove={handleMemoryTouchMove}
                 onTouchEnd={(event) => handleMemoryTouchEnd(event, "posts")}
-                onTouchCancel={clearMemoryGesture}
+                onTouchCancel={resetMemoryInteraction}
               >
                 <div
                   className="flex transition-transform duration-300 ease-out"
@@ -659,7 +667,7 @@ export default function ProfilePage() {
                         style={index === selectedPostIndex ? {
                           transform: "translate(" + memoryZoom.offsetX + "px, " + memoryZoom.offsetY + "px) scale(" + memoryZoom.scale + ")",
                           transformOrigin: "center center",
-                          transition: "transform 50ms linear",
+                          transition: memoryGestureActive ? "none" : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
                           willChange: "transform",
                         } : undefined}
                         draggable={false}
