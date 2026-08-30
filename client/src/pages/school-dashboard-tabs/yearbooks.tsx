@@ -233,8 +233,11 @@ export default function SchoolYearbooks() {
                         Manage
                       </Button>
                     ) : (
-                      <Button 
-                        size="sm" 
+                      <div className="w-full space-y-2">
+                        {!BETA_VERSION && !year.purchased && (
+                          <p className="text-xs text-blue-200">Upload, manage, and sell your yearbooks here</p>
+                        )}
+                        <Button size="sm" 
                         variant="outline"
                         onClick={() => handleBuyYear(year.year)}
                         className={`flex-1 text-white transition-colors hover:text-white ${BETA_VERSION ? 'border-purple-400 bg-purple-600/20 hover:bg-purple-600/30' : 'border-green-400 bg-green-600/20 hover:bg-green-600/30'}`}
@@ -246,6 +249,7 @@ export default function SchoolYearbooks() {
                           <><ShoppingCart className="h-4 w-4 mr-1" />Buy {formatPrice(convertPrice(year.price))}</>
                         )}
                       </Button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -306,8 +310,11 @@ export default function SchoolYearbooks() {
                         Manage
                       </Button>
                     ) : (
-                      <Button 
-                        variant="outline"
+                      <div className="w-full space-y-2">
+                        {!BETA_VERSION && !year.purchased && (
+                          <p className="text-xs text-blue-200">Upload, manage, and sell your yearbooks here</p>
+                        )}
+                        <Button variant="outline"
                         className={`flex-1 text-white transition-colors hover:text-white ${BETA_VERSION ? 'border-purple-400 bg-purple-600/20 hover:bg-purple-600/30' : 'border-green-400 bg-green-600/20 hover:bg-green-600/30'}`}
                         size="sm" 
                         onClick={() => handleBuyYear(year.year)}
@@ -319,6 +326,7 @@ export default function SchoolYearbooks() {
                           <><ShoppingCart className="h-4 w-4 mr-2" />Buy {formatPrice(convertPrice(year.price))}</>
                         )}
                       </Button>
+                      </div>
                     )}
                   </div>
                 </div>
