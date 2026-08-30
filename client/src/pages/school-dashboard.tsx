@@ -401,7 +401,8 @@ const mockMemories = [
         status, 
         price: yearbookPrice, // Use actual yearbook price or fallback
         priceExplicitlySet, // Track if price was explicitly set
-        isFree 
+        isFree,
+        hasYearbookRecord
       };
     }).filter(Boolean); // Remove null entries
   })();
