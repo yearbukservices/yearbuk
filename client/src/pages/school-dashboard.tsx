@@ -338,6 +338,10 @@ const mockMemories = [
   const { data: purchasedYears = [], isLoading: isPurchaseDataLoading } = useQuery({
     queryKey: ["/api/year-purchases", school?.id],
     enabled: !!school,
+    enabled: !!school,
+staleTime: 0,
+    enabled: !!school,
+refetchOnMount: "always",
     queryFn: async () => {
       if (!user?.id) return [];
       const res = await fetch(`/api/year-purchases/school/${school?.id}`);
@@ -350,6 +354,10 @@ const mockMemories = [
   const { data: schoolYearbooks = [] } = useQuery({
     queryKey: ["/api/yearbooks-all", school?.id],
     enabled: !!school,
+    enabled: !!school,
+staleTime: 0,
+    enabled: !!school,
+refetchOnMount: "always",
     queryFn: async () => {
       if (!school?.id) return [];
       const res = await fetch(`/api/yearbooks/${school.id}/all`);
@@ -374,9 +382,9 @@ const mockMemories = [
       if (year < startYear || year > endYear) return null;
     
     // An existing yearbook record is enough to manage that year, even if its purchase row is missing.
-    const yearPurchase = purchasedYears.find((p: any) => p.year === year);
+    const yearPurchase = purchasedYears.find((p: any) => Number(p.year) === Number(year));
     
-    const yearbook = schoolYearbooks.find((yb: any) => yb.year === year);
+    const yearbook = schoolYearbooks.find((yb: any) => Number(yb.year) === Number(year));
     const hasYearbookRecord = !!yearbook;
     const purchased = !!yearPurchase?.purchased || hasYearbookRecord;
     const isFree = yearbook?.isFree || false;
