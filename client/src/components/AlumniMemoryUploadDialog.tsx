@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import ImageCropDialog from "@/components/ImageCropDialog";
 import { useToast } from "@/hooks/use-toast";
 import type { AlumniBadge, School } from "@shared/schema";
 import { CURRENT_YEAR } from "@shared/constants";
@@ -37,6 +38,7 @@ export function AlumniMemoryUploadDialog({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [cropTarget, setCropTarget] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -69,12 +71,46 @@ export function AlumniMemoryUploadDialog({
     setTitle("");
     setDescription("");
     setSelectedFile(null);
+    setCropTarget(null);
     setErrorMessage("");
   }, [open]);
 
   useEffect(() => {
     setYear("");
   }, [schoolId]);
+
+  const createCroppedFile = (originalFile: File, croppedBlob: Blob) => {
+    const baseName = originalFile.name.replace(/\.[^/.]+$/, "");
+    const extension = croppedBlob.type === "image/png" ? "png" : "jpg";
+    return new File([croppedBlob], baseName + "-cropped." + extension, {
+      type: croppedBlob.type || "image/jpeg",
+      lastModified: Date.now(),
+    });
+  };
+
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setErrorMessage("Please choose an image file.");
+      return;
+    }
+
+    setErrorMessage("");
+    setCropTarget(file);
+  };
+
+  const handleCropSave = (croppedBlob: Blob) => {
+    if (!cropTarget) return;
+    setSelectedFile(createCroppedFile(cropTarget, croppedBlob));
+    setCropTarget(null);
+  };
+
+  const handleCropClose = () => {
+    setCropTarget(null);
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -125,7 +161,8 @@ export function AlumniMemoryUploadDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+    <>
+      <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <DialogContent className="w-[calc(100%-1rem)] max-w-lg max-h-[90vh] overflow-y-auto bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl p-4 sm:w-full sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-white">Upload a memory</DialogTitle>
@@ -220,23 +257,34 @@ export function AlumniMemoryUploadDialog({
               id="alumni-upload-file"
               type="file"
               accept="image/*"
-              onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
+              onChange={handleFileSelect}
               className="block w-full text-sm text-white file:mr-3 file:rounded-md file:border-0 file:bg-cyan-500 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-cyan-600"
-              required
             />
-            <p className="text-xs text-white/60">Images up to 100MB are supported.</p>
+            <p className="text-xs text-white/60">Images up to 100MB are supported. You'll crop the image to a square before sending it.</p>
+            {selectedFile && <p className="text-xs text-cyan-200">Square crop ready: {selectedFile.name}</p>}
           </div>
 
           {errorMessage && <p className="text-sm text-red-200">{errorMessage}</p>}
 
           <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="w-full sm:w-auto">Cancel</Button>
-            <Button type="submit" disabled={isSubmitting || verifiedSchools.length === 0} className="w-full bg-cyan-600 hover:bg-cyan-700 sm:w-auto">
+            <Button type="submit" disabled={isSubmitting || !!cropTarget || verifiedSchools.length === 0} className="w-full bg-cyan-600 hover:bg-cyan-700 sm:w-auto">
               {isSubmitting ? "Sending..." : "Send to school"}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
+
+      <ImageCropDialog
+        isOpen={!!cropTarget}
+        imageFile={cropTarget}
+        onClose={handleCropClose}
+        onSave={handleCropSave}
+        aspectRatio={1}
+        cropLabel="memory image"
+        saveButtonText="Use Cropped Image"
+      />
+    </>
   );
 }
