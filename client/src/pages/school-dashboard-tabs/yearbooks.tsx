@@ -82,7 +82,8 @@ export default function SchoolYearbooks() {
       const yearPurchase = purchasedYears.find((p: any) => p.year === year);
       
       const yearbook = schoolYearbooks.find((yb: any) => yb.year === year);
-      const purchased = !!yearPurchase?.purchased || !!yearbook;
+      const hasYearbookRecord = !!yearbook;
+      const purchased = !!yearPurchase?.purchased || hasYearbookRecord;
       const isFree = yearbook?.isFree || false;
       const priceExplicitlySet = yearbook?.price != null;
       const yearbookPrice = yearbook?.price ?? (priceConfig?.schoolYearPrice ?? SCHOOL_YEAR_PRICE);
@@ -209,7 +210,7 @@ export default function SchoolYearbooks() {
                         <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                         Loading...
                       </Button>
-                    ) : year.purchased ? (
+                    ) : year.hasYearbookRecord ? (
                       <Button 
                         size="sm" 
                         variant="outline" 
@@ -277,7 +278,7 @@ export default function SchoolYearbooks() {
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Loading...
                       </Button>
-                    ) : year.purchased ? (
+                    ) : year.hasYearbookRecord ? (
                       <Button 
                          className="flex-1 text-white border-blue-400 bg-blue-600/20 hover:bg-blue-600/30 transition-colors hover:text-white"
                         size="sm" 
