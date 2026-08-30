@@ -84,8 +84,8 @@ export function AlumniMemoryUploadDialog({
       setErrorMessage("Please choose an image to upload.");
       return;
     }
-    if (!schoolId || !year || !category || !title.trim()) {
-      setErrorMessage("Please complete the school, year, category, and title fields.");
+    if (!schoolId || !year || !category) {
+      setErrorMessage("Please complete the school, year, and category fields.");
       return;
     }
 
@@ -199,7 +199,6 @@ export function AlumniMemoryUploadDialog({
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Give your memory a title"
               className="flex h-10 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              required
             />
           </div>
 
