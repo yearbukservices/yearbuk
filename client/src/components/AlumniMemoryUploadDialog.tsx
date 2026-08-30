@@ -247,7 +247,7 @@ export function AlumniMemoryUploadDialog({
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Add some context about this memory"
               rows={3}
-              className="flex w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              className="flex w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-base sm:text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
             />
           </div>
 
