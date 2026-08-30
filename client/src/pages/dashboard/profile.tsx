@@ -54,6 +54,7 @@ export default function ProfilePage() {
   };
   const [showAlumniRequestDialog, setShowAlumniRequestDialog] = useState(false);
   const [showAlumniMemoryUploadDialog, setShowAlumniMemoryUploadDialog] = useState(false);
+  const [deletingMemoryId, setDeletingMemoryId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -140,6 +141,44 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
+
+
+  const canDeleteMemory = (memory: Memory): boolean => memory.userId === user.id;
+
+
+  const handleDeleteMemory = async (memory: Memory) => {
+    if (!canDeleteMemory(memory) || deletingMemoryId) return;
+    if (!window.confirm("Delete this memory? This cannot be undone.")) return;
+    setDeletingMemoryId(memory.id);
+    try {
+      const response = await fetch("/api/memories/" + memory.id, {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + user.id },
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || "Failed to delete memory");
+      }
+      queryClient.setQueryData<Memory[]>(["/api/memories/user", user.id], (memories) =>
+        memories?.filter((item) => item.id !== memory.id),
+      );
+      setSelectedPostIndex(null);
+      toast({
+        title: "Memory deleted",
+        description: "The memory was removed from your profile.",
+      });
+    } catch (error) {
+      toast({
+        title: "Could not delete memory",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingMemoryId(null);
+    }
+  };
+
+
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 
   return (
@@ -189,16 +228,6 @@ export default function ProfilePage() {
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </Button>
-            {hasVerifiedAlumniBadge && (
-              <Button
-                onClick={() => setShowAlumniMemoryUploadDialog(true)}
-                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white"
-                data-testid="button-upload-alumni-memory"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Upload memory
-              </Button>
-            )}
             <Button
               onClick={() => setShowAlumniRequestDialog(true)}
               variant="outline"
@@ -237,24 +266,60 @@ export default function ProfilePage() {
           {/* Posts Tab */}
           {activeTab === "posts" && (
             <div>
-              {publicMemories.length === 0 ? (
+              {publicMemories.length === 0 && !hasVerifiedAlumniBadge ? (
                 <div className="text-center py-12">
                   <Heart className="h-12 w-12 text-white/30 mx-auto mb-4" />
                   <p className="text-white/60">No posts yet</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
+                  {hasVerifiedAlumniBadge && (
+                    <Card
+                      className="bg-white/5 border-white/10 overflow-hidden cursor-pointer hover:bg-white/10 transition-all"
+                      onClick={() => setShowAlumniMemoryUploadDialog(true)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          setShowAlumniMemoryUploadDialog(true);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      data-testid="card-add-alumni-memory"
+                    >
+                      <CardContent className="p-0 aspect-square flex flex-col items-center justify-center gap-2">
+                        <Plus className="h-10 w-10 text-cyan-300" />
+                        <span className="text-xs font-medium text-cyan-100">Upload memory</span>
+                      </CardContent>
+                    </Card>
+                  )}
                   {publicMemories.map((memory, index) => (
-                    <Card 
+                    <Card
                       key={memory.id}
                       className="bg-white/5 border-white/10 overflow-hidden cursor-pointer hover:bg-white/10 transition-all"
                       onClick={() => setSelectedPostIndex(index)}
                       data-testid={`card-memory-${memory.id}`}
                     >
-                      <CardContent className="p-0 aspect-square">
+                      <CardContent className="p-0 aspect-square relative">
+                        {canDeleteMemory(memory) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/60 text-white hover:bg-red-600"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleDeleteMemory(memory);
+                            }}
+                            disabled={deletingMemoryId === memory.id}
+                            aria-label="Delete memory"
+                            data-testid={`button-delete-memory-${memory.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                         {memory.imageUrl ? (
-                          <img 
-                            src={memory.imageUrl} 
+                          <img
+                            src={memory.imageUrl}
                             alt={memory.title}
                             className="w-full h-full object-cover"
                           />
@@ -494,6 +559,20 @@ export default function ProfilePage() {
                 <h3 className="font-semibold text-lg text-white">{publicMemories[selectedPostIndex].title}</h3>
                 {publicMemories[selectedPostIndex].description && (
                   <p className="text-sm text-white/70 mt-2">{publicMemories[selectedPostIndex].description}</p>
+                )}
+                {canDeleteMemory(publicMemories[selectedPostIndex]) && (
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteMemory(publicMemories[selectedPostIndex])}
+                      disabled={deletingMemoryId === publicMemories[selectedPostIndex].id}
+                      data-testid={`button-delete-memory-lightbox-${publicMemories[selectedPostIndex].id}`}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deletingMemoryId === publicMemories[selectedPostIndex].id ? "Deleting..." : "Delete memory"}
+                    </Button>
+                  </div>
                 )}
                 <div className="flex gap-2 mt-3 text-sm text-white/70">
                   {publicMemories[selectedPostIndex].eventDate && (
