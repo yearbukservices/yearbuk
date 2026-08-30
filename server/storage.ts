@@ -70,7 +70,7 @@ import {
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import { eq, and, or, sql, isNotNull, desc, inArray, ilike } from "drizzle-orm";
+import { eq, and, or, sql, isNotNull, desc, inArray, ilike, count, groupBy } from "drizzle-orm";
 import { hashPassword, comparePassword, hashUploadCode, verifyUploadCode } from "./password-utils";
 
 // Database connection - using PostgreSQL with connection pooling
@@ -2150,7 +2150,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getAllYearbooksForSchool(schoolId: string): Promise<{ id: string; year: number; price: string | null; isFree: boolean; isPublished: boolean }[]> {
+  async getAllYearbooksForSchool(schoolId: string): Promise<{ id: string; year: number; price: string | null; isFree: boolean; isPublished: boolean; pageCount: number }[]> {
     const result = await db.select({
       id: yearbooks.id,
       year: yearbooks.year,
@@ -2158,13 +2158,31 @@ export class DatabaseStorage implements IStorage {
       isFree: yearbooks.isFree,
       isPublished: yearbooks.isPublished
     }).from(yearbooks).where(eq(yearbooks.schoolId, schoolId));
+
+    const yearbookIds = result.map((yearbook) => yearbook.id);
+    const pageCounts = yearbookIds.length > 0
+      ? await db.select({
+          yearbookId: yearbookPages.yearbookId,
+          pageCount: count(yearbookPages.id)
+        })
+        .from(yearbookPages)
+        .where(and(
+          inArray(yearbookPages.yearbookId, yearbookIds),
+          eq(yearbookPages.pageType, "content")
+        ))
+        .groupBy(yearbookPages.yearbookId)
+      : [];
+    const pageCountByYearbookId = new Map(
+      pageCounts.map(({ yearbookId, pageCount }) => [yearbookId, pageCount])
+    );
     
     return result.map(yb => ({
       id: yb.id,
       year: yb.year,
       price: yb.price,
       isFree: yb.isFree || false,
-      isPublished: yb.isPublished || false
+      isPublished: yb.isPublished || false,
+      pageCount: pageCountByYearbookId.get(yb.id) ?? 0
     }));
   }
 
