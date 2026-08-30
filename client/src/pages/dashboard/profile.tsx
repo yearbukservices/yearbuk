@@ -55,6 +55,10 @@ export default function ProfilePage() {
   const [showAlumniRequestDialog, setShowAlumniRequestDialog] = useState(false);
   const [showAlumniMemoryUploadDialog, setShowAlumniMemoryUploadDialog] = useState(false);
   const [deletingMemoryId, setDeletingMemoryId] = useState<string | null>(null);
+  const [memoryPendingDeletion, setMemoryPendingDeletion] = useState<{
+    memory: Memory;
+    collection: "posts" | "tagged";
+  } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -149,9 +153,13 @@ export default function ProfilePage() {
   const canDeleteMemory = (memory: Memory): boolean => memory.userId === user.id;
 
 
+  const requestDeleteMemory = (memory: Memory, collection: "posts" | "tagged") => {
+    if (!canDeleteMemory(memory) || deletingMemoryId) return;
+    setMemoryPendingDeletion({ memory, collection });
+  };
+
   const handleDeleteMemory = async (memory: Memory, collection: "posts" | "tagged") => {
     if (!canDeleteMemory(memory) || deletingMemoryId) return;
-    if (!window.confirm("Delete this memory? This cannot be undone.")) return;
     setDeletingMemoryId(memory.id);
     try {
       const response = await fetch("/api/memories/" + memory.id, {
@@ -571,7 +579,7 @@ export default function ProfilePage() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDeleteMemory(publicMemories[selectedPostIndex], "posts")}
+                      onClick={() => requestDeleteMemory(publicMemories[selectedPostIndex], "posts")}
                       disabled={deletingMemoryId === publicMemories[selectedPostIndex].id}
                       data-testid={`button-delete-memory-lightbox-${publicMemories[selectedPostIndex].id}`}
                     >
@@ -666,7 +674,7 @@ export default function ProfilePage() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDeleteMemory(taggedMemories[selectedTaggedIndex], "tagged")}
+                      onClick={() => requestDeleteMemory(taggedMemories[selectedTaggedIndex], "tagged")}
                       disabled={deletingMemoryId === taggedMemories[selectedTaggedIndex].id}
                       data-testid={`button-delete-memory-tagged-lightbox-${taggedMemories[selectedTaggedIndex].id}`}
                     >
@@ -680,6 +688,48 @@ export default function ProfilePage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={memoryPendingDeletion !== null}
+        onOpenChange={(open) => {
+          if (!open && !deletingMemoryId) setMemoryPendingDeletion(null);
+        }}
+      >
+        <AlertDialogContent className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete memory?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/80">
+              Are you sure you want to delete this memory? This action cannot be undone.
+              {memoryPendingDeletion && (
+                <span className="mt-2 block font-medium text-white">
+                  “{memoryPendingDeletion.memory.title}”
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="bg-white/10 border border-white/20 text-white hover:bg-white/20"
+              data-testid="button-cancel-delete-memory"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-memory"
+              onClick={() => {
+                if (!memoryPendingDeletion) return;
+                const pendingDeletion = memoryPendingDeletion;
+                setMemoryPendingDeletion(null);
+                void handleDeleteMemory(pendingDeletion.memory, pendingDeletion.collection);
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete memory
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlumniMemoryUploadDialog
         open={showAlumniMemoryUploadDialog}
