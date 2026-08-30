@@ -57,6 +57,7 @@ export function YearbookConfigDialog({
       year: number; 
       price: string;
       uploadType: string;
+      itemType: "year";
     }) => {
       await apiRequest("POST", "/api/cart", cartData);
     },
@@ -70,6 +71,7 @@ export function YearbookConfigDialog({
         schoolId: newCartItem.schoolId,
         year: newCartItem.year,
         price: newCartItem.price,
+        itemType: "year",
         orientation: '',
         uploadType: newCartItem.uploadType,
         addedAt: new Date()
@@ -218,7 +220,8 @@ export function YearbookConfigDialog({
       schoolId,
       year: parseInt(year),
       price: isFree ? "0.00" : price.toString(),
-      uploadType
+      uploadType,
+      itemType: "year"
     };
 
     addToCartMutation.mutate(cartData);
