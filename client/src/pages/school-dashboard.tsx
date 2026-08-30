@@ -402,7 +402,8 @@ const mockMemories = [
         price: yearbookPrice, // Use actual yearbook price or fallback
         priceExplicitlySet, // Track if price was explicitly set
         isFree,
-        hasYearbookRecord
+        hasYearbookRecord,
+        yearbookId: yearbook?.id
       };
     }).filter(Boolean); // Remove null entries
   })();
@@ -531,9 +532,12 @@ const mockMemories = [
     }
   };
 
-  const handleManageYear = (year: string) => {
-    // Navigate to yearbook management page for purchased year
-    setLocation(`/yearbook-manage/${year}?school=${school?.id}`);
+  const handleManageYear = (year: string, yearbookId?: string) => {
+    // Navigate with the exact yearbook record so management does not need to
+    // re-derive it from a potentially stale school/year combination.
+    const query = new URLSearchParams({ school: school?.id || "" });
+    if (yearbookId) query.set("yearbook", yearbookId);
+    setLocation(`/yearbook-manage/${year}?${query.toString()}`);
   };
 
 
@@ -916,7 +920,7 @@ const mockMemories = [
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              onClick={() => handleManageYear(year.year)}
+                              onClick={() => handleManageYear(year.year, year.yearbookId)}
                               className="flex-1 text-white border-blue-400 bg-blue-600/20 hover:bg-blue-600/30 transition-colors hover:text-white"
                               data-testid={`button-manage-year-${year.year}`}
                             >
