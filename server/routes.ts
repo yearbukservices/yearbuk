@@ -6774,19 +6774,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const cartItems = JSON.parse(paymentRecord.cartItems);
         const userId = paymentRecord.userId;
 
-        // Determine user type to create appropriate purchase records
+        // Fulfill each cart item according to its explicit product type.
+        // Legacy school carts may be labelled "yearbook" because the old UI omitted itemType;
+        // account type keeps those existing school payments on the workspace path.
         const user = await storage.getUserById(userId);
+        if (!user) {
+          throw new Error(`Payment user ${userId} was not found`);
+        }
         
         for (const item of cartItems) {
-          // Check if this is a badge slot purchase
+          // Badge slots are separate from both yearbook products.
           if (item.itemType === 'badge_slot') {
-            // Update user's badge slots
-            const currentSlots = user?.badgeSlots || 4;
+            const currentSlots = user.badgeSlots || 4;
             const newSlots = currentSlots + (item.quantity || 1);
             await storage.updateUser(userId, { badgeSlots: newSlots });
             console.log(`✅ Added ${item.quantity} badge slot(s) to user ${userId}. Total: ${newSlots}`);
-          } else if (user?.userType === "school") {
-            // Create year purchase for school
+          } else if (user.userType === "school" && (item.itemType === 'year' || item.itemType === 'yearbook' || !item.itemType)) {
+            // School accounts purchase workspace years, never viewer library access.
             await storage.createYearPurchase({
               schoolId: item.schoolId,
               year: item.year,
@@ -6796,32 +6800,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
               paymentReference: reference
             });
             
-            // Create or update yearbook with configuration from cart
-            if (item.orientation && item.uploadType) {
+            // Initialize the workspace from the selected upload type. Orientation is optional
+            // in the school setup dialog and can be selected later in yearbook management.
+            if (item.uploadType) {
               const existingYearbook = await storage.getYearbookBySchoolAndYear(item.schoolId, item.year);
               
               if (!existingYearbook) {
-                // Create new yearbook with configuration
                 await storage.createYearbook({
                   schoolId: item.schoolId,
                   year: item.year,
                   title: `${item.year} Yearbook`,
                   isPublished: false,
-                  isInitialized: true, // Mark as initialized since config is set
-                  orientation: item.orientation,
+                  isInitialized: true,
+                  orientation: item.orientation || null,
                   uploadType: item.uploadType
                 });
               } else {
-                // Update existing yearbook with new configuration
                 await storage.updateYearbook(existingYearbook.id, {
-                  orientation: item.orientation,
+                  ...(item.orientation ? { orientation: item.orientation } : {}),
                   uploadType: item.uploadType,
                   isInitialized: true
                 });
               }
             }
-          } else {
-            // Create viewer year purchase
+          } else if (user.userType !== "school" && (item.itemType === 'yearbook' || !item.itemType)) {
+            // Viewer accounts purchase access to an already published yearbook.
             await storage.createViewerYearPurchase({
               userId: userId,
               schoolId: item.schoolId,
@@ -6831,9 +6834,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               purchaseDate: new Date(),
               paymentReference: reference
             });
+          } else {
+            throw new Error(`Invalid cart item type "${item.itemType}" for ${user.userType} account`);
           }
         }
-
+        
         // Clear the user's cart after successful payment
         await storage.clearUserCart(userId);
 
