@@ -3980,6 +3980,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Verified alumni can submit memories to schools where they have an approved badge.
+  app.post("/api/alumni-uploads", upload.single('memoryFile'), async (req, res) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: "No image uploaded" });
+      }
+      if (!file.mimetype.startsWith('image/')) {
+        return res.status(400).json({ message: "Only image uploads are supported" });
+      }
+
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      const userId = authHeader.substring(7);
+      const user = await storage.getUser(userId);
+      if (!user || user.userType !== 'viewer') {
+        return res.status(403).json({ message: "Verified alumni access is required" });
+      }
+
+      const { schoolId, year, category, title, description } = req.body;
+      if (!schoolId || !year || !category || !title?.trim()) {
+        return res.status(400).json({ message: "School, year, category, and title are required" });
+      }
+
+      const school = await storage.getSchool(schoolId);
+      if (!school) {
+        return res.status(404).json({ message: "School not found" });
+      }
+
+      const badges = await storage.getAlumniBadgesByUser(user.id);
+      const hasVerifiedBadge = badges.some((badge) =>
+        badge.status === 'verified' &&
+        badge.school.trim().toLowerCase() === school.name.trim().toLowerCase()
+      );
+      if (!hasVerifiedBadge) {
+        return res.status(403).json({ message: "You need a verified alumni badge for this school" });
+      }
+
+      const selectedYear = Number.parseInt(String(year), 10);
+      const foundingYear = Number(school.yearFounded);
+      if (!Number.isInteger(selectedYear) || selectedYear < foundingYear || selectedYear > CURRENT_YEAR) {
+        return res.status(400).json({ message: "Selected year is outside the school year range" });
+      }
+      const allowedCategories = ['graduation', 'sports', 'arts', 'field_trips', 'academic'];
+      if (!allowedCategories.includes(category)) {
+        return res.status(400).json({ message: "Invalid memory category" });
+      }
+
+      const uploadedFilePath = path.join(process.cwd(), 'public/uploads/memories', file.filename);
+      let mediaUrl: string | null = `/uploads/memories/${file.filename}`;
+      let cloudinaryPublicId: string | null = null;
+      try {
+        const folderPath = generateFolderPath(school.name, school.schoolCode, 'memories', selectedYear);
+        const cloudinaryResult = await uploadToCloudinary(uploadedFilePath, folderPath);
+        mediaUrl = cloudinaryResult.secureUrl;
+        cloudinaryPublicId = cloudinaryResult.publicId;
+        await fs.unlink(uploadedFilePath);
+      } catch (error) {
+        console.error('Failed to upload alumni memory to Cloudinary:', error);
+        try {
+          await fs.unlink(uploadedFilePath);
+        } catch (cleanupError) {
+          console.error('Failed to clean up temporary alumni memory image:', cleanupError);
+        }
+        return res.status(503).json({ message: "Image storage is temporarily unavailable. Please try uploading again." });
+      }
+
+      const memory = await storage.createMemory(insertMemorySchema.parse({
+        schoolId: school.id,
+        title: title.trim(),
+        description: description?.trim() || null,
+        imageUrl: mediaUrl,
+        cloudinaryPublicId,
+        mediaType: 'image',
+        eventDate: String(selectedYear),
+        year: selectedYear,
+        category,
+        tags: [],
+        status: 'pending' as const,
+        uploadedBy: user.fullName || user.username || user.email || 'Alumni',
+        userId: user.id,
+        publicUploadLinkId: null
+      }));
+
+      if (school.adminUserId) {
+        await storage.createNotification({
+          userId: school.adminUserId,
+          type: "memory_uploaded",
+          title: "New Alumni Memory Pending Approval",
+          message: `${user.fullName || user.username || "An alumnus"} uploaded a new memory for ${school.name}`,
+          isRead: false,
+          relatedId: memory.id,
+        });
+      }
+
+      res.status(201).json({ id: memory.id, message: "Memory uploaded successfully and is pending school approval" });
+    } catch (error) {
+      console.error("Error processing alumni upload:", error);
+      res.status(500).json({ message: "Failed to upload memory" });
+    }
+  });
   app.post("/api/public-uploads/:code", upload.single('memoryFile'), async (req, res) => {
     try {
       const { code } = req.params;
