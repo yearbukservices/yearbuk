@@ -110,6 +110,9 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
     [userMemories]
   );
 
+  const getMemorySchoolName = (memory: Memory): string =>
+    schools.find((school) => school.id === memory.schoolId)?.name || "Unknown school";
+
   const getSchoolLogo = (schoolName: string): string | null => {
     const school = schools.find((s) => s.name === schoolName);
     return school?.logo || null;
@@ -445,6 +448,10 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
                     {publicMemories[selectedPostIndex].description}
                   </p>
                 )}
+                <p className="text-sm text-white/70 mt-2">
+                  <span className="font-medium text-white">Uploaded to:</span>{" "}
+                  {getMemorySchoolName(publicMemories[selectedPostIndex])}
+                </p>
               </div>
             </div>
           )}
@@ -515,6 +522,10 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
                     {taggedMemories[selectedTaggedIndex].description}
                   </p>
                 )}
+                <p className="text-sm text-white/70 mt-2">
+                  <span className="font-medium text-white">Uploaded to:</span>{" "}
+                  {getMemorySchoolName(taggedMemories[selectedTaggedIndex])}
+                </p>
               </div>
             </div>
           )}
