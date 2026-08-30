@@ -106,7 +106,8 @@ export default function SchoolYearbooks() {
         price: yearbookPrice,
         priceExplicitlySet,
         isFree,
-        hasYearbookRecord
+        hasYearbookRecord,
+        yearbookId: yearbook?.id
       };
     }).filter(Boolean);
   })();
@@ -120,8 +121,10 @@ export default function SchoolYearbooks() {
     setShowPurchaseOverlay(true);
   };
 
-  const handleManageYear = (year: string) => {
-    setLocation(`/yearbook-manage/${year}?school=${school?.id}`);
+  const handleManageYear = (year: string, yearbookId?: string) => {
+    const query = new URLSearchParams({ school: school?.id || "" });
+    if (yearbookId) query.set("yearbook", yearbookId);
+    setLocation(`/yearbook-manage/${year}?${query.toString()}`);
   };
 
   return (
@@ -219,7 +222,7 @@ export default function SchoolYearbooks() {
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        onClick={() => handleManageYear(year.year)}
+                        onClick={() => handleManageYear(year.year, year.yearbookId)}
                         className="flex-1 text-white border-blue-400 bg-blue-600/20 hover:bg-blue-600/30 transition-colors hover:text-white"
                         data-testid={`button-manage-year-${year.year}`}
                       >
