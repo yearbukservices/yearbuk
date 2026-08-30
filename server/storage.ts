@@ -2270,11 +2270,22 @@ export class DatabaseStorage implements IStorage {
         .set({ isDraft: false })
         .where(and(eq(tableOfContents.yearbookId, yearbookId), eq(tableOfContents.isDraft, true)));
 
-      // Update yearbook draft status
+      // An empty yearbook cannot remain visible to viewer accounts.
+      const publishedContentPages = await db.select({ id: yearbookPages.id })
+        .from(yearbookPages)
+        .where(and(
+          eq(yearbookPages.yearbookId, yearbookId),
+          eq(yearbookPages.pageType, "content"),
+          eq(yearbookPages.status, "published")
+        ));
+      const shouldUnpublish = yearbook.isPublished && publishedContentPages.length === 0;
+
+      // Update yearbook draft status and remove publication access when no pages remain.
       await db.update(yearbooks)
         .set({
           hasUnsavedDrafts: false,
-          lastDraftSaved: new Date()
+          lastDraftSaved: new Date(),
+          ...(shouldUnpublish ? { isPublished: false, publishedAt: null } : {})
         })
         .where(eq(yearbooks.id, yearbookId));
 
@@ -2493,37 +2504,43 @@ export class DatabaseStorage implements IStorage {
 
   // Delegate remaining methods to MemStorage for now
   async getViewerYearPurchases(userId: string, schoolId: string): Promise<ViewerYearPurchase[]> {
-    const result = await db.select().from(viewerYearPurchases).where(
-      and(
-        eq(viewerYearPurchases.userId, userId),
-        eq(viewerYearPurchases.schoolId, schoolId)
-      )
-    );
-    return result;
+    const result = await db.select({ purchase: viewerYearPurchases })
+      .from(viewerYearPurchases)
+      .innerJoin(yearbooks, and(
+        eq(yearbooks.schoolId, viewerYearPurchases.schoolId),
+        eq(yearbooks.year, viewerYearPurchases.year),
+        eq(yearbooks.isPublished, true)
+      ))
+      .where(
+        and(
+          eq(viewerYearPurchases.userId, userId),
+          eq(viewerYearPurchases.schoolId, schoolId)
+        )
+      );
+    return result.map(({ purchase }) => purchase);
   }
 
   async getAllViewerYearPurchases(userId: string): Promise<ViewerYearPurchase[]> {
-    // Get all purchases for this user with school information
-    const purchases = await db.select().from(viewerYearPurchases).where(
-      and(
-        eq(viewerYearPurchases.userId, userId),
-        eq(viewerYearPurchases.purchased, true)
-      )
-    );
-    
-    // Add school information to each purchase for Library display
-    const purchasesWithSchoolInfo = await Promise.all(
-      purchases.map(async (purchase) => {
-        const schoolResults = await db.select().from(schools).where(eq(schools.id, purchase.schoolId));
-        const school = schoolResults[0] || null;
-        return {
-          ...purchase,
-          school: school,
-        };
-      })
-    );
-    
-    return purchasesWithSchoolInfo;
+    // Only show purchases for yearbooks that are still published to viewers.
+    const purchases = await db.select({ purchase: viewerYearPurchases, school: schools })
+      .from(viewerYearPurchases)
+      .innerJoin(yearbooks, and(
+        eq(yearbooks.schoolId, viewerYearPurchases.schoolId),
+        eq(yearbooks.year, viewerYearPurchases.year),
+        eq(yearbooks.isPublished, true)
+      ))
+      .leftJoin(schools, eq(viewerYearPurchases.schoolId, schools.id))
+      .where(
+        and(
+          eq(viewerYearPurchases.userId, userId),
+          eq(viewerYearPurchases.purchased, true)
+        )
+      );
+
+    return purchases.map(({ purchase, school }) => ({
+      ...purchase,
+      school: school || null,
+    }));
   }
 
   async createViewerYearPurchase(purchase: InsertViewerYearPurchase): Promise<ViewerYearPurchase> {
