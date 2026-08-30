@@ -6823,7 +6823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
               }
             }
-          } else if (user.userType !== "school" && (item.itemType === 'yearbook' || !item.itemType)) {
+          } else if (user.userType === "viewer" && (item.itemType === 'yearbook' || !item.itemType)) {
             // Viewer accounts purchase access to an already published yearbook.
             await storage.createViewerYearPurchase({
               userId: userId,
