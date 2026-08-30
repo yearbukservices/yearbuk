@@ -338,7 +338,7 @@ export default function YearbookManage() {
     
   }, [setLocation]);
 
-  const schoolId = schoolIdFromUrl || user?.schoolId || null;
+  const schoolId = user?.schoolId || schoolIdFromUrl || null;
   
   // Add beforeunload warning when uploading or has unsaved changes
   useEffect(() => {
