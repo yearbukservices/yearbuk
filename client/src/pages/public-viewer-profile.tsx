@@ -1,13 +1,13 @@
 import { useState, useMemo, useRef, type TouchEvent as ReactTouchEvent } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { LoginDialog } from "@/components/LoginDialog";
 import logoImage from "@assets/logo_background_null.png";
-import { Award, Heart, ChevronLeft, ChevronRight, X, ArrowLeft } from "lucide-react";
+import { Award, Heart, ChevronLeft, ChevronRight, X, ArrowLeft, Trash2 } from "lucide-react";
 import type { AlumniBadge, Memory, School } from "@shared/schema";
 
 interface PublicUser {
@@ -29,6 +29,7 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
   const [activeTab, setActiveTab] = useState<"posts" | "tagged" | "badges">("posts");
   const [selectedPostIndex, setSelectedPostIndex] = useState<number | null>(null);
   const [selectedTaggedIndex, setSelectedTaggedIndex] = useState<number | null>(null);
+  const [deletingMemoryId, setDeletingMemoryId] = useState<string | null>(null);
   const touchStartX = useRef<number | null>(null);
 
   const handleMemoryTouchStart = (event: ReactTouchEvent) => {
@@ -113,6 +114,54 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
   const getMemorySchoolName = (memory: Memory): string =>
     schools.find((school) => school.id === memory.schoolId)?.name || "Unknown school";
 
+  const queryClient = useQueryClient();
+  const currentUser = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null") as {
+        id?: string; schoolId?: string; userType?: string;
+      } | null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const canDeleteMemory = (memory: Memory): boolean => {
+    if (!currentUser?.id) return false;
+    const isUploader = memory.userId === currentUser.id;
+    const isOwningSchool =
+      (currentUser.userType === "school" || currentUser.userType === "school_admin") &&
+      currentUser.schoolId === memory.schoolId;
+    return isUploader || isOwningSchool;
+  };
+
+  const handleDeleteMemory = async (memory: Memory, collection: "posts" | "tagged") => {
+    if (!canDeleteMemory(memory) || deletingMemoryId || !currentUser?.id) return;
+    if (!window.confirm("Delete this memory? This cannot be undone.")) return;
+    setDeletingMemoryId(memory.id);
+    try {
+      const response = await fetch("/api/memories/" + memory.id, {
+        method: "DELETE",
+        headers: { Authorization: "Bearer " + currentUser.id },
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || "Failed to delete memory");
+      }
+      queryClient.setQueryData<Memory[]>(["/api/memories/user", profileUser?.id], (memories) =>
+        memories?.filter((item) => item.id !== memory.id),
+      );
+      queryClient.setQueryData<Memory[]>(["/api/memories/tagged", profileUser?.id], (memories) =>
+        memories?.filter((item) => item.id !== memory.id),
+      );
+      if (collection === "posts") setSelectedPostIndex(null);
+      else setSelectedTaggedIndex(null);
+    } catch (error) {
+      console.error("Error deleting memory:", error);
+      window.alert(error instanceof Error ? error.message : "Failed to delete memory");
+    } finally {
+      setDeletingMemoryId(null);
+    }
+  };
   const getSchoolLogo = (schoolName: string): string | null => {
     const school = schools.find((s) => s.name === schoolName);
     return school?.logo || null;
@@ -452,6 +501,20 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
                   <span className="font-medium text-white">Uploaded to:</span>{" "}
                   {getMemorySchoolName(publicMemories[selectedPostIndex])}
                 </p>
+                {canDeleteMemory(publicMemories[selectedPostIndex]) && (
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteMemory(publicMemories[selectedPostIndex], "posts")}
+                      disabled={deletingMemoryId === publicMemories[selectedPostIndex].id}
+                      data-testid={`button-delete-memory-${publicMemories[selectedPostIndex].id}`}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deletingMemoryId === publicMemories[selectedPostIndex].id ? "Deleting..." : "Delete memory"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -526,6 +589,20 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
                   <span className="font-medium text-white">Uploaded to:</span>{" "}
                   {getMemorySchoolName(taggedMemories[selectedTaggedIndex])}
                 </p>
+                {canDeleteMemory(taggedMemories[selectedTaggedIndex]) && (
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteMemory(taggedMemories[selectedTaggedIndex], "tagged")}
+                      disabled={deletingMemoryId === taggedMemories[selectedTaggedIndex].id}
+                      data-testid={`button-delete-memory-tagged-${taggedMemories[selectedTaggedIndex].id}`}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deletingMemoryId === taggedMemories[selectedTaggedIndex].id ? "Deleting..." : "Delete memory"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
