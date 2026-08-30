@@ -14,6 +14,12 @@ import { useToast } from "@/hooks/use-toast";
 import AlumniRequestDialog from "@/components/AlumniRequestDialog";
 import { AlumniMemoryUploadDialog } from "@/components/AlumniMemoryUploadDialog";
 
+type MemoryZoomState = {
+  scale: number;
+  offsetX: number;
+  offsetY: number;
+};
+
 export default function ProfilePage() {
   const [, setLocation] = useLocation();
   const [user, setUser] = useState<UserType | null>(null);
@@ -21,21 +27,116 @@ export default function ProfilePage() {
   const [selectedPostIndex, setSelectedPostIndex] = useState<number | null>(null);
   const [selectedTaggedIndex, setSelectedTaggedIndex] = useState<number | null>(null);
   const touchStartX = useRef<number | null>(null);
+  const memoryZoomRef = useRef<MemoryZoomState>({ scale: 1, offsetX: 0, offsetY: 0 });
+  const [memoryZoom, setMemoryZoom] = useState<MemoryZoomState>({ scale: 1, offsetX: 0, offsetY: 0 });
+  const pinchStart = useRef<{ distance: number; zoom: MemoryZoomState } | null>(null);
+  const panStart = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
+  const gestureMode = useRef<"swipe" | "pinch" | "pan" | null>(null);
+
+  const updateMemoryZoom = (nextZoom: MemoryZoomState) => {
+    memoryZoomRef.current = nextZoom;
+    setMemoryZoom(nextZoom);
+  };
+
+  const resetMemoryZoom = () => {
+    updateMemoryZoom({ scale: 1, offsetX: 0, offsetY: 0 });
+  };
+
+  const clearMemoryGesture = () => {
+    touchStartX.current = null;
+    pinchStart.current = null;
+    panStart.current = null;
+    gestureMode.current = null;
+  };
+
+  const getTouchDistance = (event: ReactTouchEvent) => {
+    const firstTouch = event.touches[0];
+    const secondTouch = event.touches[1];
+    if (!firstTouch || !secondTouch) return 0;
+
+    return Math.hypot(
+      secondTouch.clientX - firstTouch.clientX,
+      secondTouch.clientY - firstTouch.clientY,
+    );
+  };
 
   const handleMemoryTouchStart = (event: ReactTouchEvent) => {
-    touchStartX.current = event.touches[0]?.clientX ?? null;
+    if (event.touches.length >= 2) {
+      const distance = getTouchDistance(event);
+      if (distance > 0) {
+        pinchStart.current = { distance, zoom: memoryZoomRef.current };
+        gestureMode.current = "pinch";
+        touchStartX.current = null;
+        panStart.current = null;
+      }
+      return;
+    }
+
+    const touch = event.touches[0];
+    if (!touch) return;
+
+    if (memoryZoomRef.current.scale > 1) {
+      panStart.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        offsetX: memoryZoomRef.current.offsetX,
+        offsetY: memoryZoomRef.current.offsetY,
+      };
+      gestureMode.current = "pan";
+      return;
+    }
+
+    touchStartX.current = touch.clientX;
+    gestureMode.current = "swipe";
+  };
+
+  const handleMemoryTouchMove = (event: ReactTouchEvent) => {
+    if (event.touches.length >= 2 && pinchStart.current) {
+      event.preventDefault();
+      const distance = getTouchDistance(event);
+      if (!distance) return;
+
+      const nextScale = Math.min(
+        3,
+        Math.max(1, pinchStart.current.zoom.scale * (distance / pinchStart.current.distance)),
+      );
+      updateMemoryZoom({ ...pinchStart.current.zoom, scale: nextScale });
+      return;
+    }
+
+    if (gestureMode.current === "pan" && panStart.current && event.touches[0]) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      const zoom = memoryZoomRef.current;
+      const maxOffsetX = (window.innerWidth * (zoom.scale - 1)) / 2;
+      const maxOffsetY = (window.innerHeight * (zoom.scale - 1)) / 2;
+      const nextOffsetX = panStart.current.offsetX + touch.clientX - panStart.current.x;
+      const nextOffsetY = panStart.current.offsetY + touch.clientY - panStart.current.y;
+
+      updateMemoryZoom({
+        ...zoom,
+        offsetX: Math.min(maxOffsetX, Math.max(-maxOffsetX, nextOffsetX)),
+        offsetY: Math.min(maxOffsetY, Math.max(-maxOffsetY, nextOffsetY)),
+      });
+    }
   };
 
   const handleMemoryTouchEnd = (event: ReactTouchEvent, collection: "posts" | "tagged") => {
+    if (pinchStart.current || gestureMode.current === "pan") {
+      clearMemoryGesture();
+      return;
+    }
+
     const startX = touchStartX.current;
     const endX = event.changedTouches[0]?.clientX;
-    touchStartX.current = null;
+    clearMemoryGesture();
 
-    if (startX === null || endX === undefined) return;
+    if (startX === null || endX === undefined || memoryZoomRef.current.scale > 1) return;
 
     const distance = startX - endX;
     if (Math.abs(distance) < 50) return;
 
+    resetMemoryZoom();
     if (collection === "posts") {
       setSelectedPostIndex(current => {
         if (current === null) return current;
@@ -60,6 +161,11 @@ export default function ProfilePage() {
     collection: "posts" | "tagged";
   } | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    resetMemoryZoom();
+    clearMemoryGesture();
+  }, [selectedPostIndex, selectedTaggedIndex]);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -534,20 +640,28 @@ export default function ProfilePage() {
               )}
               <div
                 className="overflow-hidden"
-                style={{ touchAction: "pan-y" }}
+                style={{ touchAction: "none" }}
                 onTouchStart={handleMemoryTouchStart}
+                onTouchMove={handleMemoryTouchMove}
                 onTouchEnd={(event) => handleMemoryTouchEnd(event, "posts")}
+                onTouchCancel={clearMemoryGesture}
               >
                 <div
                   className="flex transition-transform duration-300 ease-out"
                   style={{ transform: `translateX(-${selectedPostIndex * 100}%)` }}
                 >
-                  {publicMemories.map((memory) => (
+                  {publicMemories.map((memory, index) => (
                     <div key={memory.id} className="w-full flex-shrink-0">
                       <img
                         src={memory.imageUrl || ''}
                         alt={memory.title}
                         className="w-full h-auto max-h-[70vh] object-contain select-none pointer-events-none"
+                        style={index === selectedPostIndex ? {
+                          transform: "translate(" + memoryZoom.offsetX + "px, " + memoryZoom.offsetY + "px) scale(" + memoryZoom.scale + ")",
+                          transformOrigin: "center center",
+                          transition: "transform 50ms linear",
+                          willChange: "transform",
+                        } : undefined}
                         draggable={false}
                       />
                     </div>
@@ -629,20 +743,28 @@ export default function ProfilePage() {
               )}
               <div
                 className="overflow-hidden"
-                style={{ touchAction: "pan-y" }}
+                style={{ touchAction: "none" }}
                 onTouchStart={handleMemoryTouchStart}
+                onTouchMove={handleMemoryTouchMove}
                 onTouchEnd={(event) => handleMemoryTouchEnd(event, "tagged")}
+                onTouchCancel={clearMemoryGesture}
               >
                 <div
                   className="flex transition-transform duration-300 ease-out"
                   style={{ transform: `translateX(-${selectedTaggedIndex * 100}%)` }}
                 >
-                  {taggedMemories.map((memory) => (
+                  {taggedMemories.map((memory, index) => (
                     <div key={memory.id} className="w-full flex-shrink-0">
                       <img
                         src={memory.imageUrl || ''}
                         alt={memory.title}
                         className="w-full h-auto max-h-[70vh] object-contain select-none pointer-events-none"
+                        style={index === selectedTaggedIndex ? {
+                          transform: "translate(" + memoryZoom.offsetX + "px, " + memoryZoom.offsetY + "px) scale(" + memoryZoom.scale + ")",
+                          transformOrigin: "center center",
+                          transition: "transform 50ms linear",
+                          willChange: "transform",
+                        } : undefined}
                         draggable={false}
                       />
                     </div>
