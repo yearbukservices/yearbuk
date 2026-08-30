@@ -2472,22 +2472,25 @@ export class DatabaseStorage implements IStorage {
       and(eq(yearbooks.schoolId, schoolId), eq(yearbooks.isPublished, true))
     );
     
-    // Fetch front cover URLs for all yearbooks
+    // Only expose published yearbooks that still have at least one page.
+    // A school can delete every page after publishing, and viewers should not see
+    // a card that cannot be opened or purchased.
     const yearbookIds = result.map(y => y.id);
-    const frontCovers = yearbookIds.length > 0 ? await db.select({
+    const remainingPages = yearbookIds.length > 0 ? await db.select({
       yearbookId: yearbookPages.yearbookId,
+      pageType: yearbookPages.pageType,
       imageUrl: yearbookPages.imageUrl
     }).from(yearbookPages).where(
-      and(
-        inArray(yearbookPages.yearbookId, yearbookIds),
-        eq(yearbookPages.pageType, 'front_cover')
-      )
+      inArray(yearbookPages.yearbookId, yearbookIds)
     ) : [];
+    const yearbookIdsWithPages = new Set(remainingPages.map(page => page.yearbookId));
+    const frontCoverMap = new Map(
+      remainingPages
+        .filter(page => page.pageType === 'front_cover')
+        .map(page => [page.yearbookId, page.imageUrl])
+    );
     
-    // Create a map for easy lookup
-    const frontCoverMap = new Map(frontCovers.map(fc => [fc.yearbookId, fc.imageUrl]));
-    
-    return result.map(yearbook => ({ 
+    return result.filter(yearbook => yearbookIdsWithPages.has(yearbook.id)).map(yearbook => ({ 
       id: yearbook.id,
       year: yearbook.year,
       title: yearbook.title,
