@@ -3657,7 +3657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete/deny a memory (requires school admin authentication)
+  // Delete a memory when requested by its uploader or owning school account
   app.delete("/api/memories/:memoryId", async (req, res) => {
     try {
       const { memoryId } = req.params;
@@ -3670,25 +3670,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userId = authHeader.substring(7);
       const user = await storage.getUser(userId);
-      
-      if (!user || (user.userType !== 'school_admin' && user.userType !== 'school' && user.userType !== 'super_admin')) {
-        return res.status(403).json({ message: "School admin privileges required" });
+      if (!user) {
+        return res.status(403).json({ message: "Access denied" });
       }
 
-      // Get the memory to verify school ownership
       const memory = await storage.getMemoryById(memoryId);
       if (!memory) {
         return res.status(404).json({ message: "Memory not found" });
       }
 
-      // For school admins, verify they can access the school that owns this memory
+      const isUploader = memory.userId === user.id;
+      let isOwningSchool = false;
       if (user.userType === 'school_admin' || user.userType === 'school') {
         const userSchool = await storage.getSchoolByAdminUserId(userId);
-        if (!userSchool || userSchool.id !== memory.schoolId) {
-          return res.status(403).json({ message: "Access denied for this school" });
-        }
+        isOwningSchool = user.schoolId === memory.schoolId || userSchool?.id === memory.schoolId;
       }
-
+      if (!isUploader && !isOwningSchool) {
+        return res.status(403).json({ message: "Only the uploader or owning school can delete this memory" });
+      }
       // Remove durable Cloudinary assets and any remaining local files.
       const fs = await import('fs');
       const path = await import('path');
