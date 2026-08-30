@@ -1,4 +1,4 @@
-import { generateWatermarkedUrl, generateSignedUrl } from './cloudinary-config';
+import { generateCloudinaryUrl, generateWatermarkedUrl, generateSignedUrl } from './cloudinary-config';
 
 export interface WatermarkOptions {
   applyWatermark: boolean;
