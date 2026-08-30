@@ -67,6 +67,7 @@ interface User {
   username: string;
   userType: "school" | "viewer" | "student";
   fullName: string;
+  schoolId?: string;
 }
 
 interface School {
@@ -225,7 +226,7 @@ export default function YearbookManage() {
   }, [activePageId]);
   
   const year = params?.year;
-  const schoolId = new URLSearchParams(window.location.search).get("school");
+  const schoolIdFromUrl = new URLSearchParams(window.location.search).get("school");
   
   const [user, setUser] = useState<User | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -336,6 +337,8 @@ export default function YearbookManage() {
     }
     
   }, [setLocation]);
+
+  const schoolId = schoolIdFromUrl || user?.schoolId || null;
   
   // Add beforeunload warning when uploading or has unsaved changes
   useEffect(() => {
