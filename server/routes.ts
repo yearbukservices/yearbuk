@@ -5732,9 +5732,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const yearsList = [];
       
       for (let year = school.yearFounded; year <= CURRENT_YEAR; year++) {
-        const existingPurchase = purchases.find(p => p.year === year);
+        const existingPurchase = purchases.find(p => Number(p.year) === Number(year));
         yearsList.push({
-          year,
+          year: Number(year),
           id: existingPurchase?.id || null,
           purchased: existingPurchase?.purchased || false,
           purchaseDate: existingPurchase?.purchaseDate || null,
@@ -5805,7 +5805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if a purchase record exists for this school/year
       const purchases = await storage.getYearPurchasesBySchool(schoolId);
-      let existingPurchase = purchases.find(p => p.year === year);
+      let existingPurchase = purchases.find(p => Number(p.year) === Number(year));
       
       if (existingPurchase) {
         // Update existing purchase record
