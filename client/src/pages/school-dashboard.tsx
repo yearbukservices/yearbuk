@@ -377,7 +377,8 @@ const mockMemories = [
     const yearPurchase = purchasedYears.find((p: any) => p.year === year);
     
     const yearbook = schoolYearbooks.find((yb: any) => yb.year === year);
-    const purchased = !!yearPurchase?.purchased || !!yearbook;
+    const hasYearbookRecord = !!yearbook;
+    const purchased = !!yearPurchase?.purchased || hasYearbookRecord;
     const isFree = yearbook?.isFree || false;
     const priceExplicitlySet = yearbook?.price != null; // Check if price was explicitly set
     // Only use yearbook price if explicitly set, otherwise use system default for non-purchased years
@@ -906,7 +907,7 @@ const mockMemories = [
                               <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                               Loading...
                             </Button>
-                          ) : year.purchased ? (
+                          ) : year.hasYearbookRecord ? (
                             <Button 
                               size="sm" 
                               variant="outline" 
@@ -972,7 +973,7 @@ const mockMemories = [
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               Loading...
                             </Button>
-                          ) : year.purchased ? (
+                          ) : year.hasYearbookRecord ? (
                             <Button 
                                className="flex-1 text-white border-blue-400 bg-blue-600/20 hover:bg-blue-600/30 transition-colors hover:text-white"
                               size="sm" 
