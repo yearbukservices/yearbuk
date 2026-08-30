@@ -226,7 +226,9 @@ export default function YearbookManage() {
   }, [activePageId]);
   
   const year = params?.year;
-  const schoolIdFromUrl = new URLSearchParams(window.location.search).get("school");
+  const searchParams = new URLSearchParams(window.location.search);
+  const schoolIdFromUrl = searchParams.get("school");
+  const yearbookIdFromUrl = searchParams.get("yearbook");
   
   const [user, setUser] = useState<User | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -431,7 +433,7 @@ export default function YearbookManage() {
 
   // Fetch yearbook data
   const { data: yearbook, isLoading, error: yearbookError } = useQuery<Yearbook>({
-    queryKey: ["/api/yearbooks", schoolId, year],
+    queryKey: ["/api/yearbooks", schoolId, year, yearbookIdFromUrl],
     enabled: !!schoolId && !!year,
     queryFn: async () => {
       let userId: string | null = null;
@@ -440,8 +442,11 @@ export default function YearbookManage() {
       } catch {
         userId = null;
       }
-      const userParam = userId ? `?userId=${encodeURIComponent(userId)}` : "";
-      const res = await fetch(`/api/yearbooks/${schoolId}/${year}${userParam}`);
+      const queryParams = new URLSearchParams();
+      if (userId) queryParams.set("userId", userId);
+      if (yearbookIdFromUrl) queryParams.set("yearbookId", yearbookIdFromUrl);
+      const queryString = queryParams.toString();
+      const res = await fetch(`/api/yearbooks/${schoolId}/${year}${queryString ? `?${queryString}` : ""}`);
       if (!res.ok) {
         throw new Error("Yearbook not found. Please purchase this year first.");
       }
