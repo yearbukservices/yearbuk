@@ -6481,7 +6481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize payment with Paystack (with revenue sharing)
   app.post("/api/payments/initialize", async (req, res) => {
     try {
-      const { email, firstName, lastName, phone, amount, cartItems, userId } = req.body;
+      const { email, firstName, lastName, phone, amount, cartItems, userId, returnPath } = req.body;
       
       // Validate required fields - lastName is optional for school accounts
       if (!email || !firstName || !phone || !amount || !cartItems || !userId) {
@@ -6589,10 +6589,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paystackFirstName = cleanFirstName || 'Customer';
       const paystackLastName = cleanLastName || 'Account';
       
-      // Determine the callback domain based on environment
-      // Priority: APP_DOMAIN (universal) > REPLIT_DEV_DOMAIN (Replit) > localhost (fallback)
-      const callbackDomain = process.env.APP_DOMAIN || process.env.REPLIT_DEV_DOMAIN || 'localhost';
-      const callbackUrl = `https://${callbackDomain}/api/payments/verify/${reference}`;
+      // Build the callback from the same normalized public app URL used for redirects.
+      const callbackBaseUrl = getAppBaseUrl(req);
+      const callbackUrl = `${callbackBaseUrl}/api/payments/verify/${encodeURIComponent(reference)}`;
+      const safeReturnPath = typeof returnPath === 'string' && returnPath.startsWith('/') && !returnPath.startsWith('//')
+        ? returnPath
+        : '/cart';
       
       // Log payment initialization details in development
       if (process.env.NODE_ENV === 'development') {
@@ -6625,6 +6627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cart_items: cartItems.length,
           user_id: userId,
           school_id: schoolId,
+          return_path: safeReturnPath,
           platform_amount: platformAmount,
           school_amount: schoolAmount,
           items: cartItems.map((item: any) => ({
@@ -6736,9 +6739,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Determine redirect domain (same logic as callback_url)
-      const redirectDomain = process.env.APP_DOMAIN || process.env.REPLIT_DEV_DOMAIN || 'localhost:5000';
-      const redirectProtocol = redirectDomain.includes('localhost') ? 'http' : 'https';
+      // Use the original in-app route after verification, defaulting to the cart.
+      const appBaseUrl = getAppBaseUrl(req);
+      const safeReturnPath = typeof paymentData.metadata?.return_path === 'string' &&
+        paymentData.metadata.return_path.startsWith('/') &&
+        !paymentData.metadata.return_path.startsWith('//')
+        ? paymentData.metadata.return_path
+        : '/cart';
+      const [pathAndQuery, hashFragment = ''] = safeReturnPath.split('#', 2);
+      const buildPaymentRedirectUrl = (status: 'success' | 'failed') => {
+        const separator = pathAndQuery.includes('?') ? '&' : '?';
+        const hash = hashFragment ? `#${hashFragment}` : '';
+        return `${appBaseUrl}${pathAndQuery}${separator}payment=${status}&reference=${encodeURIComponent(reference)}${hash}`;
+      };
       
       // Log payment verification details in development
       if (process.env.NODE_ENV === 'development') {
@@ -6746,8 +6759,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reference,
           status: paymentData.status,
           gateway_response: paymentData.gateway_response,
-          redirectDomain,
-          redirectProtocol
+          appBaseUrl,
+          safeReturnPath
         });
       }
 
@@ -6825,7 +6838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.clearUserCart(userId);
 
         // Redirect to success page
-        const successUrl = `${redirectProtocol}://${redirectDomain}/cart?payment=success&reference=${reference}`;
+        const successUrl = buildPaymentRedirectUrl('success');
         console.log('✅ Payment successful, redirecting to:', successUrl);
         res.redirect(successUrl);
       } else {
@@ -6833,7 +6846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updatePaymentStatus(reference, 'failed');
         
         // Redirect to failure page
-        const failureUrl = `${redirectProtocol}://${redirectDomain}/cart?payment=failed&reference=${reference}`;
+        const failureUrl = buildPaymentRedirectUrl('failed');
         console.log('❌ Payment failed, redirecting to:', failureUrl);
         res.redirect(failureUrl);
       }
