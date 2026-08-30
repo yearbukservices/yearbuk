@@ -63,6 +63,23 @@ function NavigationHistorySync() {
   return null;
 }
 
+function PaymentCallbackHandler() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get("payment");
+    const reference = params.get("reference") || params.get("trxref");
+
+    // A verified callback is already being displayed by the destination page.
+    if (paymentStatus || !reference) return;
+
+    // Fallback for transactions whose Paystack dashboard callback still points
+    // at the app instead of the backend verifier.
+    window.location.replace(`/api/payments/verify/${encodeURIComponent(reference)}`);
+  }, []);
+
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -177,6 +194,7 @@ function App() {
             <NavigationHistorySync />
             <PageTitleManager />
             <YearbookProtection />
+            <PaymentCallbackHandler />
             <Toaster />
             <Router />
           </TooltipProvider>
