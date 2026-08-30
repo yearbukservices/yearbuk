@@ -92,12 +92,9 @@ export default function SchoolYearbooks() {
       const priceExplicitlySet = yearbook?.price != null;
       const yearbookPrice = yearbook?.price ?? (priceConfig?.schoolYearPrice ?? SCHOOL_YEAR_PRICE);
       
-      let status;
-      if (purchased) {
-        status = year === currentYear ? "Active" : "Archived";
-      } else {
-        status = "Available";
-      }
+      const status = purchased
+        ? (yearbook?.isPublished ? "Published" : "Not Published")
+        : "Available";
       
       return { 
         year: year.toString(), 
@@ -189,11 +186,11 @@ export default function SchoolYearbooks() {
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-white">{year.year}</h3>
                     <span className={`px-2 py-1 text-xs rounded-full ${
-                      year.status === "Active" 
-                        ? "bg-green-100 text-green-800" 
-                        : year.status === "Archived"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-gray-100 text-gray-800"
+                      year.status === "Published"
+                         ? "bg-green-100 text-green-800"
+                         : year.status === "Not Published"
+                         ? "bg-amber-100 text-amber-800"
+                         : "bg-gray-100 text-gray-800"
                     }`}>
                       {year.status}
                     </span>
@@ -258,11 +255,11 @@ export default function SchoolYearbooks() {
                     </div>
                     <div className="flex items-center space-x-3">
                       <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        year.status === "Active" 
-                          ? "bg-green-100 text-green-800" 
-                          : year.status === "Archived"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-gray-100 text-gray-800"
+                        year.status === "Published"
+                           ? "bg-green-100 text-green-800"
+                           : year.status === "Not Published"
+                           ? "bg-amber-100 text-amber-800"
+                           : "bg-gray-100 text-gray-800"
                       }`}>
                         {year.status}
                       </span>
