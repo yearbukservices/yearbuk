@@ -6609,6 +6609,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: totalAmountKobo,
         reference,
         currency: 'NGN',
+        // Use the backend verifier as the transaction callback instead of relying on
+        // the Paystack dashboard callback, which may send users to the home page.
+        callback_url: `${getAppBaseUrl(req)}/api/payments/verify`,
         metadata: {
           cart_items: cartItems.length,
           user_id: userId,
@@ -6743,6 +6746,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const hash = hashFragment ? `#${hashFragment}` : '';
         return `${appBaseUrl}${pathAndQuery}${separator}payment=${status}&reference=${encodeURIComponent(reference)}${hash}`;
       };
+
+      // Paystack may retry callbacks, and users may refresh the callback URL.
+      // Do not create duplicate year-purchase rows for an already processed payment.
+      if (paymentRecord.status === 'success') {
+        return res.redirect(buildPaymentRedirectUrl('success'));
+      }
       
       // Log payment verification details in development
       if (process.env.NODE_ENV === 'development') {
