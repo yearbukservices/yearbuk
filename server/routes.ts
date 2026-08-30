@@ -4002,8 +4002,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { schoolId, year, category, title, description } = req.body;
-      if (!schoolId || !year || !category || !title?.trim()) {
-        return res.status(400).json({ message: "School, year, category, and title are required" });
+      if (!schoolId || !year || !category) {
+        return res.status(400).json({ message: "School, year, and category are required" });
       }
 
       const school = await storage.getSchool(schoolId);
@@ -4051,7 +4051,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const memory = await storage.createMemory(insertMemorySchema.parse({
         schoolId: school.id,
-        title: title.trim(),
+        title: title?.trim() || "Untitled",
         description: description?.trim() || null,
         imageUrl: mediaUrl,
         cloudinaryPublicId,
