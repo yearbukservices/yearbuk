@@ -300,23 +300,7 @@ export default function ProfilePage() {
                       onClick={() => setSelectedPostIndex(index)}
                       data-testid={`card-memory-${memory.id}`}
                     >
-                      <CardContent className="p-0 aspect-square relative">
-                        {canDeleteMemory(memory) && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/60 text-white hover:bg-red-600"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleDeleteMemory(memory);
-                            }}
-                            disabled={deletingMemoryId === memory.id}
-                            aria-label="Delete memory"
-                            data-testid={`button-delete-memory-${memory.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                      <CardContent className="p-0 aspect-square">
                         {memory.imageUrl ? (
                           <img
                             src={memory.imageUrl}
