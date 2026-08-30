@@ -2150,19 +2150,21 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getAllYearbooksForSchool(schoolId: string): Promise<{ id: string; year: number; price: string | null; isFree: boolean }[]> {
+  async getAllYearbooksForSchool(schoolId: string): Promise<{ id: string; year: number; price: string | null; isFree: boolean; isPublished: boolean }[]> {
     const result = await db.select({
       id: yearbooks.id,
       year: yearbooks.year,
       price: yearbooks.price,
-      isFree: yearbooks.isFree
+      isFree: yearbooks.isFree,
+      isPublished: yearbooks.isPublished
     }).from(yearbooks).where(eq(yearbooks.schoolId, schoolId));
     
     return result.map(yb => ({
       id: yb.id,
       year: yb.year,
       price: yb.price,
-      isFree: yb.isFree || false
+      isFree: yb.isFree || false,
+      isPublished: yb.isPublished || false
     }));
   }
 
