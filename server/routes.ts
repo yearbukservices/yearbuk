@@ -8,7 +8,7 @@ import * as fsSync from "fs";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { storage } from "./storage";
-import { insertUserSchema, insertSchoolSchema, insertMemorySchema, insertPublicUploadLinkSchema, insertSchoolGalleryImageSchema, insertRecentSearchSchema, passwordResetTokens, users, yearbooks, yearbookPages } from "@shared/schema";
+import { insertUserSchema, insertSchoolSchema, insertMemorySchema, insertPublicUploadLinkSchema, insertSchoolGalleryImageSchema, insertRecentSearchSchema, passwordResetTokens, users, yearbooks, yearbookPages, tableOfContents } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
@@ -4351,9 +4351,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid or missing year parameter" });
       }
       
-      const yearbook = await storage.getYearbookBySchoolAndYear(schoolId, validYear);
-      if (!yearbook) {
+      const requestedYearbookId = typeof req.query.yearbookId === "string"
+        ? req.query.yearbookId.trim()
+        : "";
+      const yearbook = requestedYearbookId
+        ? await storage.getYearbookById(requestedYearbookId)
+        : await storage.getYearbookBySchoolAndYear(schoolId, validYear);
+
+      // Prefer the exact record from the list page, but verify it still belongs
+      // to the requested school/year before returning any management data.
+      if (!yearbook || yearbook.schoolId !== schoolId || Number(yearbook.year) !== validYear) {
         return res.status(404).json({ message: "Yearbook not found" });
+      }
+
+      // getYearbookById intentionally returns the base record. Hydrate related
+      // data here when the stable-ID lookup is used.
+      if (requestedYearbookId) {
+        const [pages, tocItems] = await Promise.all([
+          storage.getYearbookPages(yearbook.id),
+          db.select().from(tableOfContents).where(eq(tableOfContents.yearbookId, yearbook.id))
+        ]);
+        Object.assign(yearbook, {
+          pages: pages.sort((a, b) => a.pageNumber - b.pageNumber),
+          tableOfContents: tocItems.sort((a, b) => a.pageNumber - b.pageNumber)
+        });
       }
       
       // Resolve original and grid-sized signed URLs together. The client keeps
