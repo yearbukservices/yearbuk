@@ -432,8 +432,9 @@ export default function YearbookManage() {
   };
 
   // Fetch yearbook data
+  const yearbookQueryKey = ["/api/yearbooks", schoolId, year, yearbookIdFromUrl] as const;
   const { data: yearbook, isLoading, error: yearbookError } = useQuery<Yearbook>({
-    queryKey: ["/api/yearbooks", schoolId, year, yearbookIdFromUrl],
+    queryKey: yearbookQueryKey,
     enabled: !!schoolId && !!year,
     queryFn: async () => {
       let userId: string | null = null;
@@ -448,7 +449,14 @@ export default function YearbookManage() {
       const queryString = queryParams.toString();
       const res = await fetch(`/api/yearbooks/${schoolId}/${year}${queryString ? `?${queryString}` : ""}`);
       if (!res.ok) {
-        throw new Error("Yearbook not found. Please purchase this year first.");
+        const errorData = await res.json().catch(() => ({}));
+        const loadError = new Error(
+          typeof errorData?.message === "string"
+            ? errorData.message
+            : `Failed to load yearbook (HTTP ${res.status}).`
+        ) as Error & { status?: number };
+        loadError.status = res.status;
+        throw loadError;
       }
       return res.json();
     },
@@ -820,7 +828,7 @@ export default function YearbookManage() {
       // For content pages, only refresh for unpublished yearbooks
       const isCover = variables.pageType === "front_cover" || variables.pageType === "back_cover";
       if (isCover || !yearbook?.isPublished) {
-        queryClient.invalidateQueries({ queryKey: ["/api/yearbooks", schoolId, year] });
+        queryClient.invalidateQueries({ queryKey: yearbookQueryKey });
       }
       
       // Reset PDF processing state
@@ -2834,6 +2842,10 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
     return <div className="p-4">Loading yearbook...</div>;
   }
 
+  const loadError = yearbookError as (Error & { status?: number }) | null;
+  const isMissingYearbook = loadError?.status === 404;
+  const loadErrorMessage = loadError?.message || "We couldn't load this yearbook. Please try again.";
+
   if (yearbookError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
@@ -2841,12 +2853,14 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
           <CardHeader>
             <CardTitle className="text-xl text-white flex items-center gap-2">
               <Home className="h-6 w-6 text-purple-400" />
-              Yearbook unavailable
+              {isMissingYearbook ? "Yearbook unavailable" : "Unable to load yearbook"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             <p className="text-white/70 text-sm">
-              We couldn't load the {year} yearbook. Return to Yearbooks to choose another year.
+              {isMissingYearbook
+                ? `We couldn't load the ${year} yearbook. Return to Yearbooks to choose another year.`
+                : loadErrorMessage}
             </p>
             <Button
               onClick={handleBackNavigation}
