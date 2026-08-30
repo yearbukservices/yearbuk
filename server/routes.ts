@@ -36,13 +36,6 @@ import sharp from "sharp";
 console.log(`Server startup: CURRENT_YEAR = ${CURRENT_YEAR}`);
 
 function getAppBaseUrl(req: Request): string {
-  const configuredDomain = process.env.APP_DOMAIN?.trim();
-  if (configuredDomain) {
-    return /^https?:\/\//i.test(configuredDomain)
-      ? configuredDomain.replace(/\/$/, "")
-      : `https://${configuredDomain}`;
-  }
-
   const forwardedHost = req.headers["x-forwarded-host"];
   const host = (Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost) || req.get("host");
   if (!host) {
@@ -6589,9 +6582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paystackFirstName = cleanFirstName || 'Customer';
       const paystackLastName = cleanLastName || 'Account';
       
-      // Build the callback from the same normalized public app URL used for redirects.
-      const callbackBaseUrl = getAppBaseUrl(req);
-      const callbackUrl = `${callbackBaseUrl}/api/payments/verify/${encodeURIComponent(reference)}`;
+      // Paystack uses the dashboard callback URL; keep the in-app return path in metadata.
       const safeReturnPath = typeof returnPath === 'string' && returnPath.startsWith('/') && !returnPath.startsWith('//')
         ? returnPath
         : '/cart';
@@ -6607,12 +6598,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           usingSubaccount: !!subaccountCode,
           platformAmount: platformAmount / 100,
           schoolAmount: schoolAmount / 100,
-          callbackDomain,
-          callbackUrl
         });
       }
-      
-      console.log('🔗 Paystack callback URL:', callbackUrl);
       
       const paystackData = {
         email,
@@ -6622,7 +6609,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: totalAmountKobo,
         reference,
         currency: 'NGN',
-        callback_url: callbackUrl,
         metadata: {
           cart_items: cartItems.length,
           user_id: userId,
@@ -6697,9 +6683,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Verify payment with Paystack
-  app.get("/api/payments/verify/:reference", async (req, res) => {
+  app.get(["/api/payments/verify", "/api/payments/verify/:reference"], async (req, res) => {
     try {
-      const { reference } = req.params;
+      const queryReference = typeof req.query.reference === 'string'
+        ? req.query.reference
+        : typeof req.query.trxref === 'string'
+        ? req.query.trxref
+        : '';
+      const reference = req.params.reference || queryReference;
 
       if (!reference) {
         return res.status(400).json({
