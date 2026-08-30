@@ -70,7 +70,7 @@ import {
 import { randomUUID } from "crypto";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import { eq, and, or, sql, isNotNull, desc, inArray, ilike, count, groupBy } from "drizzle-orm";
+import { eq, and, or, sql, isNotNull, desc, inArray, ilike, count } from "drizzle-orm";
 import { hashPassword, comparePassword, hashUploadCode, verifyUploadCode } from "./password-utils";
 
 // Database connection - using PostgreSQL with connection pooling
