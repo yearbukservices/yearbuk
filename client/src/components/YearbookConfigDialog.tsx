@@ -154,9 +154,26 @@ export function YearbookConfigDialog({
 
       return yearbookRes.json();
     },
-    onSuccess: () => {
+    onSuccess: (createdYearbook) => {
+      // Update the list cache immediately so the unlocked year switches to
+      // Manage without requiring a full page refresh.
+      queryClient.setQueryData<any[]>(["/api/yearbooks-all", schoolId], (current = []) => {
+        const nextYearbook = {
+          id: createdYearbook.id,
+          year: createdYearbook.year ?? parseInt(year),
+          price: createdYearbook.price ?? null,
+          isFree: createdYearbook.isFree ?? false
+        };
+        const existingIndex = current.findIndex((item) =>
+          item.id === nextYearbook.id || Number(item.year) === Number(nextYearbook.year)
+        );
+        if (existingIndex === -1) return [...current, nextYearbook];
+        const updated = [...current];
+        updated[existingIndex] = { ...updated[existingIndex], ...nextYearbook };
+        return updated;
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/year-purchases", schoolId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/yearbooks", schoolId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/yearbooks-all", schoolId] });
       toast({
         className: "bg-purple-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
         title: "Yearbook unlocked!",
