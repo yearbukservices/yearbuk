@@ -211,6 +211,7 @@ export default function SuperAdminDashboard({ user, onLogout }: SuperAdminDashbo
       if (response.ok) {
         const data = await response.json();
         setSchoolYears(data);
+        return data;
       } else {
         let errorMessage = "Failed to fetch yearbooks";
         try {
@@ -256,6 +257,25 @@ export default function SuperAdminDashboard({ user, onLogout }: SuperAdminDashbo
         if (selectedSchoolForYears) {
           await fetchSchoolYears(selectedSchoolForYears.id);
         }
+
+        // Apply the successful response immediately so the unlocked row cannot remain stale.
+        setSchoolYears((current: any) => {
+          if (!current?.years) return current;
+          const purchase = result.purchase;
+          return {
+            ...current,
+            years: current.years.map((yearData: any) =>
+              String(yearData.year) === String(year)
+                ? {
+                    ...yearData,
+                    purchased: Boolean(purchase?.purchased ?? unlock),
+                    unlockedByAdmin: Boolean(purchase?.unlockedByAdmin ?? unlock),
+                    purchaseDate: purchase?.purchaseDate ?? (unlock ? new Date().toISOString() : null),
+                  }
+                : yearData
+            ),
+          };
+        });
       } else {
         const error = await response.json();
         toast({
