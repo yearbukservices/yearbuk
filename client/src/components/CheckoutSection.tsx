@@ -262,7 +262,8 @@ export function CheckoutSection({ cartItems, total, userType, onContinueShopping
         phone: formatPhoneNumber(customerData.phone),
         amount: finalTotalNGN, // Send NGN amount to backend (already converted)
         cartItems: cartItems,
-        userId: user.id
+        userId: user.id,
+        returnPath: window.location.pathname + window.location.search + window.location.hash
       };
 
       const response = await apiRequest("POST", "/api/payments/initialize", paymentData);
