@@ -109,6 +109,9 @@ export default function ProfilePage() {
     return school?.username || null;
   };
 
+  const getMemorySchoolName = (memory: Memory): string =>
+    schools.find((school) => school.id === memory.schoolId)?.name || "Unknown school";
+
   const deleteAlumniBadgeMutation = useMutation({
     mutationFn: async (badgeId: string) => {
       await apiRequest("DELETE", `/api/alumni-badges/${badgeId}`);
@@ -146,7 +149,7 @@ export default function ProfilePage() {
   const canDeleteMemory = (memory: Memory): boolean => memory.userId === user.id;
 
 
-  const handleDeleteMemory = async (memory: Memory) => {
+  const handleDeleteMemory = async (memory: Memory, collection: "posts" | "tagged") => {
     if (!canDeleteMemory(memory) || deletingMemoryId) return;
     if (!window.confirm("Delete this memory? This cannot be undone.")) return;
     setDeletingMemoryId(memory.id);
@@ -162,7 +165,11 @@ export default function ProfilePage() {
       queryClient.setQueryData<Memory[]>(["/api/memories/user", user.id], (memories) =>
         memories?.filter((item) => item.id !== memory.id),
       );
-      setSelectedPostIndex(null);
+      queryClient.setQueryData<Memory[]>(["/api/memories/tagged", user.id], (memories) =>
+        memories?.filter((item) => item.id !== memory.id),
+      );
+      if (collection === "posts") setSelectedPostIndex(null);
+      else setSelectedTaggedIndex(null);
       toast({
         title: "Memory deleted",
         description: "The memory was removed from your profile.",
@@ -544,20 +551,6 @@ export default function ProfilePage() {
                 {publicMemories[selectedPostIndex].description && (
                   <p className="text-sm text-white/70 mt-2">{publicMemories[selectedPostIndex].description}</p>
                 )}
-                {canDeleteMemory(publicMemories[selectedPostIndex]) && (
-                  <div className="mt-4 flex justify-end">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteMemory(publicMemories[selectedPostIndex])}
-                      disabled={deletingMemoryId === publicMemories[selectedPostIndex].id}
-                      data-testid={`button-delete-memory-lightbox-${publicMemories[selectedPostIndex].id}`}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {deletingMemoryId === publicMemories[selectedPostIndex].id ? "Deleting..." : "Delete memory"}
-                    </Button>
-                  </div>
-                )}
                 <div className="flex gap-2 mt-3 text-sm text-white/70">
                   {publicMemories[selectedPostIndex].eventDate && (
                     <span>{publicMemories[selectedPostIndex].eventDate}</span>
@@ -569,6 +562,24 @@ export default function ProfilePage() {
                     </>
                   )}
                 </div>
+                <p className="text-sm text-white/70 mt-2">
+                  <span className="font-medium text-white">School:</span>{" "}
+                  {getMemorySchoolName(publicMemories[selectedPostIndex])}
+                </p>
+                {canDeleteMemory(publicMemories[selectedPostIndex]) && (
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteMemory(publicMemories[selectedPostIndex], "posts")}
+                      disabled={deletingMemoryId === publicMemories[selectedPostIndex].id}
+                      data-testid={`button-delete-memory-lightbox-${publicMemories[selectedPostIndex].id}`}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deletingMemoryId === publicMemories[selectedPostIndex].id ? "Deleting..." : "Delete memory"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -646,6 +657,24 @@ export default function ProfilePage() {
                     </>
                   )}
                 </div>
+                <p className="text-sm text-white/70 mt-2">
+                  <span className="font-medium text-white">School:</span>{" "}
+                  {getMemorySchoolName(taggedMemories[selectedTaggedIndex])}
+                </p>
+                {canDeleteMemory(taggedMemories[selectedTaggedIndex]) && (
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteMemory(taggedMemories[selectedTaggedIndex], "tagged")}
+                      disabled={deletingMemoryId === taggedMemories[selectedTaggedIndex].id}
+                      data-testid={`button-delete-memory-tagged-lightbox-${taggedMemories[selectedTaggedIndex].id}`}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deletingMemoryId === taggedMemories[selectedTaggedIndex].id ? "Deleting..." : "Delete memory"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
