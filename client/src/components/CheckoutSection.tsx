@@ -532,7 +532,7 @@ export function CheckoutSection({ cartItems, total, userType, onContinueShopping
               </div>
 
               {/* Action Buttons */}
-              <div className="flex space-x-3 pt-4">
+              <div className="flex flex-col gap-3 pt-4 sm:flex-row">
                 <Button 
                   variant="outline" 
                   onClick={() => setShowCheckout(false)} 
