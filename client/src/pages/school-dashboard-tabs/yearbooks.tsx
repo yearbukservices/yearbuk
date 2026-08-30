@@ -105,7 +105,8 @@ export default function SchoolYearbooks() {
         status, 
         price: yearbookPrice,
         priceExplicitlySet,
-        isFree 
+        isFree,
+        hasYearbookRecord
       };
     }).filter(Boolean);
   })();
