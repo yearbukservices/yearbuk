@@ -49,10 +49,8 @@ export default function SchoolYearbooks() {
   const { data: purchasedYears = [], isLoading: isPurchaseDataLoading } = useQuery({
     queryKey: ["/api/year-purchases", school?.id],
     enabled: !!school,
-    enabled: !!school,
-staleTime: 0,
-    enabled: !!school,
-refetchOnMount: "always",
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       if (!user?.id) return [];
       const res = await fetch(`/api/year-purchases/school/${school?.id}`);
@@ -64,10 +62,8 @@ refetchOnMount: "always",
   const { data: schoolYearbooks = [] } = useQuery({
     queryKey: ["/api/yearbooks-all", school?.id],
     enabled: !!school,
-    enabled: !!school,
-staleTime: 0,
-    enabled: !!school,
-refetchOnMount: "always",
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       if (!school?.id) return [];
       const res = await fetch(`/api/yearbooks/${school.id}/all`);
