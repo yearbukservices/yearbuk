@@ -178,7 +178,7 @@ export function AlumniMemoryUploadDialog({
               id="alumni-upload-school"
               value={schoolId}
               onChange={(event) => setSchoolId(event.target.value)}
-              className="flex h-10 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              className="flex h-10 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-base sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
               required
             >
               <option value="" className="text-gray-900">Select a school</option>
@@ -201,7 +201,7 @@ export function AlumniMemoryUploadDialog({
                 value={year}
                 onChange={(event) => setYear(event.target.value)}
                 disabled={!schoolId}
-                className="flex h-10 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-base sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
                 required
               >
                 <option value="" className="text-gray-900">Select a year</option>
@@ -217,7 +217,7 @@ export function AlumniMemoryUploadDialog({
                 id="alumni-upload-category"
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
-                className="flex h-10 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                className="flex h-10 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-base sm:text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 required
               >
                 <option value="" className="text-gray-900">Select a category</option>
@@ -235,7 +235,7 @@ export function AlumniMemoryUploadDialog({
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Give your memory a title"
-              className="flex h-10 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              className="flex h-10 w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-base sm:text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
             />
           </div>
 
