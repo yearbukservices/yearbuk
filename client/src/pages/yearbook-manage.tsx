@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,8 +47,9 @@ const navigateToSchoolDashboardYears = (setLocation: any) => {
 };
 
 const MOBILE_DELETE_DROP_ZONE_ID = 'mobile-delete-drop-zone';
-const PAGE_VIRTUALIZATION_OVERSCAN_PX = 600;
-const INITIAL_VISIBLE_PAGE_END = 24;
+const GRID_CARD_WIDTH = 200;
+const GRID_GAP = 16;
+const GRID_OVERSCAN_ROWS = 6;
 
 const collisionDetectionStrategy: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
@@ -170,9 +172,11 @@ export default function YearbookManage() {
   // Continuous measurement becomes increasingly expensive as the page count grows.
   const measuringConfig = useMemo(() => ({
     droppable: {
-      strategy: MeasuringStrategy.BeforeDragging,
+      // Virtualized cards mount when dragging starts, so remeasure the full
+      // sortable set during a drag while keeping idle renders inexpensive.
+      strategy: activePageId ? MeasuringStrategy.Always : MeasuringStrategy.BeforeDragging,
     },
-  }), []);
+  }), [activePageId]);
   
   // Autoscroll hook - handles scrolling when dragging near edges (touch & pointer aware)
   useEffect(() => {
@@ -497,65 +501,67 @@ export default function YearbookManage() {
     [contentPageItems]
   );
 
-  // Keep sortable slots mounted for reliable DnD geometry, but avoid mounting
-  // image/dialog/button trees for cards outside the viewport overscan.
-  const [visiblePageRange, setVisiblePageRange] = useState({
-    start: 0,
-    end: INITIAL_VISIBLE_PAGE_END,
-  });
+  // Virtualize the expensive card/image trees while preserving the full page model in React state.
+  const [gridColumnCount, setGridColumnCount] = useState(1);
+  const [gridOffsetTop, setGridOffsetTop] = useState(0);
 
-  const updateVisiblePageRange = useCallback(() => {
+  const updateGridLayout = useCallback(() => {
     const grid = scrollContainerRef.current;
     if (!grid) return;
 
-    const pageNodes = grid.querySelectorAll<HTMLElement>("[data-page-index]");
-    if (pageNodes.length === 0) return;
+    const nextColumnCount = Math.max(
+      1,
+      Math.floor((grid.clientWidth + GRID_GAP) / (GRID_CARD_WIDTH + GRID_GAP))
+    );
+    const nextOffsetTop = Math.max(0, grid.getBoundingClientRect().top + window.scrollY);
 
-    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-    let firstVisible = pageNodes.length;
-    let lastVisible = -1;
-
-    pageNodes.forEach((node, index) => {
-      const rect = node.getBoundingClientRect();
-      if (rect.bottom >= -PAGE_VIRTUALIZATION_OVERSCAN_PX &&
-          rect.top <= viewportHeight + PAGE_VIRTUALIZATION_OVERSCAN_PX) {
-        firstVisible = Math.min(firstVisible, index);
-        lastVisible = index;
-      }
-    });
-
-    const nextRange = lastVisible < 0
-      ? { start: 0, end: Math.min(INITIAL_VISIBLE_PAGE_END, pageNodes.length - 1) }
-      : { start: firstVisible, end: lastVisible };
-
-    setVisiblePageRange((current) => (
-      current.start === nextRange.start && current.end === nextRange.end
-        ? current
-        : nextRange
-    ));
-  }, [contentPageItems.length]);
+    setGridColumnCount((current) => current === nextColumnCount ? current : nextColumnCount);
+    setGridOffsetTop((current) => Math.abs(current - nextOffsetTop) < 1 ? current : nextOffsetTop);
+  }, []);
 
   useEffect(() => {
-    let animationFrameId: number | null = null;
+    const grid = scrollContainerRef.current;
+    if (!grid) return;
 
-    const scheduleRangeUpdate = () => {
-      if (animationFrameId !== null) return;
-      animationFrameId = requestAnimationFrame(() => {
-        animationFrameId = null;
-        updateVisiblePageRange();
-      });
-    };
-
-    updateVisiblePageRange();
-    document.addEventListener("scroll", scheduleRangeUpdate, true);
-    window.addEventListener("resize", scheduleRangeUpdate);
+    updateGridLayout();
+    const resizeObserver = new ResizeObserver(updateGridLayout);
+    resizeObserver.observe(grid);
+    window.addEventListener('resize', updateGridLayout);
 
     return () => {
-      document.removeEventListener("scroll", scheduleRangeUpdate, true);
-      window.removeEventListener("resize", scheduleRangeUpdate);
-      if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateGridLayout);
     };
-  }, [updateVisiblePageRange]);
+  }, [updateGridLayout]);
+
+  const pageAspectRatio = useMemo(() => {
+    const [width, height] = (yearbook?.detectedAspectRatio || '3/4').split('/').map(Number);
+    return width > 0 && height > 0 ? width / height : 3 / 4;
+  }, [yearbook?.detectedAspectRatio]);
+  const estimatedCardHeight = Math.max(220, Math.round(GRID_CARD_WIDTH / pageAspectRatio));
+
+  // The extra item keeps the existing Add Page control in the same grid position.
+  // While dragging, render every card so dnd-kit can measure any reorder target.
+  const virtualizer = useWindowVirtualizer({
+    count: contentPageItems.length + 1,
+    estimateSize: () => estimatedCardHeight,
+    overscan: GRID_OVERSCAN_ROWS,
+    lanes: gridColumnCount,
+    scrollMargin: gridOffsetTop,
+    getItemKey: (index) => contentPageItems[index]?.id ?? 'add-page',
+  });
+
+  const virtualPageItems = activePageId
+    ? Array.from({ length: contentPageItems.length + 1 }, (_, index) => ({
+        index,
+        lane: index % gridColumnCount,
+        start: Math.floor(index / gridColumnCount) * estimatedCardHeight,
+        size: estimatedCardHeight,
+      }))
+    : virtualizer.getVirtualItems();
+  const virtualGridHeight = activePageId
+    ? Math.ceil((contentPageItems.length + 1) / gridColumnCount) * estimatedCardHeight
+    : virtualizer.getTotalSize();
 
   const getCoverImageUrl = (pageType: "front_cover" | "back_cover"): string | null => {
     const coverPage = yearbook?.pages?.find(
@@ -2393,7 +2399,6 @@ interface SortablePageProps {
   onMoveLeft: (pageId: string) => void;
   onMoveRight: (pageId: string) => void;
   aspectRatio?: string | null;
-  isVirtualized?: boolean;
 }
 
 function SortablePage({ 
@@ -2412,7 +2417,6 @@ function SortablePage({
   onMoveLeft,
   onMoveRight,
   aspectRatio,
-  isVirtualized = false,
 }: SortablePageProps) {
   const {
     attributes,
@@ -2446,34 +2450,6 @@ function SortablePage({
     [page.thumbnailUrl, page.imageUrl]
   );
 
-  if (isVirtualized && !isSortableDragging) {
-    return (
-      <div
-        ref={setNodeRef}
-        style={{ ...style, aspectRatio: aspectRatio || '3/4' }}
-        className={"relative border-2 rounded-lg p-3 min-w-[160px] flex flex-col bg-white/5 border-white/10 " + (isOver ? 'ring-4 ring-blue-400/60 border-blue-400' : '')}
-        data-testid={`page-item-${page.id}`}
-        data-page-index={index}
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-white/80">Page {page.pageNumber}</span>
-          <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing text-white/50 p-1.5 rounded-md"
-            style={{ touchAction: 'none' }}
-            title="Drag to reorder"
-          >
-            <GripVertical className="h-5 w-5" />
-          </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <span className="text-xs text-white/30">Preview loads on scroll</span>
-        </div>
-      </div>
-    );
-  }
-  
   return (
     <div
       ref={setNodeRef}
@@ -2546,15 +2522,20 @@ function SortablePage({
       {/* Page Image */}
       <div className="flex-1 w-full mb-2 overflow-hidden rounded">
         <img
-          src={getSecureImageUrl(page.thumbnailUrl || page.imageUrl) || ''}
+          src={previewImageUrl}
           alt={page.title ?? ''}
           className="w-full h-full object-cover pointer-events-none"
           loading="lazy"
           decoding="async"
+          sizes="200px"
           onError={(event) => {
-            const image = event.currentTarget;
-            image.src = getSecureImageUrl(page.imageUrl) || '';
-            image.onerror = null;
+            // Legacy local pages may not have a derivative; never fall back from a
+            // failed Cloudinary thumbnail to a full-resolution protected asset.
+            if (!page.thumbnailUrl) {
+              const image = event.currentTarget;
+              image.src = secureImageUrl;
+              image.onerror = null;
+            }
           }}
         />
       </div>
@@ -2634,7 +2615,6 @@ function SortablePendingPage({
   onManualPageChange,
   aspectRatio,
   index,
-  isVirtualized = false,
 }: {
   pendingPage: PendingPageUpload;
   onDelete: () => void;
@@ -2649,7 +2629,6 @@ function SortablePendingPage({
   onManualPageChange: (pageId: string, newPageNumber: number) => void;
   aspectRatio?: number | null;
   index: number;
-  isVirtualized?: boolean;
 }) {
   const {
     attributes,
@@ -2673,33 +2652,6 @@ function SortablePendingPage({
     zIndex: isDragging ? 999 : 1,
     aspectRatio: aspectRatio || '3/4',
   };
-
-  if (isVirtualized && !isDragging) {
-    return (
-      <div
-        ref={setNodeRef}
-        style={cardStyle}
-        className={"border-2 rounded-lg p-2 w-[200px] flex flex-col bg-orange-500/20 border-orange-400/30 " + (isOver ? 'ring-4 ring-blue-400/60 border-blue-400' : '')}
-        data-page-index={index}
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-orange-100">Page {pendingPage.pageNumber}</span>
-          <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing text-white/50 p-1.5 rounded-md"
-            style={{ touchAction: 'none' }}
-            title="Drag to reorder"
-          >
-            <GripVertical className="h-5 w-5" />
-          </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <span className="text-xs text-orange-100/50">Preview loads on scroll</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -3896,86 +3848,80 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                       items={contentPageIds}
                       strategy={rectSortingStrategy}
                     >
-                      <div 
+                      <div
                         ref={scrollContainerRef}
-                        className={`pages-grid grid gap-4 p-4 justify-items-center ${isPortraitViewport ? 'portrait-grid' : ''}`}
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(auto-fill, 200px)',
-                          gap: '16px',
-                          justifyContent: 'start',
-                          touchAction: 'pan-y',
-                        }}
+                        className={'pages-grid relative p-4 ' + (isPortraitViewport ? 'portrait-grid' : '')}
+                        style={{ minHeight: virtualGridHeight, width: '100%', touchAction: 'pan-y' }}
                         data-testid="pages-grid"
                       >
-                                                 {/* Render pages from the memoized, sorted grid model */}
-                         {contentPageItems.map((item, index) => {
-                           const outsideVisibleRange = index < visiblePageRange.start || index > visiblePageRange.end;
-                           const isVirtualized = outsideVisibleRange && activePageId !== item.id && editingPageId !== item.id;
+                        {virtualPageItems.map((virtualItem) => {
+                          const index = virtualItem.index;
+                          const item = contentPageItems[index];
+                          const isAddPage = index === contentPageItems.length;
+                          const left = virtualItem.lane * (GRID_CARD_WIDTH + GRID_GAP);
 
-                           if (item.type === 'published') {
-                             const page = item.data;
-                             return (
-                               <SortablePage
-                                 key={page.id}
-                                 page={page}
-                                 index={index}
-                                 onDelete={(pageId: string) => deletePageMutation.mutate(pageId)}
-                                 reorderPending={reorderPageMutation.isPending}
-                                 totalPages={contentPageItems.length}
-                                 isPortraitViewport={isPortraitViewport}
-                                 isDragging={activePageId === page.id}
-                                 editingPageId={editingPageId}
-                                 tempPageNumber={tempPageNumber}
-                                 onStartEditingPageNumber={startEditingPageNumber}
-                                 onCancelEditingPageNumber={cancelEditingPageNumber}
-                                 onManualPageChange={handleManualPageChange}
-                                 onMoveLeft={handleMovePageLeft}
-                                 onMoveRight={handleMovePageRight}
-                                 aspectRatio={yearbook?.detectedAspectRatio || null}
-                               isVirtualized={isVirtualized}
+                          return (
+                            <div
+                              key={isAddPage ? 'add-page' : item.id}
+                              ref={activePageId ? undefined : virtualizer.measureElement}
+                              data-index={index}
+                              style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: GRID_CARD_WIDTH,
+                                minHeight: virtualItem.size,
+                                transform: `translate3d(${left}px, ${virtualItem.start - gridOffsetTop}px, 0)`,
+                              }}
+                            >
+                              {isAddPage ? (
+                                <div className="border-2 border-dashed border-white/30 rounded-lg p-4 flex items-center justify-center w-[200px]" style={{ aspectRatio: yearbook?.detectedAspectRatio || '3/4' }}>
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => { setSelectedPageType("content"); setShowUploadDialog(true); }}
+                                    className="flex flex-col items-center h-full w-full hover:bg-white/10 transition-all duration-200"
+                                    data-testid="button-add-page"
+                                  >
+                                    <Plus className="h-8 w-8 text-white/60 mb-2" />
+                                    <span className="text-sm text-white/80">Add Page</span>
+                                  </Button>
+                                </div>
+                              ) : item.type === 'published' ? (
+                                <SortablePage
+                                  page={item.data}
+                                  index={index}
+                                  onDelete={(pageId: string) => deletePageMutation.mutate(pageId)}
+                                  reorderPending={reorderPageMutation.isPending}
+                                  totalPages={contentPageItems.length}
+                                  isPortraitViewport={isPortraitViewport}
+                                  isDragging={activePageId === item.id}
+                                  editingPageId={editingPageId}
+                                  tempPageNumber={tempPageNumber}
+                                  onStartEditingPageNumber={startEditingPageNumber}
+                                  onCancelEditingPageNumber={cancelEditingPageNumber}
+                                  onManualPageChange={handleManualPageChange}
+                                  onMoveLeft={handleMovePageLeft}
+                                  onMoveRight={handleMovePageRight}
+                                  aspectRatio={yearbook?.detectedAspectRatio || null}
                                 />
-                             );
-                           }
-
-                           const pendingPage = item.data;
-                           return (
-                             <SortablePendingPage
-                               key={pendingPage.tempId}
-                               pendingPage={pendingPage}
-                               totalPages={contentPageItems.length}
-                               index={index}
-                               isPortraitViewport={isPortraitViewport}
-                               editingPageId={editingPageId}
-                               tempPageNumber={tempPageNumber}
-                               onStartEditingPageNumber={startEditingPageNumber}
-                               onCancelEditingPageNumber={cancelEditingPageNumber}
-                               onManualPageChange={handleManualPageChange}
-                               onDelete={() => handleDeletePendingPage(pendingPage.tempId)}
-                               aspectRatio={yearbook?.detectedAspectRatio || null}
-                             isVirtualized={isVirtualized}
+                              ) : (
+                                <SortablePendingPage
+                                  pendingPage={item.data}
+                                  totalPages={contentPageItems.length}
+                                  index={index}
+                                  isPortraitViewport={isPortraitViewport}
+                                  editingPageId={editingPageId}
+                                  tempPageNumber={tempPageNumber}
+                                  onStartEditingPageNumber={startEditingPageNumber}
+                                  onCancelEditingPageNumber={cancelEditingPageNumber}
+                                  onManualPageChange={handleManualPageChange}
+                                  onDelete={() => handleDeletePendingPage(item.data.tempId)}
+                                  aspectRatio={yearbook?.detectedAspectRatio || null}
                                 />
-                           );
-                         })}
-
-{/* Add Page Button */}
-                        <div
-                          className="border-2 border-dashed border-white/30 rounded-lg p-4 flex items-center justify-center w-[200px]"
-                          style={{ aspectRatio: yearbook?.detectedAspectRatio || '3/4' }}
-                        >
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              setSelectedPageType("content");
-                              setShowUploadDialog(true);
-                            }}
-                            className="flex flex-col items-center h-full w-full hover:bg-white/10 transition-all duration-200"
-                            data-testid="button-add-page"
-                          >
-                            <Plus className="h-8 w-8 text-white/60 mb-2" />
-                            <span className="text-sm text-white/80">Add Page</span>
-                          </Button>
-                        </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                       </SortableContext>
                       {isPortraitViewport && (
