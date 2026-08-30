@@ -410,8 +410,7 @@ export function CheckoutSection({ cartItems, total, userType, onContinueShopping
 
       {/* Checkout Dialog */}
       <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl
-" data-testid="checkout-dialog">
+        <DialogContent className="w-[calc(100%-1rem)] max-w-2xl max-h-[90vh] overflow-y-auto bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl p-4 sm:w-full sm:p-6" data-testid="checkout-dialog">
           {purchaseComplete ? (
             // Success State
             <div className="text-center space-y-4 py-8">
@@ -537,7 +536,7 @@ export function CheckoutSection({ cartItems, total, userType, onContinueShopping
                   variant="outline" 
                   onClick={() => setShowCheckout(false)} 
                   disabled={isProcessing || isCheckingPayment}
-                  className="flex-1"
+                  className="w-full min-w-0 flex-1"
                   data-testid="button-cancel-checkout"
                 >
                   Cancel
@@ -548,7 +547,7 @@ export function CheckoutSection({ cartItems, total, userType, onContinueShopping
                     onClick={handleCheckPaymentStatus}
                     disabled={isCheckingPayment || isProcessing}
                     variant="outline"
-                    className="flex-1 border-orange-300 text-orange-700 hover:bg-orange-50"
+                    className="w-full min-w-0 flex-1 whitespace-normal border-orange-300 text-orange-700 hover:bg-orange-50"
                     data-testid="button-check-payment"
                   >
                     {isCheckingPayment ? (
@@ -568,7 +567,7 @@ export function CheckoutSection({ cartItems, total, userType, onContinueShopping
                 <Button 
                   onClick={handleProcessPayment}
                   disabled={isProcessing || isLoadingRate || isCheckingPayment}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className="w-full min-w-0 flex-1 whitespace-normal bg-green-600 hover:bg-green-700"
                   data-testid="button-process-payment"
                 >
                   {isProcessing ? (
