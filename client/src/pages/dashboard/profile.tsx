@@ -12,6 +12,7 @@ import { Settings, Award, Plus, Heart, Trash2, ChevronLeft, ChevronRight, X } fr
 import type { AlumniBadge, User as UserType, Memory, School } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import AlumniRequestDialog from "@/components/AlumniRequestDialog";
+import { AlumniMemoryUploadDialog } from "@/components/AlumniMemoryUploadDialog";
 
 export default function ProfilePage() {
   const [, setLocation] = useLocation();
@@ -52,6 +53,7 @@ export default function ProfilePage() {
     }
   };
   const [showAlumniRequestDialog, setShowAlumniRequestDialog] = useState(false);
+  const [showAlumniMemoryUploadDialog, setShowAlumniMemoryUploadDialog] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -134,6 +136,7 @@ export default function ProfilePage() {
     userMemories.filter(m => m.status === 'approved'), 
     [userMemories]
   );
+  const hasVerifiedAlumniBadge = alumniBadges.some((badge) => badge.status === "verified");
 
   if (!user) return null;
 
@@ -186,6 +189,16 @@ export default function ProfilePage() {
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </Button>
+            {hasVerifiedAlumniBadge && (
+              <Button
+                onClick={() => setShowAlumniMemoryUploadDialog(true)}
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white"
+                data-testid="button-upload-alumni-memory"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Upload memory
+              </Button>
+            )}
             <Button
               onClick={() => setShowAlumniRequestDialog(true)}
               variant="outline"
@@ -576,6 +589,16 @@ export default function ProfilePage() {
         </DialogContent>
       </Dialog>
 
+      <AlumniMemoryUploadDialog
+        open={showAlumniMemoryUploadDialog}
+        onClose={() => setShowAlumniMemoryUploadDialog(false)}
+        userId={user.id}
+        verifiedBadges={alumniBadges}
+        schools={schools}
+        onUploaded={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/memories/user", user.id] });
+        }}
+      />
       <AlumniRequestDialog
         open={showAlumniRequestDialog}
         onClose={() => setShowAlumniRequestDialog(false)}
