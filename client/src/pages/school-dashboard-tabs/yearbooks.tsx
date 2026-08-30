@@ -104,7 +104,8 @@ export default function SchoolYearbooks() {
         priceExplicitlySet,
         isFree,
         hasYearbookRecord,
-        yearbookId: yearbook?.id
+        yearbookId: yearbook?.id,
+        pageCount: yearbook?.pageCount ?? 0
       };
     }).filter(Boolean);
   })();
@@ -197,11 +198,16 @@ export default function SchoolYearbooks() {
                   </div>
 
                   {year.purchased && (
-                    <div className="text-sm text-blue-200">
-                      Price: <span className="font-semibold">{year.priceExplicitlySet ? formatPrice(convertPrice(year.price)) : 'Not set'}</span>
-                      {year.isFree && <span className="ml-1 text-green-400">(free)</span>}
-                    </div>
-                  )}
+                     <>
+                       <div className="text-sm text-blue-200">
+                         Price: <span className="font-semibold">{year.priceExplicitlySet ? formatPrice(convertPrice(year.price)) : 'Not set'}</span>
+                         {year.isFree && <span className="ml-1 text-green-400">(free)</span>}
+                       </div>
+                       <div className="text-sm text-blue-200">
+                         Number of pages: <span className="font-semibold">{year.pageCount}</span>
+                       </div>
+                     </>
+                   )}
 
                   <div className="flex space-x-2 ">
                     {isPurchaseDataLoading ? (
@@ -264,11 +270,16 @@ export default function SchoolYearbooks() {
                         {year.status}
                       </span>
                       {year.purchased && (
-                        <span className="text-sm text-blue-200">
-                          {year.priceExplicitlySet ? formatPrice(convertPrice(year.price)) : 'Not set'}
-                          {year.isFree && <span className="ml-1 text-green-400">(free)</span>}
-                        </span>
-                      )}
+                         <>
+                           <span className="text-sm text-blue-200">
+                             {year.priceExplicitlySet ? formatPrice(convertPrice(year.price)) : 'Not set'}
+                             {year.isFree && <span className="ml-1 text-green-400">(free)</span>}
+                           </span>
+                           <span className="text-sm text-blue-200">
+                             Number of pages: <span className="font-semibold">{year.pageCount}</span>
+                           </span>
+                         </>
+                       )}
                     </div>
                   </div>
                   <div className="flex-shrink-0 ">
