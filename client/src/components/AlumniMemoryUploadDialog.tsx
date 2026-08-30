@@ -44,7 +44,7 @@ export function AlumniMemoryUploadDialog({
     return verifiedBadges
       .filter((badge) => badge.status === "verified")
       .reduce<Array<{ school: School; graduationYear: string }>>((options, badge) => {
-        const school = schools.find((candidate) => candidate.name === badge.school);
+        const school = schools.find((candidate) => candidate.name.trim().toLowerCase() === badge.school.trim().toLowerCase());
         if (school && !options.some((option) => option.school.id === school.id)) {
           options.push({ school, graduationYear: badge.graduationYear });
         }
@@ -225,7 +225,7 @@ export function AlumniMemoryUploadDialog({
               className="block w-full text-sm text-white file:mr-3 file:rounded-md file:border-0 file:bg-cyan-500 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-cyan-600"
               required
             />
-            <p className="text-xs text-white/60">Images up to 20MB are supported.</p>
+            <p className="text-xs text-white/60">Images up to 100MB are supported.</p>
           </div>
 
           {errorMessage && <p className="text-sm text-red-200">{errorMessage}</p>}
