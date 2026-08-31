@@ -173,6 +173,18 @@ export function AlumniMemoryUploadDialog({
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
+            <label htmlFor="alumni-upload-file" className="text-sm font-medium text-white">Image</label>
+            <input
+              id="alumni-upload-file"
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="block w-full text-sm text-white file:mr-3 file:rounded-md file:border-0 file:bg-cyan-500 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-cyan-600"
+            />
+            <p className="text-xs text-white/60">Images up to 100MB are supported. You'll crop the image to a square before sending it.</p>
+            {selectedFile && <p className="text-xs text-cyan-200">Square crop ready: {selectedFile.name}</p>}
+          </div>
+          <div className="space-y-2">
             <label htmlFor="alumni-upload-school" className="text-sm font-medium text-white">School</label>
             <select
               id="alumni-upload-school"
