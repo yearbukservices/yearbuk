@@ -4,7 +4,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -171,8 +170,6 @@ export default function ProfilePage() {
     collection: "posts" | "tagged";
   } | null>(null);
   const { toast } = useToast();
-  const [memoryCategoryFilter, setMemoryCategoryFilter] = useState("all");
-  const [memorySort, setMemorySort] = useState<"newest" | "oldest" | "title-asc" | "title-desc">("newest");
 
   useEffect(() => {
     resetMemoryInteraction();
@@ -262,29 +259,6 @@ export default function ProfilePage() {
     [userMemories]
   );
   const hasVerifiedAlumniBadge = alumniBadges.some((badge) => badge.status === "verified");
-
-  const memoryCategories = useMemo(() =>
-    Array.from(new Set(publicMemories.map((memory) => memory.category).filter((category): category is string => Boolean(category)))).sort(),
-    [publicMemories],
-  );
-
-  const displayedPublicMemories = useMemo(() => {
-    const filtered = publicMemories.filter((memory) =>
-      memoryCategoryFilter === "all" || memory.category === memoryCategoryFilter,
-    );
-
-    return [...filtered].sort((first, second) => {
-      if (memorySort === "title-asc" || memorySort === "title-desc") {
-        const comparison = first.title.localeCompare(second.title);
-        return memorySort === "title-asc" ? comparison : -comparison;
-      }
-
-      const firstTime = first.createdAt ? new Date(first.createdAt).getTime() : 0;
-      const secondTime = second.createdAt ? new Date(second.createdAt).getTime() : 0;
-      const comparison = (Number.isNaN(firstTime) ? 0 : firstTime) - (Number.isNaN(secondTime) ? 0 : secondTime);
-      return memorySort === "oldest" ? comparison : -comparison;
-    });
-  }, [publicMemories, memoryCategoryFilter, memorySort]);
 
   if (!user) return null;
 
@@ -427,51 +401,6 @@ export default function ProfilePage() {
                   <p className="text-white/60">No posts yet</p>
                 </div>
               ) : (<>
-                <div className="mb-4 rounded-xl border border-white/10 bg-black/10 p-3">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <label className="block w-full sm:w-44">
-                      <span className="mb-1.5 block text-xs font-medium text-white/70">Filter</span>
-                      <Select value={memoryCategoryFilter} onValueChange={setMemoryCategoryFilter}>
-                        <SelectTrigger
-                          className="memory-filter-select h-10 w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 text-sm text-white focus:border-cyan-300/60 focus:outline-none"
-                          data-testid="select-memory-category"
-                        >
-                          <SelectValue placeholder="All categories" />
-                        </SelectTrigger>
-                        <SelectContent className="z-[100] border-white/20 bg-slate-900 text-white">
-                          <SelectItem value="all">All categories</SelectItem>
-                          {memoryCategories.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category.replace(/_/g, " ")}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </label>
-                    <label className="block w-full sm:w-44">
-                      <span className="mb-1.5 block text-xs font-medium text-white/70">Sort by</span>
-                      <Select value={memorySort} onValueChange={(value) => setMemorySort(value as typeof memorySort)}>
-                        <SelectTrigger
-                          className="memory-filter-select h-10 w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 text-sm text-white focus:border-cyan-300/60 focus:outline-none"
-                          data-testid="select-memory-sort"
-                        >
-                          <SelectValue placeholder="Newest first" />
-                        </SelectTrigger>
-                        <SelectContent className="z-[100] border-white/20 bg-slate-900 text-white">
-                          <SelectItem value="newest">Newest first</SelectItem>
-                          <SelectItem value="oldest">Oldest first</SelectItem>
-                          <SelectItem value="title-asc">Title A–Z</SelectItem>
-                          <SelectItem value="title-desc">Title Z–A</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </label>
-                  </div>
-                  {memoryCategoryFilter !== "all" && (
-                    <p className="mt-2 text-xs text-white/60">
-                      Showing {displayedPublicMemories.length} of {publicMemories.length} memories
-                    </p>
-                  )}
-                </div>
                 <div className="grid grid-cols-3 gap-2">
                   {hasVerifiedAlumniBadge && (
                     <Card
@@ -493,7 +422,7 @@ export default function ProfilePage() {
                       </CardContent>
                     </Card>
                   )}
-                  {displayedPublicMemories.map((memory) => (
+                  {publicMemories.map((memory) => (
                     <Card
                       key={memory.id}
                       className="bg-white/5 border-white/10 overflow-hidden cursor-pointer hover:bg-white/10 transition-all"
