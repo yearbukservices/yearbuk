@@ -5,7 +5,7 @@ import "./index.css";
 const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement || document.createElement('link');
 link.type = 'image/png';
 link.rel = 'icon';
-link.href = "/tab_logo_good.png";
+link.href = "/chrome_search_logo.png";
 if (!document.querySelector("link[rel~='icon']")) {
   document.head.appendChild(link);
 }
