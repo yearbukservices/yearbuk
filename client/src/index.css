@@ -740,3 +740,23 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
     font-size: 16px;
   }
 }
+
+
+/* Keep native memory filters correctly anchored on mobile Safari. */
+.memory-filter-select {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .memory-filter-select {
+    width: 100%;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+    transform: none !important;
+    -webkit-appearance: auto !important;
+    appearance: auto !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
