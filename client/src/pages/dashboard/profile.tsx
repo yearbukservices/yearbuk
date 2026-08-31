@@ -8,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Settings, Award, Plus, Heart, Trash2, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Settings, Award, Plus, Heart, Trash2, ChevronLeft, ChevronRight, X, Search } from "lucide-react";
 import type { AlumniBadge, User as UserType, Memory, School } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import AlumniRequestDialog from "@/components/AlumniRequestDialog";
@@ -170,6 +170,9 @@ export default function ProfilePage() {
     collection: "posts" | "tagged";
   } | null>(null);
   const { toast } = useToast();
+  const [memorySearch, setMemorySearch] = useState("");
+  const [memoryCategoryFilter, setMemoryCategoryFilter] = useState("all");
+  const [memorySort, setMemorySort] = useState<"newest" | "oldest" | "title-asc" | "title-desc">("newest");
 
   useEffect(() => {
     resetMemoryInteraction();
@@ -259,6 +262,32 @@ export default function ProfilePage() {
     [userMemories]
   );
   const hasVerifiedAlumniBadge = alumniBadges.some((badge) => badge.status === "verified");
+
+  const memoryCategories = useMemo(() =>
+    Array.from(new Set(publicMemories.map((memory) => memory.category).filter((category): category is string => Boolean(category)))).sort(),
+    [publicMemories],
+  );
+
+  const displayedPublicMemories = useMemo(() => {
+    const searchTerm = memorySearch.trim().toLowerCase();
+    const filtered = publicMemories.filter((memory) => {
+      const matchesCategory = memoryCategoryFilter === "all" || memory.category === memoryCategoryFilter;
+      const searchableText = [memory.title, memory.description, memory.category, memory.year?.toString()].filter(Boolean).join(" ").toLowerCase();
+      return matchesCategory && (!searchTerm || searchableText.includes(searchTerm));
+    });
+
+    return [...filtered].sort((first, second) => {
+      if (memorySort === "title-asc" || memorySort === "title-desc") {
+        const comparison = first.title.localeCompare(second.title);
+        return memorySort === "title-asc" ? comparison : -comparison;
+      }
+
+      const firstTime = first.createdAt ? new Date(first.createdAt).getTime() : 0;
+      const secondTime = second.createdAt ? new Date(second.createdAt).getTime() : 0;
+      const comparison = (Number.isNaN(firstTime) ? 0 : firstTime) - (Number.isNaN(secondTime) ? 0 : secondTime);
+      return memorySort === "oldest" ? comparison : -comparison;
+    });
+  }, [publicMemories, memoryCategoryFilter, memorySearch, memorySort]);
 
   if (!user) return null;
 
@@ -401,6 +430,59 @@ export default function ProfilePage() {
                   <p className="text-white/60">No posts yet</p>
                 </div>
               ) : (
+                <div className="mb-4 rounded-xl border border-white/10 bg-black/10 p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <label className="flex-1">
+                      <span className="mb-1.5 block text-xs font-medium text-white/70">Search memories</span>
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
+                        <input
+                          type="search"
+                          value={memorySearch}
+                          onChange={(event) => setMemorySearch(event.target.value)}
+                          placeholder="Search by title or description"
+                          className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/50 pl-9 pr-3 text-sm text-white placeholder:text-white/40 focus:border-cyan-300/60 focus:outline-none"
+                          data-testid="input-memory-search"
+                        />
+                      </div>
+                    </label>
+                    <label className="sm:w-44">
+                      <span className="mb-1.5 block text-xs font-medium text-white/70">Filter</span>
+                      <select
+                        value={memoryCategoryFilter}
+                        onChange={(event) => setMemoryCategoryFilter(event.target.value)}
+                        className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 text-sm text-white focus:border-cyan-300/60 focus:outline-none"
+                        data-testid="select-memory-category"
+                      >
+                        <option value="all">All categories</option>
+                        {memoryCategories.map((category) => (
+                          <option key={category} value={category}>
+                            {category.replace(/_/g, " ")}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="sm:w-44">
+                      <span className="mb-1.5 block text-xs font-medium text-white/70">Sort by</span>
+                      <select
+                        value={memorySort}
+                        onChange={(event) => setMemorySort(event.target.value as typeof memorySort)}
+                        className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 text-sm text-white focus:border-cyan-300/60 focus:outline-none"
+                        data-testid="select-memory-sort"
+                      >
+                        <option value="newest">Newest first</option>
+                        <option value="oldest">Oldest first</option>
+                        <option value="title-asc">Title A–Z</option>
+                        <option value="title-desc">Title Z–A</option>
+                      </select>
+                    </label>
+                  </div>
+                  {(memorySearch.trim() || memoryCategoryFilter !== "all") && (
+                    <p className="mt-2 text-xs text-white/60">
+                      Showing {displayedPublicMemories.length} of {publicMemories.length} memories
+                    </p>
+                  )}
+                </div>
                 <div className="grid grid-cols-3 gap-2">
                   {hasVerifiedAlumniBadge && (
                     <Card
@@ -422,11 +504,11 @@ export default function ProfilePage() {
                       </CardContent>
                     </Card>
                   )}
-                  {publicMemories.map((memory, index) => (
+                  {displayedPublicMemories.map((memory) => (
                     <Card
                       key={memory.id}
                       className="bg-white/5 border-white/10 overflow-hidden cursor-pointer hover:bg-white/10 transition-all"
-                      onClick={() => setSelectedPostIndex(index)}
+                      onClick={() => setSelectedPostIndex(publicMemories.findIndex((item) => item.id === memory.id))}
                       data-testid={`card-memory-${memory.id}`}
                     >
                       <CardContent className="p-0 aspect-square">
