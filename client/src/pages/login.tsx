@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, GraduationCap, BookOpen, Users, Camera, Star, Shield, Heart } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
-import logoImage from "@assets/logo_background_null.png";
+import logoImage from "@assets/tab_logo_good.png";
 import { FaXTwitter, FaInstagram } from "react-icons/fa6";
 
 export default function LoginPage() {
@@ -140,7 +140,7 @@ export default function LoginPage() {
                   <img 
                     src={logoImage} 
                     alt="Waibuk Logo" 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover scale-110 origin-top"
                   />
                 </div>
                 
