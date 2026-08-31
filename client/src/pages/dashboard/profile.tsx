@@ -428,12 +428,12 @@ export default function ProfilePage() {
               ) : (<>
                 <div className="mb-4 rounded-xl border border-white/10 bg-black/10 p-3">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <label className="sm:w-44">
+                    <label className="block w-full sm:w-44">
                       <span className="mb-1.5 block text-xs font-medium text-white/70">Filter</span>
                       <select
                         value={memoryCategoryFilter}
                         onChange={(event) => setMemoryCategoryFilter(event.target.value)}
-                        className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 text-sm text-white focus:border-cyan-300/60 focus:outline-none"
+                        className="memory-filter-select h-10 w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 text-sm text-white focus:border-cyan-300/60 focus:outline-none"
                         data-testid="select-memory-category"
                       >
                         <option value="all">All categories</option>
@@ -444,12 +444,12 @@ export default function ProfilePage() {
                         ))}
                       </select>
                     </label>
-                    <label className="sm:w-44">
+                    <label className="block w-full sm:w-44">
                       <span className="mb-1.5 block text-xs font-medium text-white/70">Sort by</span>
                       <select
                         value={memorySort}
                         onChange={(event) => setMemorySort(event.target.value as typeof memorySort)}
-                        className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 text-sm text-white focus:border-cyan-300/60 focus:outline-none"
+                        className="memory-filter-select h-10 w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 text-sm text-white focus:border-cyan-300/60 focus:outline-none"
                         data-testid="select-memory-sort"
                       >
                         <option value="newest">Newest first</option>
