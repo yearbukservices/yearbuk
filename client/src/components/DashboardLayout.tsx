@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Bell, Menu, ShoppingCart, Settings, Home, LogOut, X, Library, User, Upload, Users, Search, BookOpen, Image as ImageIcon, Package, UserCheck } from "lucide-react";
-import logoImage from "@assets/logo_background_null.png";
+import logoImage from "@assets/chrome_search_logo.png";
 import type { Notification, User as UserType, AlumniBadge } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Calendar } from "lucide-react";
