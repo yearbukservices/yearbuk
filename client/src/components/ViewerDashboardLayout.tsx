@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, Menu, ShoppingCart, Settings, Home, LogOut, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoImage from "@assets/logo_background_null.png";
+import logoImage from "@assets/chrome_search_logo.png";
 import type { Notification, User } from "@shared/schema";
 
 interface ViewerDashboardLayoutProps {
