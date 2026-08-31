@@ -429,7 +429,7 @@ export default function ProfilePage() {
                   <Heart className="h-12 w-12 text-white/30 mx-auto mb-4" />
                   <p className="text-white/60">No posts yet</p>
                 </div>
-              ) : (
+              ) : (<>
                 <div className="mb-4 rounded-xl border border-white/10 bg-black/10 p-3">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                     <label className="flex-1">
@@ -527,7 +527,7 @@ export default function ProfilePage() {
                     </Card>
                   ))}
                 </div>
-              )}
+              </>)}
             </div>
           )}
 
