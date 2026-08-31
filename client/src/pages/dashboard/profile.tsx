@@ -8,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Settings, Award, Plus, Heart, Trash2, ChevronLeft, ChevronRight, X, Search } from "lucide-react";
+import { Settings, Award, Plus, Heart, Trash2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { AlumniBadge, User as UserType, Memory, School } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import AlumniRequestDialog from "@/components/AlumniRequestDialog";
@@ -170,7 +170,6 @@ export default function ProfilePage() {
     collection: "posts" | "tagged";
   } | null>(null);
   const { toast } = useToast();
-  const [memorySearch, setMemorySearch] = useState("");
   const [memoryCategoryFilter, setMemoryCategoryFilter] = useState("all");
   const [memorySort, setMemorySort] = useState<"newest" | "oldest" | "title-asc" | "title-desc">("newest");
 
@@ -269,12 +268,9 @@ export default function ProfilePage() {
   );
 
   const displayedPublicMemories = useMemo(() => {
-    const searchTerm = memorySearch.trim().toLowerCase();
-    const filtered = publicMemories.filter((memory) => {
-      const matchesCategory = memoryCategoryFilter === "all" || memory.category === memoryCategoryFilter;
-      const searchableText = [memory.title, memory.description, memory.category, memory.year?.toString()].filter(Boolean).join(" ").toLowerCase();
-      return matchesCategory && (!searchTerm || searchableText.includes(searchTerm));
-    });
+    const filtered = publicMemories.filter((memory) =>
+      memoryCategoryFilter === "all" || memory.category === memoryCategoryFilter,
+    );
 
     return [...filtered].sort((first, second) => {
       if (memorySort === "title-asc" || memorySort === "title-desc") {
@@ -287,7 +283,7 @@ export default function ProfilePage() {
       const comparison = (Number.isNaN(firstTime) ? 0 : firstTime) - (Number.isNaN(secondTime) ? 0 : secondTime);
       return memorySort === "oldest" ? comparison : -comparison;
     });
-  }, [publicMemories, memoryCategoryFilter, memorySearch, memorySort]);
+  }, [publicMemories, memoryCategoryFilter, memorySort]);
 
   if (!user) return null;
 
@@ -432,20 +428,6 @@ export default function ProfilePage() {
               ) : (<>
                 <div className="mb-4 rounded-xl border border-white/10 bg-black/10 p-3">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <label className="flex-1">
-                      <span className="mb-1.5 block text-xs font-medium text-white/70">Search memories</span>
-                      <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
-                        <input
-                          type="search"
-                          value={memorySearch}
-                          onChange={(event) => setMemorySearch(event.target.value)}
-                          placeholder="Search by title or description"
-                          className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/50 pl-9 pr-3 text-sm text-white placeholder:text-white/40 focus:border-cyan-300/60 focus:outline-none"
-                          data-testid="input-memory-search"
-                        />
-                      </div>
-                    </label>
                     <label className="sm:w-44">
                       <span className="mb-1.5 block text-xs font-medium text-white/70">Filter</span>
                       <select
@@ -477,7 +459,7 @@ export default function ProfilePage() {
                       </select>
                     </label>
                   </div>
-                  {(memorySearch.trim() || memoryCategoryFilter !== "all") && (
+                  {memoryCategoryFilter !== "all" && (
                     <p className="mt-2 text-xs text-white/60">
                       Showing {displayedPublicMemories.length} of {publicMemories.length} memories
                     </p>
