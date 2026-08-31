@@ -95,7 +95,7 @@ export function ViewerDashboardLayout({ children, user }: ViewerDashboardLayoutP
 
       {/* Notifications Dropdown */}
       {showNotifications && (
-        <div className="fixed top-20 right-4 w-96 max-w-[calc(100vw-2rem)] bg-blue-600/60 backdrop-blur-lg border border-white/20 rounded-lg shadow-2xl z-[999999] max-h-[calc(100vh-6rem)] overflow-hidden flex flex-col">
+        <div className="fixed top-20 right-4 w-96 max-w-[calc(100vw-2rem)] bg-blue-950/95 backdrop-blur-lg border border-white/20 rounded-lg shadow-2xl z-[999999] max-h-[calc(100vh-6rem)] overflow-hidden flex flex-col">
           <div className="p-4 border-b border-white/20">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-white">Notifications</h3>
