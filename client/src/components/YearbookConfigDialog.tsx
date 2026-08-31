@@ -340,7 +340,7 @@ export function YearbookConfigDialog({
                       </div>
                     </RadioGroup>
                     <p className="text-xs text-blue-100 mt-3">
-                      This choice isn’t permanent—you can change the upload type later if needed.
+                      This choice isn’t permanent— you can change the upload type later.
                     </p>
                   </CardContent>
                 </Card>
