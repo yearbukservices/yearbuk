@@ -1048,54 +1048,6 @@ export default function PhotosMemoriesManage() {
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-10 xl:px-14 py-5 sm:py-10">
         <div className="space-y-5 sm:space-y-7">
 
-          {/* Quick orientation */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-testid="memory-overview">
-            <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.1]">
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-blue-400/20 blur-2xl" />
-              <div className="relative flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-200/70">Uploaded memories</p>
-                  <p className="mt-2 text-2xl sm:text-3xl font-semibold text-white">{memoriesData.length}</p>
-                  <p className="mt-1 text-xs text-white/50">In your collection</p>
-                </div>
-                <div className="rounded-xl bg-blue-400/15 p-2.5 text-blue-200"><FolderOpen className="h-4 w-4" /></div>
-              </div>
-            </div>
-            <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.1]">
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-amber-300/20 blur-2xl" />
-              <div className="relative flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100/70">Needs review</p>
-                  <p className="mt-2 text-2xl sm:text-3xl font-semibold text-white">{pendingMemories.length}</p>
-                  <p className="mt-1 text-xs text-white/50">Waiting for approval</p>
-                </div>
-                <div className="rounded-xl bg-amber-300/15 p-2.5 text-amber-100"><Clock className="h-4 w-4" /></div>
-              </div>
-            </div>
-            <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.1]">
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-300/20 blur-2xl" />
-              <div className="relative flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-100/70">Categories</p>
-                  <p className="mt-2 text-2xl sm:text-3xl font-semibold text-white">{Math.max(availableCategories.length - 1, 0)}</p>
-                  <p className="mt-1 text-xs text-white/50">Ways to keep memories tidy</p>
-                </div>
-                <div className="rounded-xl bg-violet-300/15 p-2.5 text-violet-100"><Filter className="h-4 w-4" /></div>
-              </div>
-            </div>
-            <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] p-4 sm:p-5 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.1]">
-              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-300/20 blur-2xl" />
-              <div className="relative flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/70">Upload portal</p>
-                  <p className="mt-2 text-2xl sm:text-3xl font-semibold text-white">Ready</p>
-                  <p className="mt-1 text-xs text-white/50">Share a link with your community</p>
-                </div>
-                <div className="rounded-xl bg-cyan-300/15 p-2.5 text-cyan-100"><Share2 className="h-4 w-4" /></div>
-              </div>
-            </div>
-          </div>
-
           {/* Constant Memory Upload Link */}
           <Card className="bg-blue-500/[0.16] backdrop-blur-2xl border border-blue-300/25 shadow-[0_20px_70px_-28px_rgba(37,99,235,0.65)] rounded-2xl">
             <CardContent className="p-3 sm:p-4">
