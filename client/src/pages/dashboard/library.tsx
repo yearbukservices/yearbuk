@@ -29,8 +29,20 @@ export default function LibraryPage() {
     },
   });
 
+  // A library contains one entry per school/year, even if historical purchase
+  // records contain repeated successful transactions.
+  const uniquePurchasedYearbooks = Array.from(
+    purchasedYearbooks.reduce((unique: Map<string, any>, yearbook: any) => {
+      const key = `${yearbook.schoolId}:${yearbook.year}`;
+      if (!unique.has(key)) {
+        unique.set(key, yearbook);
+      }
+      return unique;
+    }, new Map<string, any>()).values(),
+  );
+
   // Group purchased yearbooks by school to create school folders/shelves
-  const groupedYearbooks = purchasedYearbooks.reduce((acc: any, yearbook: any) => {
+  const groupedYearbooks = uniquePurchasedYearbooks.reduce((acc: any, yearbook: any) => {
     const schoolName = yearbook.school?.name || 'Unknown School';
     if (!acc[schoolName]) {
       acc[schoolName] = [];
@@ -62,7 +74,7 @@ export default function LibraryPage() {
               <div>
                 <h3 className="text-lg font-semibold text-white">My Yearbook Library</h3>
                 <p className="text-sm text-white/70">
-                  {purchasedYearbooks.length} purchased yearbook{purchasedYearbooks.length !== 1 ? 's' : ''} from {schoolFolders.length} school{schoolFolders.length !== 1 ? 's' : ''}
+                  {uniquePurchasedYearbooks.length} purchased yearbook{uniquePurchasedYearbooks.length !== 1 ? 's' : ''} from {schoolFolders.length} school{schoolFolders.length !== 1 ? 's' : ''}
                 </p>
               </div>
             </div>
