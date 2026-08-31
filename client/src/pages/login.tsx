@@ -140,7 +140,7 @@ export default function LoginPage() {
                   <img 
                     src={logoImage} 
                     alt="Waibuk Logo" 
-                    className="w-full h-full object-cover scale-110 origin-top"
+                    className="w-full h-full object-cover scale-125 origin-top"
                   />
                 </div>
                 
@@ -212,7 +212,7 @@ export default function LoginPage() {
                 <img 
                   src={logoImage} 
                   alt="Waibuk Logo" 
-                  className="w-full h-full object-cover scale-110 origin-top"
+                  className="w-full h-full object-cover scale-125 origin-top"
                 />
               </div>
             </div>
