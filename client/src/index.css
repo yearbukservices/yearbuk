@@ -742,11 +742,6 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
 }
 
 
-/* Keep native memory filters correctly anchored on mobile Safari. */
-.memory-filter-select {
-  min-width: 0;
-}
-
 @media (max-width: 767px) {
   .memory-filter-select {
     width: 100%;
