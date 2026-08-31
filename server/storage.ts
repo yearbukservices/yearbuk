@@ -2540,7 +2540,26 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    return purchases.map(({ purchase, school }) => ({
+    // A user should see one library entry per school/year. The join above can
+    // return multiple rows when historical purchase records or published
+    // yearbook rows overlap, so keep the latest purchase for each yearbook.
+    const uniquePurchases = new Map<string, (typeof purchases)[number]>();
+    for (const entry of purchases) {
+      const key = `${entry.purchase.schoolId}:${entry.purchase.year}`;
+      const previous = uniquePurchases.get(key);
+      const previousTime = previous?.purchase.purchaseDate
+        ? new Date(previous.purchase.purchaseDate).getTime()
+        : 0;
+      const currentTime = entry.purchase.purchaseDate
+        ? new Date(entry.purchase.purchaseDate).getTime()
+        : 0;
+
+      if (!previous || currentTime >= previousTime) {
+        uniquePurchases.set(key, entry);
+      }
+    }
+
+    return Array.from(uniquePurchases.values()).map(({ purchase, school }) => ({
       ...purchase,
       school: school || null,
     }));
