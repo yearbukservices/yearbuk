@@ -443,7 +443,7 @@ export function YearbookConfigDialog({
 
           {!BETA_VERSION && !isFree && (
             <p className="text-xs text-gray-400 text-center">
-              * This is a demo. No actual payment will be processed.
+              
             </p>
           )}
         </div>
