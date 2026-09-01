@@ -95,6 +95,7 @@ export default function ViewerSettings() {
     confirmPassword: ""
   });
   const [showPhoneToAlumni, setShowPhoneToAlumni] = useState(true);
+  const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState(false);
 
   const requestPasswordResetMutation = useMutation({
     mutationFn: async () => {
@@ -1257,7 +1258,6 @@ export default function ViewerSettings() {
           </CardContent>
         </Card>
 
-        {/* Existing 2FA is administrator-only; do not expose a non-functional viewer toggle. */}
         <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-lg sm:text-xl flex items-center text-white">
@@ -1268,10 +1268,15 @@ export default function ViewerSettings() {
           <CardContent className="p-4 sm:p-6 pt-0">
             <div className="flex flex-col gap-3 rounded-lg border border-white/15 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-medium text-white">Not available for viewer accounts</p>
-                <p className="mt-1 text-sm text-white/60">Yearbuk’s existing two-factor flow is used for administrator sign-ins.</p>
+                <p className="font-medium text-white">Require two-factor authentication</p>
+                <p className="mt-1 text-sm text-white/60">When enabled, logins will require a verification code sent to the user’s email mailbox. Login enforcement will be connected in a future update.</p>
               </div>
-              <span className="w-fit rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs font-medium text-white/70">Managed by account type</span>
+              <Switch
+                checked={isTwoFactorEnabled}
+                onCheckedChange={setIsTwoFactorEnabled}
+                aria-label="Require two-factor authentication"
+                data-testid="switch-two-factor-authentication"
+              />
             </div>
           </CardContent>
         </Card>
