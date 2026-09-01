@@ -3027,6 +3027,11 @@ export class DatabaseStorage implements IStorage {
         .from(memories)
         .where(eq(memories.userId, userId));
       const memoryIds = ownedMemories.map((memory) => memory.id);
+      const ownedAlumniRequests = await tx
+        .select({ id: alumniRequests.id })
+        .from(alumniRequests)
+        .where(eq(alumniRequests.userId, userId));
+      const alumniRequestIds = ownedAlumniRequests.map((request) => request.id);
 
       // Remove tags before removing owned memories because the schema does not
       // declare cascading foreign keys. Also detach this person from shared memories.
@@ -3037,6 +3042,9 @@ export class DatabaseStorage implements IStorage {
       await tx.delete(photoTags).where(eq(photoTags.taggedUserId, userId));
 
       // Remove viewer-owned personal activity and access records.
+      if (alumniRequestIds.length > 0) {
+        await tx.delete(alumniBadges).where(inArray(alumniBadges.alumniRequestId, alumniRequestIds));
+      }
       await tx.delete(alumniBadges).where(eq(alumniBadges.userId, userId));
       await tx.delete(alumniRequests).where(eq(alumniRequests.userId, userId));
       await tx.delete(alumniRequestBlocks).where(eq(alumniRequestBlocks.userId, userId));
