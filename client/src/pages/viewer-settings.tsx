@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, CreditCard, Bell, Shield, Menu, Eye, EyeOff, Edit, Check, X, Settings, ShoppingCart, LogOut, MenuIcon, Home, Key, RefreshCw, Receipt, Camera, BookOpen, Crop } from "lucide-react";
+import { ArrowLeft, User, CreditCard, Bell, Shield, Menu, Eye, EyeOff, Edit, Check, X, Settings, ShoppingCart, LogOut, MenuIcon, Home, Key, RefreshCw, Receipt, Camera, BookOpen, Crop, Phone } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency, Currency } from "@/contexts/CurrencyContext";
 import type { User as UserType, AlumniBadge, Notification } from "@shared/schema";
@@ -88,6 +89,7 @@ export default function ViewerSettings() {
     newPassword: "",
     confirmPassword: ""
   });
+  const [showPhoneToAlumni, setShowPhoneToAlumni] = useState(true);
 
   const changePasswordMutation = useMutation({
     mutationFn: async () => {
@@ -280,6 +282,7 @@ export default function ViewerSettings() {
       fullName: parsedUser.fullName || "",
       phoneNumber: parsedUser.phoneNumber || ""
     }));
+    setShowPhoneToAlumni(parsedUser.showPhoneToAlumni !== false);
   }, [setLocation]);
 
   const handleBackClick = () => {
@@ -314,6 +317,7 @@ export default function ViewerSettings() {
         fullName: updatedUser.fullName || "",
         phoneNumber: updatedUser.phoneNumber || ""
       }));
+      setShowPhoneToAlumni(updatedUser.showPhoneToAlumni !== false);
       
       toast({
         className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
@@ -395,6 +399,35 @@ export default function ViewerSettings() {
     }));
   };
 
+  const privacyMutation = useMutation({
+    mutationFn: async (showPhone: boolean) => {
+      if (!user) throw new Error("No user found");
+      const response = await apiRequest("PATCH", `/api/users/${user.id}`, {
+        showPhoneToAlumni: showPhone,
+      });
+      return response.json();
+    },
+    onSuccess: (updatedUser) => {
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      window.dispatchEvent(new Event("userChanged"));
+      setUser(updatedUser);
+      setShowPhoneToAlumni(updatedUser.showPhoneToAlumni !== false);
+      toast({
+        className: "bg-green-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Privacy setting updated",
+        description: updatedUser.showPhoneToAlumni === false ? "Your phone number is hidden from verified alumni." : "Your phone number is visible to verified alumni.",
+      });
+    },
+    onError: (error: any, showPhone: boolean) => {
+      setShowPhoneToAlumni(!showPhone);
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Privacy setting failed",
+        description: error.message || "Unable to update your privacy setting.",
+        variant: "destructive",
+      });
+    },
+  });
   // Profile photo mutations
   const selectPresetAvatarMutation = useMutation({
     mutationFn: async (imageUrl: string) => {
@@ -1059,6 +1092,47 @@ export default function ViewerSettings() {
     );
   };
 
+  const renderPrivacyTab = () => {
+    return (
+      <div className="space-y-4 sm:space-y-6 max-w-4xl">
+        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl flex items-center text-white">
+              <Eye className="h-5 w-5 mr-2 text-green-400" />
+              Privacy
+            </CardTitle>
+            <p className="text-sm text-white/70 mt-2">Control how your personal information is shared across Yearbuk.</p>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <div className="rounded-lg border border-white/15 bg-white/5 p-4 sm:p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  <Phone className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-300" />
+                  <div className="min-w-0">
+                    <h3 className="font-medium text-white">Alumni Information</h3>
+                    <p className="mt-1 text-sm font-medium text-white/90">Phone number visibility</p>
+                    <p className="mt-1 text-sm text-white/60">Choose whether your phone number is shown to verified alumni in school alumni lists.</p>
+                    <p className="mt-2 text-xs text-white/50">{showPhoneToAlumni ? "Visible to verified alumni" : "Hidden from verified alumni"}</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={showPhoneToAlumni}
+                  onCheckedChange={(checked) => privacyMutation.mutate(checked)}
+                  disabled={privacyMutation.isPending || !user.phoneNumber}
+                  aria-label="Show my phone number to verified alumni"
+                  data-testid="switch-phone-visibility"
+                  className="self-end sm:self-center data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-white/20"
+                />
+              </div>
+              {!user.phoneNumber && (
+                <p className="mt-4 border-t border-white/10 pt-3 text-xs text-white/50">Add a phone number in Account Information before changing its visibility.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
   const renderSecurityTab = () => {
     const emailIsVerified = user.isEmailVerified === true;
 
@@ -1210,6 +1284,8 @@ export default function ViewerSettings() {
         return renderPaymentHistoryTab();
       case "security":
         return renderSecurityTab();
+      case "privacy":
+        return renderPrivacyTab();
       default:
         return renderProfileTab();
     }
@@ -1538,9 +1614,24 @@ export default function ViewerSettings() {
                   Password & Security
                 </button>
               </nav>
+            </div
+
+            {/* Privacy Section */}
+            <div>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Privacy</h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveTab("privacy")}
+                  className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${activeTab === "privacy" ? "bg-white/20 text-white font-medium" : "text-white/70 hover:text-white hover:bg-white/10"}`}
+                  data-testid="tab-privacy"
+                >
+                  <Eye className="h-4 w-4 mr-2 flex-shrink-0" />
+                  Privacy
+                </button>
+              </nav>
             </div>
           </div>
-        </div>
+        </div
 
         {/* Mobile Sidebar */}
         <div className={`fixed top-0 left-0 h-full w-64 bg-white/10 backdrop-blur-lg border-r border-white/20 z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto lg:hidden ${
@@ -1627,8 +1718,26 @@ export default function ViewerSettings() {
                 </button>
               </nav>
             </div>
+
+            {/* Privacy Section */}
+            <div>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Privacy</h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => {
+                    setActiveTab("privacy");
+                    setShowSidebar(false);
+                  }}
+                  className={`flex items-center w-full px-3 py-3 text-sm rounded-md transition-colors touch-manipulation ${activeTab === "privacy" ? "bg-white/20 text-white font-medium" : "text-white/70 hover:text-white hover:bg-white/10"}`}
+                  data-testid="tab-privacy-mobile"
+                >
+                  <Eye className="h-5 w-5 mr-3 flex-shrink-0" />
+                  Privacy
+                </button>
+              </nav>
+            </div>
           </div>
-        </div>
+        </div
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
