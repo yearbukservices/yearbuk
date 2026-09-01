@@ -321,6 +321,7 @@ export default function ViewerSettings() {
     try {
       await apiRequest("POST", "/api/auth/delete-account", { currentPassword: deletePassword });
       localStorage.removeItem("user");
+      queryClient.clear();
       window.dispatchEvent(new Event('userChanged'));
       toast({
         className: "bg-green-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
