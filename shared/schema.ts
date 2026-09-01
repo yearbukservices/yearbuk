@@ -25,7 +25,8 @@ export const users: PgTableWithColumns<any> = pgTable("users", {
   isEmailVerified: boolean("is_email_verified").default(false),
   emailVerificationToken: text("email_verification_token"),
   emailVerificationTokenExpiresAt: timestamp("email_verification_token_expires_at"),
-  twoFactorCode: text("two_factor_code"), // Hashed 6-digit code for 2FA (super admin only)
+  twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false), // Require email 2FA at login
+  twoFactorCode: text("two_factor_code"), // Hashed 6-digit code for 2FA
   twoFactorCodeExpiresAt: timestamp("two_factor_code_expires_at"), // 2FA code expiry (5 minutes)
   twoFactorCodeSentAt: timestamp("two_factor_code_sent_at"), // Last time 2FA code was sent (for cooldown)
   lastUsernameChange: timestamp("last_username_change"), // Track when username was last changed (for 14-day restriction)
