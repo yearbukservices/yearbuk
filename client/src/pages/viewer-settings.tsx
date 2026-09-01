@@ -97,7 +97,32 @@ export default function ViewerSettings() {
   });
   const [showPhoneToAlumni, setShowPhoneToAlumni] = useState(true);
 
-  const requestPasswordResetMutation = useMutation({\n    mutationFn: async () => {\n      if (!user?.email) throw new Error("No account email found");\n\n      const response = await apiRequest("POST", "/api/auth/request-password-reset", {\n        email: user.email,\n      });\n      return response.json();\n    },\n    onSuccess: () => {\n      toast({\n        className: "bg-green-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",\n        title: "Password reset email sent",\n        description: "Check " + user?.email + " for a secure link to reset your password.",\n      });\n    },\n    onError: (error: any) => {\n      toast({\n        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",\n        title: "Unable to send password reset email",\n        description: error.message || "Please try again later.",\n        variant: "destructive",\n      });\n    },\n  });\n  // Fetch alumni badges for account status
+  const requestPasswordResetMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.email) throw new Error("No account email found");
+
+      const response = await apiRequest("POST", "/api/auth/request-password-reset", {
+        email: user.email,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        className: "bg-green-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Password reset email sent",
+        description: "Check " + user?.email + " for a secure link to reset your password.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Unable to send password reset email",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
+  });
+  // Fetch alumni badges for account status
   const { data: alumniBadges = [] } = useQuery<AlumniBadge[]>({
     queryKey: ['/api/alumni-badges', user?.id],
     enabled: !!user
@@ -1158,7 +1183,33 @@ export default function ViewerSettings() {
           </CardContent>
         </Card>
 
-        {/* Password reset */}\n        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">\n          <CardHeader className="p-4 sm:p-6">\n            <CardTitle className="text-lg sm:text-xl flex items-center text-white">\n              <Key className="h-5 w-5 mr-2 text-cyan-400" />\n              Password Reset\n            </CardTitle>\n            <p className="text-sm text-white/70 mt-2">We’ll send a secure password reset link to the email address used to create your account.</p>\n          </CardHeader>\n          <CardContent className="p-4 sm:p-6 pt-0 space-y-4">\n            <div className="rounded-lg border border-white/15 bg-white/5 p-4">\n              <p className="text-xs uppercase tracking-wide text-white/50">Reset email</p>\n              <p className="mt-1 break-words text-sm text-white">{user.email || "No email address on this account"}</p>\n            </div>\n            <Button\n              type="button"\n              onClick={() => requestPasswordResetMutation.mutate()}\n              disabled={requestPasswordResetMutation.isPending || !user.email}\n              className="w-full sm:w-auto"\n              data-testid="button-request-password-reset"\n            >\n              {requestPasswordResetMutation.isPending ? "Sending reset email..." : "Send Password Reset Email"}\n            </Button>\n          </CardContent>\n        </Card>\n\n        {/* Existing 2FA is administrator-only; do not expose a non-functional viewer toggle. */}
+        {/* Password reset */}
+        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl flex items-center text-white">
+              <Key className="h-5 w-5 mr-2 text-cyan-400" />
+              Password Reset
+            </CardTitle>
+            <p className="text-sm text-white/70 mt-2">We’ll send a secure password reset link to the email address used to create your account.</p>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+            <div className="rounded-lg border border-white/15 bg-white/5 p-4">
+              <p className="text-xs uppercase tracking-wide text-white/50">Reset email</p>
+              <p className="mt-1 break-words text-sm text-white">{user.email || "No email address on this account"}</p>
+            </div>
+            <Button
+              type="button"
+              onClick={() => requestPasswordResetMutation.mutate()}
+              disabled={requestPasswordResetMutation.isPending || !user.email}
+              className="w-full sm:w-auto"
+              data-testid="button-request-password-reset"
+            >
+              {requestPasswordResetMutation.isPending ? "Sending reset email..." : "Send Password Reset Email"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Existing 2FA is administrator-only; do not expose a non-functional viewer toggle. */}
         <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-lg sm:text-xl flex items-center text-white">
