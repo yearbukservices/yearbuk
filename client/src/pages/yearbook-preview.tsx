@@ -960,7 +960,7 @@ export default function YearbookPreview() {
                         <div className="flex items-center justify-between space-x-2 py-2 px-3 bg-white/5 rounded-md border border-white/10">
                           <Label htmlFor="page-view-toggle-preview" className="text-xs sm:text-sm text-white cursor-pointer flex items-center gap-2">
                             <BookOpen className="h-4 w-4" />
-                            <span>{isSpreadView ? 'Two Page View' : 'Single Page'}</span>
+                            <span>{isSpreadView ? 'Two page view' : 'One page view'}</span>
                           </Label>
                           <Switch
                             id="page-view-toggle-preview"
