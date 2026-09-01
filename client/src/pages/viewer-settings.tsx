@@ -1154,7 +1154,7 @@ export default function ViewerSettings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-100">
               <AlertTriangle className="h-5 w-5" />
-              Danger Zone
+              Delete Account
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
