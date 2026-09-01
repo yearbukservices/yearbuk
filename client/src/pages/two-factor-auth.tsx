@@ -62,9 +62,12 @@ export default function TwoFactorAuthPage() {
 
       const data = await response.json();
       
+      const pendingRedirectTo = sessionStorage.getItem("pending2FARedirectTo") || data.redirectTo || "/super-admin";
+
       // Clear session storage
       sessionStorage.removeItem("pending2FAUserId");
       sessionStorage.removeItem("pending2FAEmail");
+      sessionStorage.removeItem("pending2FARedirectTo");
       
       // Clear any existing user data before storing new user
       localStorage.removeItem("user");
@@ -72,14 +75,16 @@ export default function TwoFactorAuthPage() {
       
       // Store user data in localStorage
       localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("superAdminToken", data.user.id);
+      if (data.user.userType === "super_admin" || data.user.role === "super_admin") {
+        localStorage.setItem("superAdminToken", data.user.id);
+      }
       
       // Dispatch custom event to notify CurrencyContext of user change
       window.dispatchEvent(new Event('userChanged'));
 
       setSuccess("Verification successful! Redirecting...");
       setTimeout(() => {
-        setLocation("/super-admin");
+        setLocation(pendingRedirectTo);
       }, 1000);
     } catch (error: any) {
       const errorText = await error.response?.text();
@@ -253,6 +258,7 @@ export default function TwoFactorAuthPage() {
                 onClick={() => {
                   sessionStorage.removeItem("pending2FAUserId");
                   sessionStorage.removeItem("pending2FAEmail");
+                  sessionStorage.removeItem("pending2FARedirectTo");
                   setLocation("/login");
                 }}
                 className="text-white"
