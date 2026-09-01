@@ -15,6 +15,7 @@ import SchoolSettingsTab from "@/pages/school-dashboard-tabs/settings";
 import SchoolAlumni from "@/pages/school-dashboard-tabs/alumni";
 import InstagramSchoolProfile from "@/pages/instagram-school-profile";
 import { useQuery } from "@tanstack/react-query";
+import LoadingSplash from "@/components/LoadingSplash";
 
 interface UnifiedDashboardProps {
   forceSchoolProfile?: string;
@@ -93,9 +94,14 @@ export default function UnifiedDashboard({ forceSchoolProfile, forceViewerProfil
     searchTabRef.current = resetFn;
   };
 
-  const { data: schoolData } = useQuery<{ id: string; username: string }>({
-    queryKey: ["/api/schools", user?.id],
-    enabled: !!user && userType === "school" && activeTab === "profile",
+  const schoolLookupId = user?.schoolId || user?.id;
+  const {
+    data: schoolData,
+    isLoading: schoolDataLoading,
+    isError: schoolDataError,
+  } = useQuery<{ id: string; username: string }>({
+    queryKey: ["/api/schools", schoolLookupId],
+    enabled: !!schoolLookupId && userType === "school" && activeTab === "profile",
   });
 
   // Render non-search content for viewer users
@@ -129,13 +135,26 @@ export default function UnifiedDashboard({ forceSchoolProfile, forceViewerProfil
       case "settings":
         return <SchoolSettingsTab user={user} />;
       case "profile":
-        return schoolData?.username ? (
+        if (schoolDataLoading) return <LoadingSplash />;
+        if (schoolDataError || !schoolData?.username) {
+          return (
+            <div className="min-h-[50vh] flex items-center justify-center px-4">
+              <div className="max-w-md rounded-2xl border border-white/20 bg-white/10 p-8 text-center text-white shadow-xl">
+                <h2 className="text-xl font-semibold">School profile unavailable</h2>
+                <p className="mt-2 text-blue-100">
+                  We couldn&apos;t load your school profile right now. Please refresh and try again.
+                </p>
+              </div>
+            </div>
+          );
+        }
+        return (
           <InstagramSchoolProfile
             schoolUsername={schoolData.username}
             initialTab="memories"
             inDashboard={true}
           />
-        ) : null;
+        );
       default:
         return <SchoolDashboardHome user={user} />;
     }
