@@ -1594,7 +1594,6 @@ export default function ViewerSettings() {
           <div className="p-4 space-y-6">
             {/* Account Section */}
             <div>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Account</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => setActiveTab("profile")}
@@ -1613,7 +1612,6 @@ export default function ViewerSettings() {
 
             {/* Billing Section */}
             <div className={BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Billing</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => setActiveTab("unlock")}
@@ -1644,7 +1642,6 @@ export default function ViewerSettings() {
 
             {/* Security Section */}
             <div>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Security</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => setActiveTab("security")}
@@ -1663,7 +1660,6 @@ export default function ViewerSettings() {
 
             {/* Privacy Section */}
             <div>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Privacy</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => setActiveTab("privacy")}
@@ -1685,7 +1681,6 @@ export default function ViewerSettings() {
           <div className="p-4 pt-20 space-y-6">
             {/* Account Section */}
             <div>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Account</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => {
@@ -1707,7 +1702,6 @@ export default function ViewerSettings() {
 
             {/* Billing Section */}
             <div className={BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Billing</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => {
@@ -1744,7 +1738,6 @@ export default function ViewerSettings() {
 
             {/* Security Section */}
             <div>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Security</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => {
@@ -1766,7 +1759,6 @@ export default function ViewerSettings() {
 
             {/* Privacy Section */}
             <div>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Privacy</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => {
