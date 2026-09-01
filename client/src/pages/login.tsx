@@ -42,6 +42,7 @@ export default function LoginPage() {
         // Store pending 2FA info in session storage
         sessionStorage.setItem("pending2FAUserId", data.userId);
         sessionStorage.setItem("pending2FAEmail", data.email);
+        sessionStorage.setItem("pending2FARedirectTo", data.redirectTo || "/");
         setLocation("/two-factor-auth");
         return;
       }
