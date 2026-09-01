@@ -1377,7 +1377,7 @@ export default function DynamicYearbookViewer() {
                         <div className="flex items-center justify-between space-x-2 py-2 px-3 bg-blue-900/90 rounded-md border border-blue-700/80">
                           <Label htmlFor="page-view-toggle" className="text-xs sm:text-sm text-white cursor-pointer flex items-center gap-2">
                             <BookOpen className="h-4 w-4" />
-                            <span>{isSpreadView ? 'Landscape Screens' : 'Portrait Screens'}</span>
+                            <span>{isSpreadView ? 'Two page view' : 'One page view'}</span>
                           </Label>
                           <Switch
                             id="page-view-toggle"
