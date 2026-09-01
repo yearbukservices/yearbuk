@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, User, CreditCard, Bell, Shield, Menu, Eye, EyeOff, Edit, Check, X, Settings, ShoppingCart, LogOut, MenuIcon, Home, Key, RefreshCw, Receipt, Camera, BookOpen, Crop, Phone, AlertTriangle, Trash2 } from "lucide-react";
+import { ArrowLeft, User, CreditCard, Bell, Shield, Menu, Eye, EyeOff, Edit, Check, X, Settings, ShoppingCart, LogOut, MenuIcon, Home, Key, RefreshCw, Receipt, Camera, BookOpen, Crop, Phone, AlertTriangle, Trash2, UserX } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -1125,6 +1125,22 @@ export default function ViewerSettings() {
               {!user.phoneNumber && (
                 <p className="mt-4 border-t border-white/10 pt-3 text-xs text-white/50">Add a phone number in Account Information before changing its visibility.</p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl" data-testid="card-blocked-accounts">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl flex items-center text-white">
+              <UserX className="h-5 w-5 mr-2 text-orange-300" />
+              Blocked accounts
+            </CardTitle>
+            <p className="text-sm text-white/70 mt-2">Manage the accounts you have blocked from interacting with you.</p>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <div className="rounded-lg border border-white/15 bg-white/5 p-4">
+              <p className="font-medium text-white">No blocked accounts</p>
+              <p className="mt-1 text-sm text-white/60">Accounts you block will appear here.</p>
             </div>
           </CardContent>
         </Card>
