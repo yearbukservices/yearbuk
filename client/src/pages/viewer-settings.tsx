@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, CreditCard, Bell, Shield, Menu, Eye, EyeOff, Edit, Check, X, Settings, ShoppingCart, LogOut, MenuIcon, Home, Key, RefreshCw, Receipt, Camera, BookOpen, Crop, Phone } from "lucide-react";
+import { ArrowLeft, User, CreditCard, Bell, Shield, Menu, Eye, EyeOff, Edit, Check, X, Settings, ShoppingCart, LogOut, MenuIcon, Home, Key, RefreshCw, Receipt, Camera, BookOpen, Crop, Phone, AlertTriangle, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +48,15 @@ export default function ViewerSettings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  // Account deletion state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<"warning" | "confirm">("warning");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteAcknowledged, setDeleteAcknowledged] = useState(false);
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState("");
 
   // Unlock year state
   const [codeInput, setCodeInput] = useState("");
@@ -293,6 +302,41 @@ export default function ViewerSettings() {
     localStorage.removeItem("user");
     window.dispatchEvent(new Event('userChanged'));
     setLocation("/home");
+  };
+
+  const resetDeleteDialog = () => {
+    setShowDeleteDialog(false);
+    setDeleteStep("warning");
+    setDeletePassword("");
+    setDeleteAcknowledged(false);
+    setShowDeletePassword(false);
+    setDeleteAccountError("");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user || !deletePassword || !deleteAcknowledged || isDeletingAccount) return;
+
+    setIsDeletingAccount(true);
+    setDeleteAccountError("");
+    try {
+      await apiRequest("POST", "/api/auth/delete-account", { currentPassword: deletePassword });
+      localStorage.removeItem("user");
+      window.dispatchEvent(new Event('userChanged'));
+      toast({
+        className: "bg-green-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Account deleted",
+        description: "Your Yearbuk account and personal data have been deleted.",
+      });
+      resetDeleteDialog();
+      setLocation("/home");
+    } catch (error: any) {
+      const message = error?.message || "Unable to delete your account. Please try again.";
+      setDeleteAccountError(message.toLowerCase().includes("password")
+        ? "The current password is incorrect."
+        : "Unable to delete your account right now. Please try again.");
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   // Update profile mutation
@@ -1743,10 +1787,136 @@ export default function ViewerSettings() {
         <div className="flex-1 min-w-0">
           <div className="p-4 sm:p-6">
             {renderContent()}
+            <div className="mt-10">
+              <Separator className="bg-white/10" />
+              <Card className="mt-6 border-red-300/25 bg-red-950/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-red-100">
+                    <AlertTriangle className="h-5 w-5" />
+                    Danger Zone
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-medium text-white">Delete your account</p>
+                    <p className="mt-1 max-w-2xl text-sm text-white/65">
+                      Permanently remove your profile, memories, badges, and account activity. Completed payment records are retained when required for accounting.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full shrink-0 border-red-300/40 bg-red-950/30 text-red-100 hover:bg-red-900/40 hover:text-white sm:w-auto"
+                    onClick={() => {
+                      setDeleteStep("warning");
+                      setDeletePassword("");
+                      setDeleteAcknowledged(false);
+                      setDeleteAccountError("");
+                      setShowDeleteDialog(true);
+                    }}
+                    data-testid="button-delete-account"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete account
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
       </div>
+
+
+      {/* Delete Account Dialog */}
+      <Dialog
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          if (!open && !isDeletingAccount) resetDeleteDialog();
+          else setShowDeleteDialog(open);
+        }}
+      >
+        <DialogContent className="max-w-lg border-red-300/25 bg-slate-950/95 text-white backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl text-red-100">
+              <AlertTriangle className="h-5 w-5" />
+              {deleteStep === "warning" ? "Delete your account?" : "Confirm permanent deletion"}
+            </DialogTitle>
+            <DialogDescription className="text-white/70">
+              {deleteStep === "warning"
+                ? "This cannot be undone. Your profile, memories, badges, saved activity, and account access will be removed."
+                : "Enter your current password to permanently delete this viewer account."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteStep === "warning" ? (
+            <div className="space-y-5">
+              <div className="rounded-lg border border-red-300/20 bg-red-950/30 p-4 text-sm text-red-50/85">
+                Completed payment records may be retained where required for accounting, but they will be anonymized. School-owned yearbooks and shared school content will not be deleted.
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={resetDeleteDialog} data-testid="button-cancel-delete-account">
+                  Cancel
+                </Button>
+                <Button className="bg-red-600 text-white hover:bg-red-700" onClick={() => { setDeleteStep("confirm"); setDeleteAccountError(""); }} data-testid="button-continue-delete-account">
+                  Continue
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="delete-account-password" className="text-white">Current password</Label>
+                <div className="relative">
+                  <Input
+                    id="delete-account-password"
+                    type={showDeletePassword ? "text" : "password"}
+                    value={deletePassword}
+                    onChange={(event) => { setDeletePassword(event.target.value); setDeleteAccountError(""); }}
+                    autoComplete="current-password"
+                    className="border-white/20 bg-white/10 pr-11 text-white placeholder:text-white/40"
+                    placeholder="Enter your current password"
+                    aria-invalid={Boolean(deleteAccountError)}
+                    data-testid="input-delete-account-password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                    onClick={() => setShowDeletePassword((visible) => !visible)}
+                    aria-label={showDeletePassword ? "Hide password" : "Show password"}
+                  >
+                    {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <label className="flex cursor-pointer items-start gap-3 text-sm text-white/80">
+                <input
+                  type="checkbox"
+                  checked={deleteAcknowledged}
+                  onChange={(event) => setDeleteAcknowledged(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-red-600"
+                  data-testid="checkbox-confirm-delete-account"
+                />
+                <span>I understand that this action is permanent and cannot be undone.</span>
+              </label>
+              {deleteAccountError && <p role="alert" className="text-sm text-red-300">{deleteAccountError}</p>}
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={resetDeleteDialog} disabled={isDeletingAccount} data-testid="button-cancel-final-delete">
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-red-600 text-white hover:bg-red-700"
+                  onClick={handleDeleteAccount}
+                  disabled={!deletePassword || !deleteAcknowledged || isDeletingAccount}
+                  data-testid="button-confirm-delete-account"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeletingAccount ? "Deleting..." : "Permanently delete"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Crop Dialog */}
       <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
