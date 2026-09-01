@@ -11,6 +11,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Settings, Award, Plus, Heart, Trash2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { AlumniBadge, User as UserType, Memory, School } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import LoadingSplash from "@/components/LoadingSplash";
 import AlumniRequestDialog from "@/components/AlumniRequestDialog";
 import { AlumniMemoryUploadDialog } from "@/components/AlumniMemoryUploadDialog";
 
@@ -175,20 +177,27 @@ export default function ProfilePage() {
     resetMemoryInteraction();
   }, [selectedPostIndex, selectedTaggedIndex]);
 
+  const { user: authUser, isLoading: authLoading } = useAuth();
+
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-      fetch(`/api/users/${parsedUser.id}`)
-        .then(res => res.json())
-        .then(updatedUser => {
-          setUser(updatedUser);
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-        })
-        .catch(err => console.error('Failed to refresh user data:', err));
+    if (authLoading) return;
+    if (!authUser) {
+      setUser(null);
+      return;
     }
-  }, []);
+
+    setUser(authUser as UserType);
+    fetch(`/api/users/${authUser.id}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to refresh user data");
+        return res.json();
+      })
+      .then(updatedUser => {
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      })
+      .catch(err => console.error("Failed to refresh user data:", err));
+  }, [authUser, authLoading]);
 
   const { data: alumniBadges = [] } = useQuery<AlumniBadge[]>({
     queryKey: ["/api/alumni-badges", user?.id],
@@ -260,6 +269,7 @@ export default function ProfilePage() {
   );
   const hasVerifiedAlumniBadge = alumniBadges.some((badge) => badge.status === "verified");
 
+  if (authLoading || (authUser && !user)) return <LoadingSplash />;
   if (!user) return null;
 
 
