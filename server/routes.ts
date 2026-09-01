@@ -2810,7 +2810,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user profile (email, username, fullName, password) - MUST come before /api/users/:id
   app.patch("/api/users/profile", async (req, res) => {
     try {
-      const { email, username, fullName, currentPassword, newPassword } = req.body;
+      const { email, username, fullName, currentPassword, newPassword, confirmPassword } = req.body;
       const authHeader = req.headers.authorization;
       
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -2826,17 +2826,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // If changing password, verify current password
-      if (newPassword) {
-        if (!currentPassword) {
+      // If changing password, verify the current password and hash the replacement.
+      let hashedNewPassword: string | undefined;
+      if (newPassword !== undefined) {
+        if (typeof newPassword !== "string" || newPassword.length < 8) {
+          return res.status(400).json({ message: "New password must be at least 8 characters" });
+        }
+        if (newPassword !== confirmPassword) {
+          return res.status(400).json({ message: "New password and confirmation do not match" });
+        }
+        if (typeof currentPassword !== "string" || !currentPassword) {
           return res.status(400).json({ message: "Current password required" });
         }
-        
-        // Here we would typically hash the currentPassword and compare with stored hash
-        // For now, assuming the storage layer handles password verification
-        if (currentUser.password !== currentPassword) {
+
+        const isCurrentPasswordValid = await comparePassword(currentPassword, currentUser.password);
+        if (!isCurrentPasswordValid) {
           return res.status(400).json({ message: "Current password is incorrect" });
         }
+
+        hashedNewPassword = await hashPassword(newPassword);
       }
       
       // Prepare update data
@@ -2844,7 +2852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (email !== undefined) updateData.email = email;
       if (username !== undefined) updateData.username = username;
       if (fullName !== undefined) updateData.fullName = fullName;
-      if (newPassword !== undefined) updateData.password = newPassword;
+      if (hashedNewPassword) updateData.password = hashedNewPassword;
       
       // Check if there's anything to update
       if (Object.keys(updateData).length === 0) {
