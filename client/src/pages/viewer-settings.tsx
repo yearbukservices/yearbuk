@@ -109,7 +109,7 @@ export default function ViewerSettings() {
       toast({
         className: "bg-green-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
         title: "Password reset email sent",
-        description: "Check " + user?.email + " for a secure link to reset your password.",
+        description: "Check your mailbox for a secure link to reset your password.",
       });
     },
     onError: (error: any) => {
