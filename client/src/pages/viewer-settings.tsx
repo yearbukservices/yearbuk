@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, User, CreditCard, Bell, Shield, Menu, Eye, EyeOff, Edit, Check, X, Settings, ShoppingCart, LogOut, MenuIcon, Home, Key, RefreshCw, Receipt, Camera, BookOpen, Crop, Phone, AlertTriangle, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -1132,6 +1131,43 @@ export default function ViewerSettings() {
       </div>
     );
   };
+  const renderDeleteAccountTab = () => {
+    return (
+      <div className="space-y-4 sm:space-y-6 max-w-4xl">
+        <Card className="border-red-300/25 bg-red-950/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-100">
+              <AlertTriangle className="h-5 w-5" />
+              Danger Zone
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-medium text-white">Delete your account</p>
+              <p className="mt-1 max-w-2xl text-sm text-white/65">
+                Permanently remove your profile, memories, badges, and account activity. Completed payment records are retained when required for accounting.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="w-full shrink-0 border-red-300/40 bg-red-950/30 text-red-100 hover:bg-red-900/40 hover:text-white sm:w-auto"
+              onClick={() => {
+                setDeleteStep("warning");
+                setDeletePassword("");
+                setDeleteAcknowledged(false);
+                setDeleteAccountError("");
+                setShowDeleteDialog(true);
+              }}
+              data-testid="button-delete-account"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete account
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
   const renderSecurityTab = () => {
     const emailIsVerified = user.isEmailVerified === true;
 
@@ -1242,6 +1278,8 @@ export default function ViewerSettings() {
         return renderSecurityTab();
       case "privacy":
         return renderPrivacyTab();
+      case "delete-account":
+        return renderDeleteAccountTab();
       default:
         return renderProfileTab();
     }
@@ -1580,6 +1618,14 @@ export default function ViewerSettings() {
                   <Eye className="h-4 w-4 mr-2 flex-shrink-0" />
                   Privacy
                 </button>
+                <button
+                  onClick={() => setActiveTab("delete-account")}
+                  className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${activeTab === "delete-account" ? "bg-white/20 text-white font-medium" : "text-white/70 hover:text-white hover:bg-white/10"}`}
+                  data-testid="tab-delete-account"
+                >
+                  <Trash2 className="h-4 w-4 mr-2 flex-shrink-0 text-red-300" />
+                  Delete Account
+                </button>
               </nav>
             </div>
           </div>
@@ -1682,6 +1728,17 @@ export default function ViewerSettings() {
                   <Eye className="h-5 w-5 mr-3 flex-shrink-0" />
                   Privacy
                 </button>
+                <button
+                  onClick={() => {
+                    setActiveTab("delete-account");
+                    setShowSidebar(false);
+                  }}
+                  className={`flex items-center w-full px-3 py-3 text-sm rounded-md transition-colors touch-manipulation ${activeTab === "delete-account" ? "bg-white/20 text-white font-medium" : "text-white/70 hover:text-white hover:bg-white/10"}`}
+                  data-testid="tab-delete-account-mobile"
+                >
+                  <Trash2 className="h-5 w-5 mr-3 flex-shrink-0 text-red-300" />
+                  Delete Account
+                </button>
               </nav>
             </div>
           </div>
@@ -1691,40 +1748,6 @@ export default function ViewerSettings() {
         <div className="flex-1 min-w-0">
           <div className="p-4 sm:p-6">
             {renderContent()}
-            <div className="mt-10">
-              <Separator className="bg-white/10" />
-              <Card className="mt-6 border-red-300/25 bg-red-950/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-red-100">
-                    <AlertTriangle className="h-5 w-5" />
-                    Danger Zone
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-medium text-white">Delete your account</p>
-                    <p className="mt-1 max-w-2xl text-sm text-white/65">
-                      Permanently remove your profile, memories, badges, and account activity. Completed payment records are retained when required for accounting.
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="w-full shrink-0 border-red-300/40 bg-red-950/30 text-red-100 hover:bg-red-900/40 hover:text-white sm:w-auto"
-                    onClick={() => {
-                      setDeleteStep("warning");
-                      setDeletePassword("");
-                      setDeleteAcknowledged(false);
-                      setDeleteAccountError("");
-                      setShowDeleteDialog(true);
-                    }}
-                    data-testid="button-delete-account"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete account
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
       </div>
