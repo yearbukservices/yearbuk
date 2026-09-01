@@ -542,12 +542,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Check if user is super admin and needs 2FA
+      // Require email 2FA for super admins in the existing protected environments,
+      // or for any account that has enabled the setting.
       const isSuperAdmin = user.userType === "super_admin" || user.role === "super_admin";
       const shouldRequireTwoFactor =
-        process.env.NODE_ENV === "production" || Boolean(process.env.RESEND_API_KEY);
+        (isSuperAdmin && (process.env.NODE_ENV === "production" || Boolean(process.env.RESEND_API_KEY))) ||
+        user.twoFactorEnabled === true;
 
-      if (isSuperAdmin && shouldRequireTwoFactor) {
+      if (shouldRequireTwoFactor) {
+        if (!user.email) {
+          await trackLoginActivity(req, user.id, 'failed', '2FA email unavailable');
+          return res.status(400).json({ message: "A valid email address is required to use two-factor authentication." });
+        }
+
         // Check if there's already a valid, unused 2FA code
         const now = new Date();
         const hasValidCode = user.twoFactorCode && 
@@ -580,7 +587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const emailHtml = createTwoFactorAuthEmail(code);
           
           const emailResult = await sendEmail(
-            user.email!,
+            user.email,
             "Your Security Code - Yearbuk",
             emailHtml
           );
@@ -601,7 +608,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ 
           requires2FA: true, 
           userId: user.id,
-          email: user.email
+          email: user.email,
+          redirectTo: isSuperAdmin ? "/super-admin" : "/"
         });
       }
 
@@ -616,15 +624,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         redirectTo = "/";
       }
 
-      // Return user info (excluding password) with redirect
-      const { password: _, ...userInfo } = user;
+      // Return user info (excluding password and 2FA secrets) with redirect
+      const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, ...userInfo } = user;
       res.json({ user: userInfo, redirectTo });
     } catch (error) {
       res.status(500).json({ message: "Login failed" });
     }
   });
 
-  // Verify 2FA code for super admin
+  // Verify 2FA code for any account with login 2FA enabled
   app.post("/api/auth/verify-2fa", async (req, res) => {
     try {
       const { userId, code } = req.body;
@@ -639,8 +647,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Check if user is super admin
-      if (user.userType !== "super_admin" && user.role !== "super_admin") {
+      // Super admins use the existing protected flow; other accounts must have enabled 2FA.
+      const isSuperAdmin = user.userType === "super_admin" || user.role === "super_admin";
+      if (!isSuperAdmin && user.twoFactorEnabled !== true) {
         return res.status(403).json({ message: "2FA not required for this account" });
       }
       
@@ -674,11 +683,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Track successful login
       await trackLoginActivity(req, user.id, 'success', '2FA verified', null);
       
-      // Return user info (excluding password)
-      const { password: _, twoFactorCode: __, ...userInfo } = user;
+      // Return user info without password or 2FA secrets
+      const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, ...userInfo } = user;
       res.json({ 
         user: userInfo, 
-        redirectTo: "/super-admin" 
+        redirectTo: isSuperAdmin ? "/super-admin" : "/" 
       });
     } catch (error) {
       console.error("2FA verification error:", error);
@@ -686,7 +695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Resend 2FA code for super admin
+  // Resend 2FA code for any account with login 2FA enabled
   app.post("/api/auth/resend-2fa", async (req, res) => {
     try {
       const { userId } = req.body;
@@ -701,8 +710,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Check if user is super admin
-      if (user.userType !== "super_admin" && user.role !== "super_admin") {
+      // Super admins use the existing protected flow; other accounts must have enabled 2FA.
+      const isSuperAdmin = user.userType === "super_admin" || user.role === "super_admin";
+      if (!isSuperAdmin && user.twoFactorEnabled !== true) {
         return res.status(403).json({ message: "2FA not required for this account" });
       }
       
@@ -2970,13 +2980,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user privacy settings and profile
   app.patch("/api/users/:id", async (req, res) => {
     try {
-      const { showPhoneToAlumni, phoneNumber, username, fullName } = req.body;
+      const { showPhoneToAlumni, phoneNumber, username, fullName, twoFactorEnabled } = req.body;
       const userId = req.params.id;
       
       // Validate that only allowed fields are being updated
       const updateData: any = {};
       if (showPhoneToAlumni !== undefined) updateData.showPhoneToAlumni = showPhoneToAlumni;
       if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
+      if (twoFactorEnabled !== undefined) {
+        if (typeof twoFactorEnabled !== "boolean") {
+          return res.status(400).json({ message: "Two-factor authentication setting must be a boolean" });
+        }
+        updateData.twoFactorEnabled = twoFactorEnabled;
+      }
       if (fullName !== undefined) {
         const normalizedFullName = typeof fullName === "string" ? fullName.trim() : "";
         if (!normalizedFullName) {
