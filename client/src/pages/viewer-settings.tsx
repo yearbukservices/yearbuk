@@ -1614,7 +1614,7 @@ export default function ViewerSettings() {
                   Password & Security
                 </button>
               </nav>
-            </div
+            </div>
 
             {/* Privacy Section */}
             <div>
@@ -1631,7 +1631,7 @@ export default function ViewerSettings() {
               </nav>
             </div>
           </div>
-        </div
+        </div>
 
         {/* Mobile Sidebar */}
         <div className={`fixed top-0 left-0 h-full w-64 bg-white/10 backdrop-blur-lg border-r border-white/20 z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto lg:hidden ${
@@ -1737,7 +1737,7 @@ export default function ViewerSettings() {
               </nav>
             </div>
           </div>
-        </div
+        </div>
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
