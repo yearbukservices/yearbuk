@@ -246,6 +246,7 @@ export default function ViewerSettings() {
       phoneNumber: parsedUser.phoneNumber || ""
     }));
     setShowPhoneToAlumni(parsedUser.showPhoneToAlumni !== false);
+    setIsTwoFactorEnabled(parsedUser.twoFactorEnabled === true);
   }, [setLocation]);
 
   const handleBackClick = () => {
@@ -317,6 +318,7 @@ export default function ViewerSettings() {
         phoneNumber: updatedUser.phoneNumber || ""
       }));
       setShowPhoneToAlumni(updatedUser.showPhoneToAlumni !== false);
+       setIsTwoFactorEnabled(updatedUser.twoFactorEnabled === true);
       
       toast({
         className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
@@ -338,6 +340,14 @@ export default function ViewerSettings() {
       setIsUpdatingProfile(false);
     }
   });
+
+  const handleTwoFactorToggle = (enabled: boolean) => {
+    const previousValue = isTwoFactorEnabled;
+    setIsTwoFactorEnabled(enabled);
+    updateProfileMutation.mutate({ twoFactorEnabled: enabled }, {
+      onError: () => setIsTwoFactorEnabled(previousValue),
+    });
+  };
 
   const handleSaveField = (field: string) => {
     if (!user) return;
@@ -1273,7 +1283,7 @@ export default function ViewerSettings() {
               </div>
               <Switch
                 checked={isTwoFactorEnabled}
-                onCheckedChange={setIsTwoFactorEnabled}
+                onCheckedChange={handleTwoFactorToggle}
                 aria-label="Require two-factor authentication"
                 data-testid="switch-two-factor-authentication"
               />
