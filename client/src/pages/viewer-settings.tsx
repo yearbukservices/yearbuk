@@ -39,6 +39,7 @@ export default function ViewerSettings() {
     email: "",
     username: "",
     fullName: "",
+    phoneNumber: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
@@ -83,6 +84,7 @@ export default function ViewerSettings() {
     email: "",
     username: "",
     fullName: "",
+    phoneNumber: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
@@ -145,35 +147,45 @@ export default function ViewerSettings() {
     markNotificationReadMutation.mutate(notificationId);
   };
 
-  // Determine account status (consistent with viewer-dashboard logic)
+  // Determine account status from the existing viewer and alumni verification data.
+  const verifiedAlumniBadges = alumniBadges.filter((badge: any) => badge.status === "verified");
+
   const getAccountStatus = () => {
-    if (!user || !user.userType) return 'Unknown';
-    
-    // Count verified and total badges
-    const verifiedBadges = alumniBadges.filter((badge: any) => badge.status === 'verified');
-    const totalBadges = alumniBadges.length;
-    
+    if (!user || !user.userType) return "Unknown";
+
     switch (user.userType.toLowerCase()) {
-      case 'student':
-        return 'Student';
-      case 'viewer':
-        if (verifiedBadges.length > 0) {
-          return `Alumni(${verifiedBadges.length})`;
-        } else {
-          return 'Viewer';
-        }
-      case 'school':
-        return 'School Admin';
-      case 'super_admin':
-        return 'Super Admin';
+      case "student":
+        return "Student";
+      case "viewer":
+        return verifiedAlumniBadges.length > 0 ? "Verified Alumni" : "Viewer";
+      case "school":
+        return "School Admin";
+      case "super_admin":
+        return "Super Admin";
       default:
-        return 'Unknown';
+        return "Unknown";
     }
   };
-  
-  const accountStatus = getAccountStatus();
 
-  useEffect(() => {
+  const accountStatus = getAccountStatus();
+  const verifiedAlumniSchool = verifiedAlumniBadges[0]?.school;
+
+  const formatDateOfBirth = (value: unknown) => {
+    if (!value) return "Not provided";
+
+    const dateOnly = String(value).slice(0, 10);
+    const [year, month, day] = dateOnly.split("-").map(Number);
+    if (!year || !month || !day) return String(value);
+
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(Date.UTC(year, month - 1, day)));
+  };
+
+    useEffect(() => {
     const userData = localStorage.getItem("user");
     if (!userData) {
       setLocation("/");
@@ -187,7 +199,8 @@ export default function ViewerSettings() {
       ...prev,
       email: parsedUser.email || "",
       username: parsedUser.username || "",
-      fullName: parsedUser.fullName || ""
+      fullName: parsedUser.fullName || "",
+      phoneNumber: parsedUser.phoneNumber || ""
     }));
   }, [setLocation]);
 
@@ -220,7 +233,8 @@ export default function ViewerSettings() {
         ...prev,
         email: updatedUser.email || "",
         username: updatedUser.username || "",
-        fullName: updatedUser.fullName || ""
+        fullName: updatedUser.fullName || "",
+        phoneNumber: updatedUser.phoneNumber || ""
       }));
       
       toast({
@@ -246,13 +260,25 @@ export default function ViewerSettings() {
 
   const handleSaveField = (field: string) => {
     if (!user) return;
-    
-    const value = tempValues[field as keyof typeof tempValues];
-    if (!value.trim()) {
+
+    const rawValue = tempValues[field as keyof typeof tempValues];
+    const value = typeof rawValue === "string" ? rawValue.trim() : "";
+
+    if ((field === "fullName" || field === "username") && !value) {
       toast({
         className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
         title: "Invalid input",
-        description: "Field cannot be empty",
+        description: field === "fullName" ? "Full name cannot be empty" : "Username cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (field === "phoneNumber" && value && !/^\([1-9]\d{0,3}\)\d{4,15}$/.test(value)) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Invalid phone number",
+        description: "Use the format (country code)(number), for example (234)8012345678.",
         variant: "destructive",
       });
       return;
@@ -261,7 +287,6 @@ export default function ViewerSettings() {
     setIsUpdatingProfile(true);
     updateProfileMutation.mutate({ [field]: value });
   };
-
   const handleCancelEdit = (field: string) => {
     setEditingField(null);
     setTempValues(prev => ({
@@ -417,7 +442,7 @@ export default function ViewerSettings() {
     <div className="space-y-4 sm:space-y-6 max-w-4xl">
       <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
         <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl text-white">Personal Information</CardTitle>
+          <CardTitle className="text-lg sm:text-xl text-white">Account Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
           {/* Full Name Field */}
@@ -551,6 +576,96 @@ export default function ViewerSettings() {
               className="bg-white/5 backdrop-blur-lg border border-white/20 text-white/70 h-10 sm:h-11 cursor-not-allowed"
               data-testid="input-email"
             />
+          </div>
+
+          {/* Phone Number Field */}
+          <div className="grid gap-2">
+            <Label htmlFor="phoneNumber" data-testid="label-phone-number" className="text-sm font-medium text-white">Phone Number</Label>
+            <div className="flex items-center gap-2">
+              {editingField === "phoneNumber" ? (
+                <>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={tempValues.phoneNumber}
+                    onChange={(e) => setTempValues(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                    className="flex-1 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/60"
+                    placeholder="(234)8012345678"
+                    data-testid="input-phone-number-edit"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleSaveField("phoneNumber")}
+                    disabled={isUpdatingProfile}
+                    data-testid="button-save-phone-number"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleCancelEdit("phoneNumber")}
+                    disabled={isUpdatingProfile}
+                    data-testid="button-cancel-phone-number"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={profileForm.phoneNumber}
+                    readOnly
+                    placeholder="Not provided"
+                    className="flex-1 bg-white/5 backdrop-blur-lg border border-white/20 text-white/70 h-10 sm:h-11"
+                    data-testid="input-phone-number"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => startEditing("phoneNumber")}
+                    data-testid="button-edit-phone-number"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 touch-manipulation"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+            <p className="text-xs text-white/60">Use the format (country code)(number).</p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Date of Birth */}
+            <div className="grid gap-2">
+              <Label htmlFor="dateOfBirth" data-testid="label-date-of-birth" className="text-sm font-medium text-white">Date of Birth</Label>
+              <Input
+                id="dateOfBirth"
+                value={formatDateOfBirth(user.dateOfBirth)}
+                readOnly
+                disabled
+                className="bg-white/5 backdrop-blur-lg border border-white/20 text-white/70 h-10 sm:h-11 cursor-not-allowed"
+                data-testid="input-date-of-birth"
+              />
+              <p className="text-xs text-white/60">Private account information.</p>
+            </div>
+
+            {/* Account Type / Status */}
+            <div className="grid gap-2">
+              <Label data-testid="label-account-status" className="text-sm font-medium text-white">Account Type / Status</Label>
+              <div className="min-h-10 sm:min-h-11 flex flex-col justify-center rounded-md border border-white/20 bg-white/5 px-3 py-2">
+                <span className={`inline-flex w-fit items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${accountStatus === "Verified Alumni" ? "border-green-400/30 bg-green-500/20 text-green-200" : "border-blue-400/30 bg-blue-500/20 text-blue-200"}`}>{accountStatus}</span>
+                {accountStatus === "Verified Alumni" && verifiedAlumniSchool && (
+                  <span className="mt-1 text-xs text-white/60">School: {verifiedAlumniSchool}</span>
+                )}
+              </div>
+              <p className="text-xs text-white/60">Managed by Yearbuk verification.</p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -1085,7 +1200,7 @@ export default function ViewerSettings() {
             <div className="flex items-center space-x-1 sm:space-x-4 flex-shrink-0">
               {/* Mobile Circle Status Indicator - Show only on small screens */}
               <div className="sm:hidden relative">
-                {accountStatus === "Alumni" ? (
+                {accountStatus === "Verified Alumni" ? (
                   <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                     {alumniBadges.filter(b => b.status === "verified").length}
                   </div>
@@ -1096,7 +1211,7 @@ export default function ViewerSettings() {
               
               {/* Desktop Account Status Indicator - Hidden on small screens */}
               <div className={`hidden sm:block px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
-                accountStatus.startsWith("Alumni") 
+                accountStatus === "Verified Alumni" 
                   ? "bg-green-500/20 text-green-200 border border-green-400/30" 
                   : "bg-blue-500/20 text-blue-200 border border-blue-400/30"
               }`}>
@@ -1280,7 +1395,7 @@ export default function ViewerSettings() {
                   data-testid="tab-profile"
                 >
                   <User className="h-4 w-4 mr-2 flex-shrink-0" />
-                  Profile Settings
+                  Account Information
                 </button>
               </nav>
             </div>
@@ -1359,7 +1474,7 @@ export default function ViewerSettings() {
                   data-testid="tab-profile-mobile"
                 >
                   <User className="h-5 w-5 mr-3 flex-shrink-0" />
-                  Profile Settings
+                  Account Information
                 </button>
               </nav>
             </div>
