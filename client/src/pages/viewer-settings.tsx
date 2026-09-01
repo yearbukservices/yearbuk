@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type FormEvent } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -7,12 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, CreditCard, Bell, Shield, Menu, Eye, EyeOff, Edit, Check, X, Settings, ShoppingCart, LogOut, MenuIcon, Home, Key, RefreshCw, Receipt, Clock, MapPin, Monitor, Smartphone, Camera, BookOpen, Crop } from "lucide-react";
+import { ArrowLeft, User, CreditCard, Bell, Shield, Menu, Eye, EyeOff, Edit, Check, X, Settings, ShoppingCart, LogOut, MenuIcon, Home, Key, RefreshCw, Receipt, Camera, BookOpen, Crop } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency, Currency } from "@/contexts/CurrencyContext";
 import type { User as UserType, AlumniBadge, Notification } from "@shared/schema";
-import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
 import { BETA_VERSION } from "@shared/constants";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import Cropper from "react-easy-crop";
@@ -90,6 +89,39 @@ export default function ViewerSettings() {
     confirmPassword: ""
   });
 
+  const changePasswordMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("No user found");
+
+      const response = await apiRequest("PATCH", "/api/users/profile", {
+        currentPassword: profileForm.currentPassword,
+        newPassword: profileForm.newPassword,
+        confirmPassword: profileForm.confirmPassword,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      setProfileForm(prev => ({
+        ...prev,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
+      toast({
+        className: "bg-green-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Password changed",
+        description: "Your password has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Password change failed",
+        description: error.message || "Unable to change your password.",
+        variant: "destructive",
+      });
+    },
+  });
   // Fetch alumni badges for account status
   const { data: alumniBadges = [] } = useQuery<AlumniBadge[]>({
     queryKey: ['/api/alumni-badges', user?.id],
@@ -121,18 +153,6 @@ export default function ViewerSettings() {
     enabled: !!user
   });
 
-  // Fetch login activity (for security tab)
-  const { data: loginActivity = [], isLoading: loadingLoginActivity } = useQuery<any[]>({
-    queryKey: ["/api/users", user?.id, "login-activity"],
-    enabled: !!user?.id && activeTab === "security",
-  });
-
-  // Fetch most recent login (for security tab)
-  const { data: recentLogin, isLoading: loadingRecentLogin } = useQuery<any>({
-    queryKey: ["/api/users", user?.id, "recent-login"],
-    enabled: !!user?.id && activeTab === "security",
-  });
-
   // Mark notification as read mutation
   const markNotificationReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
@@ -143,6 +163,64 @@ export default function ViewerSettings() {
     }
   });
 
+  const resendVerificationMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("No user found");
+      const response = await apiRequest("POST", "/api/resend-verification", { userId: user.id });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        className: "bg-green-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Verification email sent",
+        description: "Check your inbox for the verification link.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Unable to send verification email",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleChangePassword = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (profileForm.newPassword.length < 8) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Password is too short",
+        description: "Your new password must be at least 8 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (profileForm.newPassword !== profileForm.confirmPassword) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Passwords do not match",
+        description: "Enter the same new password in both fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!profileForm.currentPassword) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Current password required",
+        description: "Enter your current password to continue.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    changePasswordMutation.mutate();
+  };
   const handleMarkNotificationRead = (notificationId: string) => {
     markNotificationReadMutation.mutate(notificationId);
   };
@@ -982,134 +1060,146 @@ export default function ViewerSettings() {
   };
 
   const renderSecurityTab = () => {
-    return (
-      <div className="space-y-4 sm:space-y-6 max-w-6xl">
-        {/* Most Recent Login Card */}
-        {recentLogin && (
-          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-lg sm:text-xl flex items-center text-white">
-                <Shield className="h-5 w-5 mr-2 text-green-400" />
-                Most Recent Login
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <div className="flex items-center text-white/70 text-sm">
-                    <Smartphone className="h-4 w-4 mr-2" />
-                    <span>Device: {recentLogin.deviceType || 'Unknown'} - {recentLogin.browser || 'Unknown'}</span>
-                  </div>
-                  <div className="flex items-center text-white/70 text-sm">
-                    <Monitor className="h-4 w-4 mr-2" />
-                    <span>OS: {recentLogin.os || 'Unknown'}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center text-white/70 text-sm">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <span>Location: {recentLogin.city || recentLogin.country || 'Unknown'}</span>
-                  </div>
-                  <div className="flex items-center text-white/70 text-sm">
-                    <Clock className="h-4 w-4 mr-2" />
-                    <span>{new Date(recentLogin.createdAt).toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+    const emailIsVerified = user.isEmailVerified === true;
 
-        {/* Login Activity History */}
+    return (
+      <div className="space-y-4 sm:space-y-6 max-w-4xl">
         <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-lg sm:text-xl flex items-center text-white">
-              <Clock className="h-5 w-5 mr-2 text-blue-400" />
-              Login Activity
+              <Shield className="h-5 w-5 mr-2 text-green-400" />
+              Password &amp; Security
             </CardTitle>
-            <p className="text-sm text-white/70 mt-2">
-              Review your recent login history and security activity
-            </p>
+            <p className="text-sm text-white/70 mt-2">Manage your password and review the security state of your viewer account.</p>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0">
-            {loadingLoginActivity ? (
-              <div className="flex items-center justify-center py-8">
-                <RefreshCw className="h-6 w-6 animate-spin text-white" />
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+            {/* Security overview */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border border-white/15 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-wide text-white/50">Password</p>
+                <p className="mt-1 text-sm text-white/80">Password changes require your current password.</p>
               </div>
-            ) : loginActivity && loginActivity.length > 0 ? (
-              <div className="max-h-96 overflow-y-auto pr-2 space-y-3">
-                {loginActivity.map((activity: any, index: number) => (
-                  <div key={activity.id || index} className="bg-white/5 backdrop-blur-lg border border-white/20 rounded-lg p-4">
-                    <div className="flex justify-between items-start flex-wrap gap-2">
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <span className={`inline-flex items-center px-2 py-1 rounded text-xs ${
-                            activity.loginStatus === 'success' 
-                              ? 'bg-green-500/20 text-green-200' 
-                              : 'bg-red-500/20 text-red-200'
-                          }`}>
-                            {activity.loginStatus === 'success' ? 'Successful' : 'Failed'}
-                          </span>
-                          {activity.failureReason && (
-                            <span className="text-xs text-red-300">({activity.failureReason})</span>
-                          )}
-                        </div>
-                        <div className="text-white/80 text-sm">
-                          {activity.browser} on {activity.os} - {activity.deviceType}
-                        </div>
-                        <div className="text-white/60 text-xs">
-                          {activity.city || activity.country || 'Unknown location'} • {activity.ipAddress}
-                        </div>
-                      </div>
-                      <div className="text-white/60 text-xs whitespace-nowrap">
-                        {new Date(activity.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="rounded-lg border border-white/15 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-wide text-white/50">Email</p>
+                <p className="mt-1 break-words text-sm text-white">{user.email || "No email address"}</p>
+                <div className={`mt-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${emailIsVerified ? "border-green-400/30 bg-green-500/20 text-green-200" : "border-amber-400/30 bg-amber-500/20 text-amber-200"}`}>
+                  {emailIsVerified ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                  {emailIsVerified ? "Email verified" : "Email not verified"}
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-8 text-white/60">
-                <Shield className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No login activity recorded</p>
+            </div>
+
+            {!emailIsVerified && user.email && (
+              <div className="flex flex-col gap-3 rounded-lg border border-amber-400/20 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-medium text-white">Verify your email</p>
+                  <p className="text-sm text-white/60">We will send a new verification link to your email address.</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => resendVerificationMutation.mutate()}
+                  disabled={resendVerificationMutation.isPending}
+                  className="w-full border-white/20 text-white sm:w-auto"
+                  data-testid="button-verify-email"
+                >
+                  {resendVerificationMutation.isPending ? "Sending..." : "Verify Email"}
+                </Button>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Security Settings - Can be expanded */}
+        {/* Change password */}
         <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-lg sm:text-xl flex items-center text-white">
-              <Settings className="h-5 w-5 mr-2 text-purple-400" />
-              Security Settings
+              <Key className="h-5 w-5 mr-2 text-cyan-400" />
+              Change Password
+            </CardTitle>
+            <p className="text-sm text-white/70 mt-2">Use a new password of at least 8 characters.</p>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="current-password" className="text-sm font-medium text-white">Current password</Label>
+                <div className="relative">
+                  <Input
+                    id="current-password"
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={profileForm.currentPassword}
+                    onChange={(event) => setProfileForm(prev => ({ ...prev, currentPassword: event.target.value }))}
+                    autoComplete="current-password"
+                    className="bg-white/10 pr-12 text-white placeholder:text-white/50 border border-white/20"
+                    data-testid="input-current-password"
+                  />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white" aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}>
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-password" className="text-sm font-medium text-white">New password</Label>
+                <div className="relative">
+                  <Input
+                    id="new-password"
+                    type={showNewPassword ? "text" : "password"}
+                    value={profileForm.newPassword}
+                    onChange={(event) => setProfileForm(prev => ({ ...prev, newPassword: event.target.value }))}
+                    autoComplete="new-password"
+                    className="bg-white/10 pr-12 text-white placeholder:text-white/50 border border-white/20"
+                    data-testid="input-new-password"
+                  />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white" aria-label={showNewPassword ? "Hide new password" : "Show new password"}>
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password" className="text-sm font-medium text-white">Confirm new password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={profileForm.confirmPassword}
+                    onChange={(event) => setProfileForm(prev => ({ ...prev, confirmPassword: event.target.value }))}
+                    autoComplete="new-password"
+                    className="bg-white/10 pr-12 text-white placeholder:text-white/50 border border-white/20"
+                    data-testid="input-confirm-password"
+                  />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white" aria-label={showConfirmPassword ? "Hide password confirmation" : "Show password confirmation"}>
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <Button type="submit" disabled={changePasswordMutation.isPending} className="w-full sm:w-auto" data-testid="button-change-password">
+                {changePasswordMutation.isPending ? "Changing password..." : "Change Password"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Existing 2FA is administrator-only; do not expose a non-functional viewer toggle. */}
+        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl flex items-center text-white">
+              <Shield className="h-5 w-5 mr-2 text-purple-400" />
+              Two-factor authentication
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0">
-            <div className="space-y-4">
-              {/* Change Password Section */}
-              <div className="p-4 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl text-white rounded-lg border">
-                <h3 className="text-white font-medium mb-2">Change Password</h3>
-                <p className="text-white/60 text-sm mb-3">
-                  Reset your password securely via email verification
-                </p>
-                <PasswordChangeDialog />
+            <div className="flex flex-col gap-3 rounded-lg border border-white/15 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium text-white">Not available for viewer accounts</p>
+                <p className="mt-1 text-sm text-white/60">Yearbuk’s existing two-factor flow is used for administrator sign-ins.</p>
               </div>
-
-              <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                <h3 className="text-white font-medium mb-2">Two-Factor Authentication</h3>
-                <p className="text-white/60 text-sm mb-3">Add an extra layer of security to your account</p>
-                <Button variant="outline" size="sm" className="text-white border-white/20" disabled>
-                  Coming Soon
-                </Button>
-              </div>
+              <span className="w-fit rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs font-medium text-white/70">Managed by account type</span>
             </div>
           </CardContent>
         </Card>
       </div>
     );
   };
-
   const renderContent = () => {
     switch (activeTab) {
       case "profile":
@@ -1445,7 +1535,7 @@ export default function ViewerSettings() {
                   data-testid="tab-security"
                 >
                   <Shield className="h-4 w-4 mr-2 flex-shrink-0" />
-                  Login Activity
+                  Password & Security
                 </button>
               </nav>
             </div>
@@ -1533,7 +1623,7 @@ export default function ViewerSettings() {
                   data-testid="tab-security-mobile"
                 >
                   <Shield className="h-5 w-5 mr-3 flex-shrink-0" />
-                  Login Activity
+                  Password & Security
                 </button>
               </nav>
             </div>
