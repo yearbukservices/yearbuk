@@ -331,6 +331,22 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Deleted viewer tombstones cannot use stale bearer IDs after account removal.
+  app.use("/api", async (req, res, next) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) return next();
+
+      const user = await storage.getUserById(authHeader.substring(7));
+      if (user?.userType === "deleted" || user?.role === "deleted") {
+        return res.status(401).json({ message: "This account has been deleted" });
+      }
+      next();
+    } catch (error) {
+      console.error("Error checking account status:", error);
+      next();
+    }
+  });
   // Ensure upload directories exist
   await ensureUploadDirs();
   
@@ -2804,6 +2820,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
         available: false, 
         message: "Failed to check username availability" 
       });
+    }
+  });
+
+
+  // Permanently delete a viewer account after verifying the authenticated user's password.
+  app.post("/api/auth/delete-account", async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const userId = authHeader.substring(7);
+      const currentUser = await storage.getUserWithPassword(userId);
+      if (!currentUser || currentUser.userType !== "viewer") {
+        return res.status(401).json({ message: "Invalid viewer account" });
+      }
+
+      const { currentPassword } = req.body || {};
+      if (typeof currentPassword !== "string" || !currentPassword) {
+        return res.status(400).json({ message: "Current password is required" });
+      }
+      if (!(await comparePassword(currentPassword, currentUser.password))) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+
+      const ownedMemories = await storage.getMemoriesByUser(userId);
+      const cloudinaryIds = ownedMemories
+        .map((memory) => memory.cloudinaryPublicId)
+        .filter((publicId): publicId is string => Boolean(publicId));
+      const profileImage = currentUser.profileImage;
+
+      const deleted = await storage.deleteViewerAccount(userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Viewer account not found" });
+      }
+
+      const extractCloudinaryPublicId = (url: string | null | undefined) => {
+        if (!url || !url.includes("cloudinary.com")) return null;
+        const marker = "/upload/";
+        const markerIndex = url.indexOf(marker);
+        if (markerIndex < 0) return null;
+        let publicId = url.slice(markerIndex + marker.length).split("?")[0];
+        publicId = publicId.replace(/^v\d+\//, "").replace(/\.[^/.]+$/, "");
+        return publicId || null;
+      };
+
+      const profileCloudinaryId = extractCloudinaryPublicId(profileImage);
+      const allCloudinaryIds = Array.from(new Set([...cloudinaryIds, ...(profileCloudinaryId ? [profileCloudinaryId] : [])]));
+      await Promise.all(allCloudinaryIds.map(async (publicId) => {
+        try {
+          await deleteFromCloudinary(publicId);
+        } catch (error) {
+          console.warn("Could not delete viewer Cloudinary asset:", publicId, error);
+        }
+      }));
+
+      const localAssetUrls = [profileImage, ...ownedMemories.map((memory) => memory.imageUrl)]
+        .filter((url): url is string => Boolean(url) && !url.includes("cloudinary.com"));
+      const uploadsRoot = path.resolve(process.cwd(), "public/uploads");
+      await Promise.all(localAssetUrls.map(async (url) => {
+        const relativeUrl = url.replace(/^\/+/, "").replace(/^public\//, "");
+        const localPath = path.resolve(process.cwd(), "public", relativeUrl);
+        if (!localPath.startsWith(uploadsRoot + path.sep)) return;
+        try {
+          await fs.unlink(localPath);
+        } catch (error: any) {
+          if (error?.code !== "ENOENT") console.warn("Could not delete viewer local asset:", localPath, error);
+        }
+      }));
+
+      return res.json({ message: "Account deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting viewer account:", error);
+      return res.status(500).json({ message: "Unable to delete account right now. Please try again." });
     }
   });
 
