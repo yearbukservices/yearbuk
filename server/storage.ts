@@ -266,6 +266,7 @@ export interface IStorage {
   getAllAlumniRequests(): Promise<AlumniRequest[]>;
   getUserById(id: string): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
+  deleteViewerAccount(userId: string): Promise<boolean>;
   deleteSchool(id: string): Promise<boolean>;
   updateUserRole(id: string, userType: string): Promise<User | undefined>;
   updateUserPrivacySettings(userId: string, updateData: { showPhoneToAlumni?: boolean; phoneNumber?: string }): Promise<User | undefined>;
@@ -372,6 +373,38 @@ export class MemStorage implements IStorage {
     // Same as getUser for memory storage since it already includes password
     return this.users.get(id);
   }
+  async deleteViewerAccount(userId: string): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user || user.userType !== "viewer") return false;
+
+    for (const [id, memory] of this.memories) {
+      if (memory.userId === userId) this.memories.delete(id);
+    }
+    for (const [id, badge] of this.alumniBadges) {
+      if (badge.userId === userId) this.alumniBadges.delete(id);
+    }
+    for (const [id, request] of this.alumniRequests) {
+      if (request.userId === userId) this.alumniRequests.delete(id);
+    }
+    for (const [id, notification] of this.notifications) {
+      if (notification.userId === userId) this.notifications.delete(id);
+    }
+    for (const [id, purchase] of this.viewerYearPurchases) {
+      if (purchase.userId === userId) this.viewerYearPurchases.delete(id);
+    }
+    for (const [id, item] of this.cartItems) {
+      if (item.userId === userId) this.cartItems.delete(id);
+    }
+    for (const [id, block] of this.alumniRequestBlocks) {
+      if (block.userId === userId) this.alumniRequestBlocks.delete(id);
+    }
+    for (const [id, search] of this.recentSearches) {
+      if (search.userId === userId) this.recentSearches.delete(id);
+    }
+    this.users.delete(userId);
+    return true;
+  }
+
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
@@ -2971,6 +3004,91 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(users).where(eq(users.id, id)).returning();
     return Array.isArray(result) && result.length > 0;
   }
+  async deleteViewerAccount(userId: string): Promise<boolean> {
+    const existingUser = await db
+      .select({ id: users.id, userType: users.userType })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!existingUser[0] || existingUser[0].userType !== "viewer") {
+      return false;
+    }
+
+    // Payment records are retained for accounting, so the user becomes an
+    // anonymized tombstone rather than leaving a broken foreign key behind.
+    const deletedPassword = await hashPassword("account-deleted-" + randomUUID());
+    const anonymizedUsername = "deleted-" + userId;
+    const anonymizedEmail = "deleted-" + userId + "@example.invalid";
+
+    await db.transaction(async (tx) => {
+      const ownedMemories = await tx
+        .select({ id: memories.id })
+        .from(memories)
+        .where(eq(memories.userId, userId));
+      const memoryIds = ownedMemories.map((memory) => memory.id);
+
+      // Remove tags before removing owned memories because the schema does not
+      // declare cascading foreign keys. Also detach this person from shared memories.
+      if (memoryIds.length > 0) {
+        await tx.delete(photoTags).where(inArray(photoTags.memoryId, memoryIds));
+        await tx.delete(memories).where(inArray(memories.id, memoryIds));
+      }
+      await tx.delete(photoTags).where(eq(photoTags.taggedUserId, userId));
+
+      // Remove viewer-owned personal activity and access records.
+      await tx.delete(alumniBadges).where(eq(alumniBadges.userId, userId));
+      await tx.delete(alumniRequests).where(eq(alumniRequests.userId, userId));
+      await tx.delete(alumniRequestBlocks).where(eq(alumniRequestBlocks.userId, userId));
+      await tx.delete(notifications).where(eq(notifications.userId, userId));
+      await tx.delete(recentSearches).where(eq(recentSearches.userId, userId));
+      await tx.delete(viewerYearPurchases).where(eq(viewerYearPurchases.userId, userId));
+      await tx.delete(cartItems).where(eq(cartItems.userId, userId));
+      await tx.delete(loginActivity).where(eq(loginActivity.userId, userId));
+      await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+
+      // These nullable relationships should no longer identify the deleted viewer.
+      await tx.update(alumniRequests).set({ reviewedBy: null }).where(eq(alumniRequests.reviewedBy, userId));
+      await tx.update(yearbookCodes).set({ usedBy: null, usedAt: null }).where(eq(yearbookCodes.usedBy, userId));
+
+      // Keep amount, reference, status, school, and timestamps for financial records,
+      // but remove direct contact data from the retained payment rows.
+      await tx.update(paymentRecords)
+        .set({ email: anonymizedEmail, paystackData: null })
+        .where(eq(paymentRecords.userId, userId));
+
+      await tx.update(users)
+        .set({
+          username: anonymizedUsername,
+          password: deletedPassword,
+          userType: "deleted",
+          role: "deleted",
+          firstName: "Deleted",
+          middleName: null,
+          lastName: "User",
+          fullName: "Deleted User",
+          dateOfBirth: "1970-01-01",
+          email: anonymizedEmail,
+          phoneNumber: null,
+          showPhoneToAlumni: false,
+          preferredCurrency: "USD",
+          profileImage: null,
+          schoolId: null,
+          badgeSlots: 0,
+          isEmailVerified: false,
+          emailVerificationToken: null,
+          emailVerificationTokenExpiresAt: null,
+          twoFactorCode: null,
+          twoFactorCodeExpiresAt: null,
+          twoFactorCodeSentAt: null,
+          lastUsernameChange: new Date(),
+        })
+        .where(eq(users.id, userId));
+    });
+
+    return true;
+  }
+
 
   async deleteSchool(id: string): Promise<boolean> {
     const result = await db.delete(schools).where(eq(schools.id, id)).returning();
