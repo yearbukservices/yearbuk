@@ -1245,10 +1245,6 @@ export default function ViewerSettings() {
             <p className="text-sm text-white/70 mt-2">We’ll send a secure password reset link to the email address used to create your account.</p>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
-            <div className="rounded-lg border border-white/15 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-wide text-white/50">Reset email</p>
-              <p className="mt-1 break-words text-sm text-white">{user.email || "No email address on this account"}</p>
-            </div>
             <Button
               type="button"
               onClick={() => requestPasswordResetMutation.mutate()}
