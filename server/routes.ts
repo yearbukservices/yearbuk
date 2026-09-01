@@ -344,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next();
     } catch (error) {
       console.error("Error checking account status:", error);
-      next();
+      return res.status(401).json({ message: "Invalid authentication" });
     }
   });
   // Ensure upload directories exist
