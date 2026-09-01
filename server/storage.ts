@@ -269,7 +269,7 @@ export interface IStorage {
   deleteViewerAccount(userId: string): Promise<boolean>;
   deleteSchool(id: string): Promise<boolean>;
   updateUserRole(id: string, userType: string): Promise<User | undefined>;
-  updateUserPrivacySettings(userId: string, updateData: { showPhoneToAlumni?: boolean; phoneNumber?: string }): Promise<User | undefined>;
+  updateUserPrivacySettings(userId: string, updateData: { showPhoneToAlumni?: boolean; phoneNumber?: string; twoFactorEnabled?: boolean }): Promise<User | undefined>;
   updateUserProfile(userId: string, updateData: { email?: string; username?: string; fullName?: string; password?: string; preferredCurrency?: string; profileImage?: string }): Promise<User | undefined>;
   logAdminAction(adminUserId: string, action: string, targetType: string, targetId: string, details?: Record<string, any>): Promise<void>;
   getAdminLogs(): Promise<AdminLog[]>;
@@ -3111,7 +3111,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async updateUserPrivacySettings(userId: string, updateData: { showPhoneToAlumni?: boolean; phoneNumber?: string }): Promise<User | undefined> {
+  async updateUserPrivacySettings(userId: string, updateData: { showPhoneToAlumni?: boolean; phoneNumber?: string; twoFactorEnabled?: boolean }): Promise<User | undefined> {
     const result = await db.update(users).set(updateData).where(eq(users.id, userId)).returning();
     return result.length > 0 ? result[0] : undefined;
   }
