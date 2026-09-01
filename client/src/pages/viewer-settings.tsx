@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type FormEvent } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -44,9 +44,6 @@ export default function ViewerSettings() {
     newPassword: "",
     confirmPassword: ""
   });
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   // Account deletion state
@@ -100,40 +97,7 @@ export default function ViewerSettings() {
   });
   const [showPhoneToAlumni, setShowPhoneToAlumni] = useState(true);
 
-  const changePasswordMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("No user found");
-
-      const response = await apiRequest("PATCH", "/api/users/profile", {
-        currentPassword: profileForm.currentPassword,
-        newPassword: profileForm.newPassword,
-        confirmPassword: profileForm.confirmPassword,
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      setProfileForm(prev => ({
-        ...prev,
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      }));
-      toast({
-        className: "bg-green-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-        title: "Password changed",
-        description: "Your password has been updated successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-        title: "Password change failed",
-        description: error.message || "Unable to change your password.",
-        variant: "destructive",
-      });
-    },
-  });
-  // Fetch alumni badges for account status
+  const requestPasswordResetMutation = useMutation({\n    mutationFn: async () => {\n      if (!user?.email) throw new Error("No account email found");\n\n      const response = await apiRequest("POST", "/api/auth/request-password-reset", {\n        email: user.email,\n      });\n      return response.json();\n    },\n    onSuccess: () => {\n      toast({\n        className: "bg-green-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",\n        title: "Password reset email sent",\n        description: "Check " + user?.email + " for a secure link to reset your password.",\n      });\n    },\n    onError: (error: any) => {\n      toast({\n        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",\n        title: "Unable to send password reset email",\n        description: error.message || "Please try again later.",\n        variant: "destructive",\n      });\n    },\n  });\n  // Fetch alumni badges for account status
   const { data: alumniBadges = [] } = useQuery<AlumniBadge[]>({
     queryKey: ['/api/alumni-badges', user?.id],
     enabled: !!user
@@ -197,41 +161,6 @@ export default function ViewerSettings() {
     },
   });
 
-  const handleChangePassword = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (profileForm.newPassword.length < 8) {
-      toast({
-        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-        title: "Password is too short",
-        description: "Your new password must be at least 8 characters.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (profileForm.newPassword !== profileForm.confirmPassword) {
-      toast({
-        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-        title: "Passwords do not match",
-        description: "Enter the same new password in both fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!profileForm.currentPassword) {
-      toast({
-        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-        title: "Current password required",
-        description: "Enter your current password to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    changePasswordMutation.mutate();
-  };
   const handleMarkNotificationRead = (notificationId: string) => {
     markNotificationReadMutation.mutate(notificationId);
   };
@@ -1229,76 +1158,7 @@ export default function ViewerSettings() {
           </CardContent>
         </Card>
 
-        {/* Change password */}
-        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl flex items-center text-white">
-              <Key className="h-5 w-5 mr-2 text-cyan-400" />
-              Change Password
-            </CardTitle>
-            <p className="text-sm text-white/70 mt-2">Use a new password of at least 8 characters.</p>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0">
-            <form onSubmit={handleChangePassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-password" className="text-sm font-medium text-white">Current password</Label>
-                <div className="relative">
-                  <Input
-                    id="current-password"
-                    type={showCurrentPassword ? "text" : "password"}
-                    value={profileForm.currentPassword}
-                    onChange={(event) => setProfileForm(prev => ({ ...prev, currentPassword: event.target.value }))}
-                    autoComplete="current-password"
-                    className="bg-white/10 pr-12 text-white placeholder:text-white/50 border border-white/20"
-                    data-testid="input-current-password"
-                  />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white" aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}>
-                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new-password" className="text-sm font-medium text-white">New password</Label>
-                <div className="relative">
-                  <Input
-                    id="new-password"
-                    type={showNewPassword ? "text" : "password"}
-                    value={profileForm.newPassword}
-                    onChange={(event) => setProfileForm(prev => ({ ...prev, newPassword: event.target.value }))}
-                    autoComplete="new-password"
-                    className="bg-white/10 pr-12 text-white placeholder:text-white/50 border border-white/20"
-                    data-testid="input-new-password"
-                  />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white" aria-label={showNewPassword ? "Hide new password" : "Show new password"}>
-                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password" className="text-sm font-medium text-white">Confirm new password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirm-password"
-                    type={showConfirmPassword ? "text" : "password"}
-                    value={profileForm.confirmPassword}
-                    onChange={(event) => setProfileForm(prev => ({ ...prev, confirmPassword: event.target.value }))}
-                    autoComplete="new-password"
-                    className="bg-white/10 pr-12 text-white placeholder:text-white/50 border border-white/20"
-                    data-testid="input-confirm-password"
-                  />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white" aria-label={showConfirmPassword ? "Hide password confirmation" : "Show password confirmation"}>
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-              <Button type="submit" disabled={changePasswordMutation.isPending} className="w-full sm:w-auto" data-testid="button-change-password">
-                {changePasswordMutation.isPending ? "Changing password..." : "Change Password"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Existing 2FA is administrator-only; do not expose a non-functional viewer toggle. */}
+        {/* Password reset */}\n        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">\n          <CardHeader className="p-4 sm:p-6">\n            <CardTitle className="text-lg sm:text-xl flex items-center text-white">\n              <Key className="h-5 w-5 mr-2 text-cyan-400" />\n              Password Reset\n            </CardTitle>\n            <p className="text-sm text-white/70 mt-2">We’ll send a secure password reset link to the email address used to create your account.</p>\n          </CardHeader>\n          <CardContent className="p-4 sm:p-6 pt-0 space-y-4">\n            <div className="rounded-lg border border-white/15 bg-white/5 p-4">\n              <p className="text-xs uppercase tracking-wide text-white/50">Reset email</p>\n              <p className="mt-1 break-words text-sm text-white">{user.email || "No email address on this account"}</p>\n            </div>\n            <Button\n              type="button"\n              onClick={() => requestPasswordResetMutation.mutate()}\n              disabled={requestPasswordResetMutation.isPending || !user.email}\n              className="w-full sm:w-auto"\n              data-testid="button-request-password-reset"\n            >\n              {requestPasswordResetMutation.isPending ? "Sending reset email..." : "Send Password Reset Email"}\n            </Button>\n          </CardContent>\n        </Card>\n\n        {/* Existing 2FA is administrator-only; do not expose a non-functional viewer toggle. */}
         <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-lg sm:text-xl flex items-center text-white">
