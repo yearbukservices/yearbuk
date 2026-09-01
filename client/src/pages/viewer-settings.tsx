@@ -1082,7 +1082,7 @@ export default function ViewerSettings() {
                       </div>
                       <div className="flex flex-col items-start sm:items-end gap-1">
                         <span className="text-white font-semibold text-lg" data-testid={`text-price-${payment.id}`}>
-                          {formatPrice(parseFloat(payment.price || '0'))}
+                          {formatPrice(convertPrice(parseFloat(payment.price || '0')))}
                         </span>
                         {payment.paymentReference && (
                           <span className="text-white/40 text-xs font-mono" data-testid={`text-reference-${payment.id}`}>
