@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type FormEvent } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -96,6 +96,11 @@ export default function ViewerSettings() {
   });
   const [showPhoneToAlumni, setShowPhoneToAlumni] = useState(true);
   const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState(false);
+  const [showTwoFactorDialog, setShowTwoFactorDialog] = useState(false);
+  const [twoFactorTarget, setTwoFactorTarget] = useState<boolean | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [isRequestingTwoFactorCode, setIsRequestingTwoFactorCode] = useState(false);
+  const [isVerifyingTwoFactor, setIsVerifyingTwoFactor] = useState(false);
 
   const requestPasswordResetMutation = useMutation({
     mutationFn: async () => {
@@ -341,12 +346,53 @@ export default function ViewerSettings() {
     }
   });
 
-  const handleTwoFactorToggle = (enabled: boolean) => {
-    const previousValue = isTwoFactorEnabled;
-    setIsTwoFactorEnabled(enabled);
-    updateProfileMutation.mutate({ twoFactorEnabled: enabled }, {
-      onError: () => setIsTwoFactorEnabled(previousValue),
-    });
+  const handleTwoFactorToggle = async (enabled: boolean) => {
+    if (!user?.email) {
+      toast({ title: "Email required", description: "Add and verify an email address before changing two-factor authentication.", variant: "destructive" });
+      return;
+    }
+
+    setTwoFactorTarget(enabled);
+    setTwoFactorCode("");
+    setIsRequestingTwoFactorCode(true);
+    try {
+      await apiRequest("POST", "/api/auth/request-2fa-toggle", { enabled });
+      setShowTwoFactorDialog(true);
+    } catch (error: any) {
+      setTwoFactorTarget(null);
+      toast({ title: "Unable to send verification code", description: error.message || "Please try again later.", variant: "destructive" });
+    } finally {
+      setIsRequestingTwoFactorCode(false);
+    }
+  };
+
+  const handleTwoFactorVerification = async (event: FormEvent) => {
+    event.preventDefault();
+    if (twoFactorTarget === null || twoFactorCode.length !== 6) return;
+
+    setIsVerifyingTwoFactor(true);
+    try {
+      const response = await apiRequest("POST", "/api/auth/verify-2fa-toggle", {
+        enabled: twoFactorTarget,
+        code: twoFactorCode,
+      });
+      const updatedUser = await response.json();
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      window.dispatchEvent(new Event("userChanged"));
+      setUser(updatedUser);
+      setIsTwoFactorEnabled(updatedUser.twoFactorEnabled === true);
+      setShowTwoFactorDialog(false);
+      setTwoFactorTarget(null);
+      setTwoFactorCode("");
+      toast({
+        title: twoFactorTarget ? "Two-factor authentication enabled" : "Two-factor authentication disabled",
+        description: twoFactorTarget ? "Future logins will require an email verification code." : "Future logins will no longer require an email verification code.",
+      });
+    } catch (error: any) {
+      toast({ title: "Verification failed", description: error.message || "The code could not be verified.", variant: "destructive" });
+    } finally {
+      setIsVerifyingTwoFactor(false);
+    }
   };
 
   const handleSaveField = (field: string) => {
@@ -1279,17 +1325,56 @@ export default function ViewerSettings() {
             <div className="flex flex-col gap-3 rounded-lg border border-white/15 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-white">Require two-factor authentication</p>
-                <p className="mt-1 text-sm text-white/60">When enabled, logins will require a verification code sent to the user’s email mailbox. Login enforcement will be connected in a future update.</p>
+                <p className="mt-1 text-sm text-white/60">When enabled, logins require a verification code sent to the user’s email mailbox. Changing this setting also requires a verification code.</p>
               </div>
               <Switch
                 checked={isTwoFactorEnabled}
                 onCheckedChange={handleTwoFactorToggle}
+                disabled={isRequestingTwoFactorCode || isVerifyingTwoFactor}
                 aria-label="Require two-factor authentication"
                 data-testid="switch-two-factor-authentication"
               />
             </div>
           </CardContent>
         </Card>
+      <Dialog
+        open={showTwoFactorDialog}
+        onOpenChange={(open) => {
+          if (!open && !isVerifyingTwoFactor) {
+            setShowTwoFactorDialog(false);
+            setTwoFactorTarget(null);
+            setTwoFactorCode("");
+          }
+        }}
+      >
+        <DialogContent className="bg-slate-900 border-white/20 text-white">
+          <DialogHeader>
+            <DialogTitle>Confirm {twoFactorTarget ? "enabling" : "disabling"} two-factor authentication</DialogTitle>
+            <DialogDescription className="text-white/70">
+              We sent a 6-digit verification code to {user?.email}. Enter it to confirm this security change.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleTwoFactorVerification} className="space-y-4">
+            <div>
+              <Label htmlFor="two-factor-settings-code" className="text-white">Verification code</Label>
+              <Input
+                id="two-factor-settings-code"
+                data-testid="input-two-factor-settings-code"
+                value={twoFactorCode}
+                onChange={(event) => setTwoFactorCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="Enter 6-digit code"
+                inputMode="numeric"
+                maxLength={6}
+                autoFocus
+                className="mt-2 bg-white/10 border-white/20 text-center text-2xl tracking-widest"
+              />
+            </div>
+            <Button type="submit" disabled={isVerifyingTwoFactor || twoFactorCode.length !== 6} className="w-full">
+              {isVerifyingTwoFactor ? "Verifying..." : "Confirm change"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
       </div>
     );
   };
