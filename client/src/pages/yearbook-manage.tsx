@@ -4240,7 +4240,8 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                         )}
                       </div>
                       
-                      {/* Progress bar */}
+                      </div>
+                                            {/* Progress bar */}
                       {progress && progress.status !== 'failed' && (
                         <div className="space-y-1">
                           <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
