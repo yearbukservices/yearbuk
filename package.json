@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx server/index.ts",
     "build": "node esbuild.config.js && vite build",
-    "start": "node dist/index.js",
+    "start": "npm run db:push && node dist/index.js",
     "start:replit": "pnpm run db:push && pnpm run build && node dist/index.js",
     "db:push": "drizzle-kit push"
   },
@@ -100,6 +100,7 @@
     "drizzle-kit": "^0.30.6",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.3"
   }
 }
