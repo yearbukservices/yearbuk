@@ -29,6 +29,7 @@ export const users: PgTableWithColumns<any> = pgTable("users", {
   twoFactorCode: text("two_factor_code"), // Hashed 6-digit code for 2FA
   twoFactorCodeExpiresAt: timestamp("two_factor_code_expires_at"), // 2FA code expiry (5 minutes)
   twoFactorCodeSentAt: timestamp("two_factor_code_sent_at"), // Last time 2FA code was sent (for cooldown)
+  twoFactorCodePurpose: text("two_factor_code_purpose"), // login, settings_enable, or settings_disable
   lastUsernameChange: timestamp("last_username_change"), // Track when username was last changed (for 14-day restriction)
   createdAt: timestamp("created_at").defaultNow(),
 });
