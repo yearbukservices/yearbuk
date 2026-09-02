@@ -1647,7 +1647,19 @@ export default function YearbookManage() {
   };
   
   const removeUploadingFile = (index: number) => {
+    const file = uploadingFiles[index];
+    const fileId = file
+      ? Array.from(fileUploadProgress.entries()).find(([_, info]) => info.file === file)?.[0]
+      : undefined;
+
     setUploadingFiles(prev => prev.filter((_, i) => i !== index));
+    if (fileId) {
+      setFileUploadProgress(prev => {
+        const next = new Map(prev);
+        next.delete(fileId);
+        return next;
+      });
+    }
   };
 
   const handleUploadSubmit = async () => {
@@ -4147,7 +4159,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                             </Button>
                           </div>
                         )}
-                        {!progress && !isUploading && (
+                        {!isUploading && (!progress || progress.status === 'failed') && (
                           <Button 
                             variant="ghost" 
                             size="sm" 
