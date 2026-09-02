@@ -108,6 +108,18 @@ export async function initializeDatabase() {
       `);
       console.log("✅ Verified memories.user_id column");
 
+      // Repair older databases that predate the account security columns.
+      // This is idempotent and preserves all existing user records.
+      await db.execute(sql`
+        ALTER TABLE IF EXISTS "users"
+          ADD COLUMN IF NOT EXISTS "two_factor_enabled" boolean NOT NULL DEFAULT false,
+          ADD COLUMN IF NOT EXISTS "two_factor_code" text,
+          ADD COLUMN IF NOT EXISTS "two_factor_code_expires_at" timestamp,
+          ADD COLUMN IF NOT EXISTS "two_factor_code_sent_at" timestamp,
+          ADD COLUMN IF NOT EXISTS "last_username_change" timestamp
+      `);
+      console.log("✅ Verified users security columns");
+
       // Check if users table exists and has data
       const existingUsers = await db.select().from(users).limit(1);
       
