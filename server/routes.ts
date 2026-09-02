@@ -586,7 +586,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .set({
               twoFactorCode: hashedCode,
               twoFactorCodeExpiresAt: expiresAt,
-              twoFactorCodeSentAt: new Date()
+              twoFactorCodeSentAt: new Date(),
+              twoFactorCodePurpose: "login"
             })
             .where(eq(users.id, user.id));
           
@@ -633,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Return user info (excluding password and 2FA secrets) with redirect
-      const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, ...userInfo } = user;
+      const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, twoFactorCodePurpose: _____, ...userInfo } = user;
       res.json({ user: userInfo, redirectTo });
     } catch (error) {
       console.error("Login failed:", error);
@@ -662,6 +663,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "2FA not required for this account" });
       }
       
+      // Login verification codes cannot be used to change account settings.
+      if (user.twoFactorCodePurpose && user.twoFactorCodePurpose !== "login") {
+        return res.status(400).json({ message: "No login verification code found. Please request a new one." });
+      }
+
       // Check if code exists and hasn't expired
       if (!user.twoFactorCode || !user.twoFactorCodeExpiresAt) {
         return res.status(400).json({ message: "No verification code found. Please request a new one." });
@@ -685,7 +691,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .set({
           twoFactorCode: null,
           twoFactorCodeExpiresAt: null,
-          twoFactorCodeSentAt: null
+          twoFactorCodeSentAt: null,
+          twoFactorCodePurpose: null
         })
         .where(eq(users.id, user.id));
       
@@ -693,7 +700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await trackLoginActivity(req, user.id, 'success', '2FA verified', null);
       
       // Return user info without password or 2FA secrets
-      const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, ...userInfo } = user;
+      const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, twoFactorCodePurpose: _____, ...userInfo } = user;
       res.json({ 
         user: userInfo, 
         redirectTo: isSuperAdmin ? "/super-admin" : "/" 
@@ -751,7 +758,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .set({
           twoFactorCode: hashedCode,
           twoFactorCodeExpiresAt: expiresAt,
-          twoFactorCodeSentAt: new Date()
+          twoFactorCodeSentAt: new Date(),
+          twoFactorCodePurpose: "login"
         })
         .where(eq(users.id, user.id));
       
@@ -774,6 +782,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("2FA resend error:", error);
       res.status(500).json({ message: "Failed to resend code" });
+    }
+  });
+
+  // Request a verification code before changing the 2FA setting.
+  app.post("/api/auth/request-2fa-toggle", requireAuth, async (req: any, res) => {
+    try {
+      const { enabled } = req.body;
+      if (typeof enabled !== "boolean") {
+        return res.status(400).json({ message: "Two-factor authentication setting must be a boolean" });
+      }
+
+      const user = req.user;
+      if (!user.email) {
+        return res.status(400).json({ message: "A valid email address is required to change two-factor authentication." });
+      }
+
+      if (user.twoFactorCodeSentAt) {
+        const secondsSinceLastSend = (Date.now() - new Date(user.twoFactorCodeSentAt).getTime()) / 1000;
+        if (secondsSinceLastSend < 50) {
+          return res.status(429).json({ message: "Please wait before requesting another verification code." });
+        }
+      }
+
+      const code = crypto.randomInt(100000, 1000000).toString();
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      const purpose = enabled ? "settings_enable" : "settings_disable";
+      const hashedCode = await hashPassword(code);
+
+      await db.update(users).set({
+        twoFactorCode: hashedCode,
+        twoFactorCodeExpiresAt: expiresAt,
+        twoFactorCodeSentAt: new Date(),
+        twoFactorCodePurpose: purpose
+      }).where(eq(users.id, user.id));
+
+      const { createTwoFactorSettingChangeEmail } = await import("./utils/emailTemplates.js");
+      const emailResult = await sendEmail(
+        user.email,
+        enabled ? "Confirm Two-Factor Authentication" : "Confirm Two-Factor Authentication Change",
+        createTwoFactorSettingChangeEmail(code, enabled)
+      );
+
+      if (!emailResult.success) {
+        await db.update(users).set({
+          twoFactorCode: null,
+          twoFactorCodeExpiresAt: null,
+          twoFactorCodeSentAt: null,
+          twoFactorCodePurpose: null
+        }).where(eq(users.id, user.id));
+        return res.status(500).json({ message: "Failed to send verification code" });
+      }
+
+      res.json({ message: "Verification code sent", email: user.email });
+    } catch (error) {
+      console.error("2FA settings code request error:", error);
+      res.status(500).json({ message: "Failed to request verification code" });
+    }
+  });
+
+  // Verify the code and apply the exact requested 2FA setting change.
+  app.post("/api/auth/verify-2fa-toggle", requireAuth, async (req: any, res) => {
+    try {
+      const { enabled, code } = req.body;
+      if (typeof enabled !== "boolean" || typeof code !== "string" || !/^\d{6}$/.test(code.trim())) {
+        return res.status(400).json({ message: "A valid 6-digit verification code is required" });
+      }
+
+      const user = req.user;
+      const expectedPurpose = enabled ? "settings_enable" : "settings_disable";
+      if (user.twoFactorCodePurpose !== expectedPurpose || !user.twoFactorCode || !user.twoFactorCodeExpiresAt) {
+        return res.status(400).json({ message: "No matching verification code found. Please request a new one." });
+      }
+      if (new Date() > new Date(user.twoFactorCodeExpiresAt)) {
+        return res.status(400).json({ message: "Verification code has expired. Please request a new one." });
+      }
+
+      const isCodeValid = await comparePassword(code.trim(), user.twoFactorCode);
+      if (!isCodeValid) {
+        return res.status(401).json({ message: "Invalid verification code" });
+      }
+
+      const updatedUser = await storage.updateUser(user.id, {
+        twoFactorEnabled: enabled,
+        twoFactorCode: null,
+        twoFactorCodeExpiresAt: null,
+        twoFactorCodeSentAt: null,
+        twoFactorCodePurpose: null
+      });
+      if (!updatedUser) return res.status(404).json({ message: "User not found" });
+
+      const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, twoFactorCodePurpose: _____, ...safeUser } = updatedUser;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("2FA settings verification error:", error);
+      res.status(500).json({ message: "Failed to update two-factor authentication" });
     }
   });
 
@@ -2989,19 +3092,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user privacy settings and profile
   app.patch("/api/users/:id", async (req, res) => {
     try {
-      const { showPhoneToAlumni, phoneNumber, username, fullName, twoFactorEnabled } = req.body;
+      const { showPhoneToAlumni, phoneNumber, username, fullName } = req.body;
       const userId = req.params.id;
       
       // Validate that only allowed fields are being updated
       const updateData: any = {};
       if (showPhoneToAlumni !== undefined) updateData.showPhoneToAlumni = showPhoneToAlumni;
       if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
-      if (twoFactorEnabled !== undefined) {
-        if (typeof twoFactorEnabled !== "boolean") {
-          return res.status(400).json({ message: "Two-factor authentication setting must be a boolean" });
-        }
-        updateData.twoFactorEnabled = twoFactorEnabled;
-      }
       if (fullName !== undefined) {
         const normalizedFullName = typeof fullName === "string" ? fullName.trim() : "";
         if (!normalizedFullName) {
