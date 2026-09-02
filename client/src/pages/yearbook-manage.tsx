@@ -257,6 +257,9 @@ export default function YearbookManage() {
   }>>(new Map());
   
   const [isUploading, setIsUploading] = useState(false);
+  const activeUploadXhrRef = useRef<XMLHttpRequest | null>(null);
+  const uploadCancelledRef = useRef(false);
+  const uploadedPageIdsRef = useRef<Set<string>>(new Set());
   const [newTOCItem, setNewTOCItem] = useState({
     title: "",
     pageNumber: null as number | null,
@@ -1317,6 +1320,26 @@ export default function YearbookManage() {
     });
   };
 
+  const extractUploadedPageIds = (response: any): string[] => {
+    const pages = Array.isArray(response?.pages) ? response.pages : [response];
+    return pages
+      .map((page: any) => page?.id)
+      .filter((id: unknown): id is string => typeof id === "string");
+  };
+
+  const deleteUploadedPages = async (pageIds: string[]): Promise<string[]> => {
+    const failedPageIds: string[] = [];
+    for (const pageId of pageIds) {
+      try {
+        await apiRequest("DELETE", "/api/yearbooks/pages/" + pageId);
+      } catch (error) {
+        console.error("Failed to remove cancelled upload " + pageId + ":", error);
+        failedPageIds.push(pageId);
+      }
+    }
+    return failedPageIds;
+  };
+
   // Enhanced upload function with progress tracking
   const uploadFileWithProgress = (file: File, pageType: string, title: string, yearbookId: string): Promise<any> => {
     return new Promise((resolve, reject) => {
@@ -1363,6 +1386,7 @@ export default function YearbookManage() {
       formData.append('title', title);
       
       const xhr = new XMLHttpRequest();
+      activeUploadXhrRef.current = xhr;
       
       // Track upload progress
       xhr.upload.addEventListener('progress', (e) => {
@@ -1383,6 +1407,20 @@ export default function YearbookManage() {
       xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           const response = JSON.parse(xhr.responseText);
+          if (activeUploadXhrRef.current === xhr) {
+            activeUploadXhrRef.current = null;
+          }
+
+          const uploadedPageIds = extractUploadedPageIds(response);
+          uploadedPageIds.forEach(pageId => uploadedPageIdsRef.current.add(pageId));
+          if (uploadCancelledRef.current) {
+            void deleteUploadedPages(uploadedPageIds).finally(() => {
+              uploadedPageIds.forEach(pageId => uploadedPageIdsRef.current.delete(pageId));
+              reject(new Error("Upload cancelled"));
+            });
+            return;
+          }
+
           setFileUploadProgress(prev => {
             const newMap = new Map(prev);
             const current = newMap.get(fileId);
@@ -1393,6 +1431,9 @@ export default function YearbookManage() {
           });
           resolve(response);
         } else {
+          if (activeUploadXhrRef.current === xhr) {
+            activeUploadXhrRef.current = null;
+          }
           const errorData = JSON.parse(xhr.responseText || '{}');
           setFileUploadProgress(prev => {
             const newMap = new Map(prev);
@@ -1410,8 +1451,18 @@ export default function YearbookManage() {
         }
       });
       
-      // Handle errors
+      // Handle cancellation and network errors
+      xhr.addEventListener('abort', () => {
+        if (activeUploadXhrRef.current === xhr) {
+          activeUploadXhrRef.current = null;
+        }
+        reject(new Error("Upload cancelled"));
+      });
+
       xhr.addEventListener('error', () => {
+        if (activeUploadXhrRef.current === xhr) {
+          activeUploadXhrRef.current = null;
+        }
         setFileUploadProgress(prev => {
           const newMap = new Map(prev);
           const current = newMap.get(fileId);
@@ -1576,6 +1627,7 @@ export default function YearbookManage() {
     try {
       // Upload files one by one with progress tracking
       for (let i = 0; i < uploadingFiles.length; i++) {
+        if (uploadCancelledRef.current) break;
         const file = uploadingFiles[i];
         const pageNumber = (yearbook?.pages?.filter(p => p.pageType === "content")?.length || 0) + i + 1;
         const title = selectedPageType === "front_cover" ? "Front Cover" : 
@@ -1590,6 +1642,8 @@ export default function YearbookManage() {
         }
       }
       
+      if (uploadCancelledRef.current) return;
+
       // Check if all uploads completed successfully
       const allCompleted = Array.from(fileUploadProgress.values()).every(f => f.status === 'completed');
       const anyFailed = Array.from(fileUploadProgress.values()).some(f => f.status === 'failed');
@@ -1633,6 +1687,57 @@ export default function YearbookManage() {
     }
   };
 
+  const handleUploadCancel = async () => {
+    uploadCancelledRef.current = true;
+
+    const activeXhr = activeUploadXhrRef.current;
+    if (activeXhr) {
+      activeXhr.abort();
+      activeUploadXhrRef.current = null;
+    }
+
+    const pageIdsToDelete = Array.from(uploadedPageIdsRef.current);
+    uploadedPageIdsRef.current.clear();
+
+    setPendingPageUploads(prev => {
+      prev.forEach(page => {
+        URL.revokeObjectURL(page.tempUrl);
+        if (page.thumbnailUrl && page.thumbnailUrl !== page.tempUrl) {
+          URL.revokeObjectURL(page.thumbnailUrl);
+        }
+      });
+      return [];
+    });
+    setHasUnsavedChanges(pendingTOCItems.length > 0);
+    setUploadingFiles([]);
+    setFileUploadProgress(new Map());
+    setUploadProgress({
+      isProcessingPDF: false,
+      currentFile: "",
+      totalFiles: 0,
+      currentFileIndex: 0
+    });
+    setShowUploadDialog(false);
+
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+
+    const failedPageIds = await deleteUploadedPages(pageIdsToDelete);
+    if (pageIdsToDelete.length > 0) {
+      queryClient.invalidateQueries({ queryKey: ["/api/yearbooks", schoolId, year] });
+    }
+
+    toast({
+      className: failedPageIds.length > 0
+        ? "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white"
+        : "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+      title: failedPageIds.length > 0 ? "Upload cancelled with cleanup errors" : "Upload cancelled",
+      description: failedPageIds.length > 0
+        ? "Some uploaded images could not be removed. Please retry cancellation cleanup."
+        : "Selected files and any images uploaded in this batch were removed.",
+      variant: failedPageIds.length > 0 ? "destructive" : undefined
+    });
+  };
   const handleAddTOC = () => {
     addTOCMutation.mutate(newTOCItem);
   };
@@ -3956,17 +4061,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
       </div>
 
       {/* Upload Dialog */}
-      <Dialog open={showUploadDialog} onOpenChange={(open) => {
-        setShowUploadDialog(open);
-        if (!open) {
-          // Reset file input and uploading files when dialog closes
-          const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-          if (fileInput) {
-            fileInput.value = '';
-          }
-          setUploadingFiles([]);
-        }
-      }}>
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent
           className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl
 ">
@@ -4099,7 +4194,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
             
             <div className="flex justify-end space-x-2">
               <Button className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl
- text-red-500" variant="outline" onClick={() => setShowUploadDialog(false)}>
+ text-red-500" variant="outline" onClick={handleUploadCancel}>
                 Cancel
               </Button>
               <Button 
