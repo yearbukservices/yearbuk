@@ -116,6 +116,7 @@ export async function initializeDatabase() {
           ADD COLUMN IF NOT EXISTS "two_factor_code" text,
           ADD COLUMN IF NOT EXISTS "two_factor_code_expires_at" timestamp,
           ADD COLUMN IF NOT EXISTS "two_factor_code_sent_at" timestamp,
+          ADD COLUMN IF NOT EXISTS "two_factor_code_purpose" text,
           ADD COLUMN IF NOT EXISTS "last_username_change" timestamp
       `);
       console.log("✅ Verified users security columns");
