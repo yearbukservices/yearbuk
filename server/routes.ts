@@ -433,20 +433,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { username, password, redirectContext } = req.body;
+      const { username, password, redirectContext } = req.body || {};
+      if (typeof username !== "string" || typeof password !== "string" || !username.trim() || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      const normalizedUsername = username.trim().toLowerCase();
       
       // Try to find user by username first, then by email
-      let user = await storage.getUserByUsername(username.toLowerCase());
+      let user = await storage.getUserByUsername(normalizedUsername);
       if (!user) {
         // Check if the input looks like an email and try to find by email
-        if (username.includes('@')) {
-          user = await storage.getUserByEmail(username.toLowerCase());
+        if (normalizedUsername.includes('@')) {
+          user = await storage.getUserByEmail(normalizedUsername);
         }
       }
       
       // If no user account exists, check if this is a pending school registration
       if (!user) {
-        const school = await storage.getSchoolByUsername(username.toLowerCase());
+        const school = await storage.getSchoolByUsername(normalizedUsername);
         
         if (school && school.tempAdminCredentials) {
           // Verify password against temporary credentials
@@ -491,7 +495,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      // Compare password using bcrypt
+      if (user.userType === "deleted" || user.role === "deleted") {
+        return res.status(401).json({ message: "This account is no longer available" });
+      }
+
+      // Compare password using the account's stored password hash.
       const isPasswordValid = await comparePassword(password, user.password);
       if (!isPasswordValid) {
         await trackLoginActivity(req, user.id, 'failed', 'Invalid password');
@@ -628,6 +636,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, ...userInfo } = user;
       res.json({ user: userInfo, redirectTo });
     } catch (error) {
+      console.error("Login failed:", error);
       res.status(500).json({ message: "Login failed" });
     }
   });
