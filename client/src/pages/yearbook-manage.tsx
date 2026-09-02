@@ -235,6 +235,21 @@ export default function YearbookManage() {
   const [showTOCDialog, setShowTOCDialog] = useState(false);
   const [selectedPageType, setSelectedPageType] = useState<"front_cover" | "back_cover" | "content">("content");
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
+  const [uploadPreviewUrls, setUploadPreviewUrls] = useState<Map<File, string>>(new Map());
+
+  useEffect(() => {
+    const nextPreviewUrls = new Map<File, string>();
+    uploadingFiles.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        nextPreviewUrls.set(file, URL.createObjectURL(file));
+      }
+    });
+    setUploadPreviewUrls(nextPreviewUrls);
+
+    return () => {
+      nextPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [uploadingFiles]);
   const [uploadProgress, setUploadProgress] = useState<{
     isProcessingPDF: boolean;
     currentFile: string;
@@ -258,7 +273,9 @@ export default function YearbookManage() {
   
   const [isUploading, setIsUploading] = useState(false);
   const activeUploadXhrRef = useRef<XMLHttpRequest | null>(null);
+  const activeUploadFileIdRef = useRef<string | null>(null);
   const uploadCancelledRef = useRef(false);
+  const cancelledUploadIdsRef = useRef<Set<string>>(new Set());
   const uploadedPageIdsRef = useRef<Set<string>>(new Set());
   const [newTOCItem, setNewTOCItem] = useState({
     title: "",
@@ -1374,6 +1391,7 @@ export default function YearbookManage() {
       
       const xhr = new XMLHttpRequest();
       activeUploadXhrRef.current = xhr;
+      activeUploadFileIdRef.current = fileId;
       
       // Track upload progress
       xhr.upload.addEventListener('progress', (e) => {
@@ -1396,11 +1414,12 @@ export default function YearbookManage() {
           const response = JSON.parse(xhr.responseText);
           if (activeUploadXhrRef.current === xhr) {
             activeUploadXhrRef.current = null;
+            activeUploadFileIdRef.current = null;
           }
 
           const uploadedPageIds = extractUploadedPageIds(response);
           uploadedPageIds.forEach(pageId => uploadedPageIdsRef.current.add(pageId));
-          if (uploadCancelledRef.current) {
+          if (uploadCancelledRef.current || cancelledUploadIdsRef.current.has(fileId)) {
             void deleteUploadedPages(uploadedPageIds).finally(() => {
               uploadedPageIds.forEach(pageId => uploadedPageIdsRef.current.delete(pageId));
               reject(new Error("Upload cancelled"));
@@ -1420,6 +1439,7 @@ export default function YearbookManage() {
         } else {
           if (activeUploadXhrRef.current === xhr) {
             activeUploadXhrRef.current = null;
+            activeUploadFileIdRef.current = null;
           }
           const errorData = JSON.parse(xhr.responseText || '{}');
           setFileUploadProgress(prev => {
@@ -1442,6 +1462,7 @@ export default function YearbookManage() {
       xhr.addEventListener('abort', () => {
         if (activeUploadXhrRef.current === xhr) {
           activeUploadXhrRef.current = null;
+          activeUploadFileIdRef.current = null;
         }
         reject(new Error("Upload cancelled"));
       });
@@ -1449,6 +1470,7 @@ export default function YearbookManage() {
       xhr.addEventListener('error', () => {
         if (activeUploadXhrRef.current === xhr) {
           activeUploadXhrRef.current = null;
+          activeUploadFileIdRef.current = null;
         }
         setFileUploadProgress(prev => {
           const newMap = new Map(prev);
@@ -1472,6 +1494,7 @@ export default function YearbookManage() {
     if (!yearbook?.id) return;
 
     uploadCancelledRef.current = false;
+    cancelledUploadIdsRef.current.clear();
     uploadedPageIdsRef.current.clear();
     setIsUploading(true);
     const initialProgress = new Map<string, { file: File; progress: number; status: 'pending' | 'uploading' | 'completed' | 'failed'; error?: string }>();
@@ -1482,9 +1505,10 @@ export default function YearbookManage() {
 
     try {
       for (let i = 0; i < files.length; i++) {
-        if (uploadCancelledRef.current) break;
         const file = files[i];
         const fileId = getUploadFileId(file, i);
+        if (uploadCancelledRef.current) break;
+        if (cancelledUploadIdsRef.current.has(fileId)) continue;
         const pageNumber = (yearbook.pages?.filter(p => p.pageType === 'content').length || 0) + i + 1;
         const title = selectedPageType === 'front_cover' ? 'Front Cover' :
           selectedPageType === 'back_cover' ? 'Back Cover' : `Page ${pageNumber}`;
@@ -1492,6 +1516,7 @@ export default function YearbookManage() {
         try {
           await uploadFileWithProgress(file, selectedPageType, title, yearbook.id, fileId, pageNumber);
         } catch (error: any) {
+          if (cancelledUploadIdsRef.current.has(fileId)) continue;
           setFileUploadProgress(prev => {
             const next = new Map(prev);
             const current = next.get(fileId);
@@ -1689,8 +1714,28 @@ export default function YearbookManage() {
     if (fileInput) fileInput.value = '';
   };
 
+  const cancelFileUpload = (fileId: string) => {
+    const fileInfo = fileUploadProgress.get(fileId);
+    if (!fileInfo) return;
+
+    cancelledUploadIdsRef.current.add(fileId);
+    if (activeUploadFileIdRef.current === fileId && activeUploadXhrRef.current) {
+      activeUploadXhrRef.current.abort();
+      activeUploadXhrRef.current = null;
+      activeUploadFileIdRef.current = null;
+    }
+
+    setUploadingFiles(prev => prev.filter(file => file !== fileInfo.file));
+    setFileUploadProgress(prev => {
+      const next = new Map(prev);
+      next.delete(fileId);
+      return next;
+    });
+  };
+
   const handleUploadCancel = async () => {
     uploadCancelledRef.current = true;
+    cancelledUploadIdsRef.current.clear();
 
     const activeXhr = activeUploadXhrRef.current;
     if (activeXhr) {
@@ -4126,7 +4171,19 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                   return (
                     <div key={index} className="p-3 rounded bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
                       <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="h-12 w-12 rounded border border-white/20 bg-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                            {uploadPreviewUrls.get(file) ? (
+                              <img
+                                src={uploadPreviewUrls.get(file)}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <FileText className="h-5 w-5 text-blue-100/70" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-blue-50 truncate">{file.name}</p>
                           <p className="text-xs text-blue-50">
                             {(file.size / 1024 / 1024).toFixed(2)} MB
@@ -4158,6 +4215,18 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                               Retry
                             </Button>
                           </div>
+                        )}
+                        {isUploading && progress && (progress.status === 'uploading' || progress.status === 'pending') && fileId && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => cancelFileUpload(fileId)}
+                            className="h-6 px-2 text-xs text-red-400 hover:text-red-300 border-red-400/50 ml-2"
+                            aria-label={"Cancel upload for " + file.name}
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Cancel
+                          </Button>
                         )}
                         {!isUploading && (!progress || progress.status === 'failed') && (
                           <Button 
