@@ -265,6 +265,11 @@ export default function YearbookManage() {
     pageNumber: null as number | null,
     description: ""
   });
+
+  const allSelectedFilesUploaded =
+    uploadingFiles.length > 0 &&
+    fileUploadProgress.size === uploadingFiles.length &&
+    Array.from(fileUploadProgress.values()).every(file => file.status === "completed");
   
   // Setup state for when yearbook record doesn't exist yet (beta unlock recovery)
 
@@ -1125,22 +1130,7 @@ export default function YearbookManage() {
   // Save changes mutation (for published yearbooks)
   const saveChangesMutation = useMutation({
     mutationFn: async () => {
-      // Apply all pending page uploads WITH their custom page numbers
-      for (const upload of pendingPageUploads) {
-        const formData = new FormData();
-        formData.append("file", upload.file);
-        formData.append("pageType", upload.pageType);
-        formData.append("title", upload.title);
-        // Send the page number so it's preserved after reordering
-        formData.append("pageNumber", upload.pageNumber.toString());
-        
-        const response = await fetch(`/api/yearbooks/${yearbook?.id}/upload-page`, {
-          method: "POST",
-          body: formData,
-        });
-        
-        if (!response.ok) throw new Error(`Upload failed for ${upload.title}`);
-      }
+      // File uploads are completed before this mutation runs. Save only publishes drafts and applies metadata changes.
       
       // Apply all pending TOC items
       for (const tocItem of pendingTOCItems) {
@@ -1363,49 +1353,24 @@ export default function YearbookManage() {
   };
 
   // Enhanced upload function with progress tracking
-  const uploadFileWithProgress = (file: File, pageType: string, title: string, yearbookId: string): Promise<any> => {
+  const uploadFileWithProgress = (file: File, pageType: string, title: string, yearbookId: string, fileId: string, pageNumber?: number): Promise<any> => {
     return new Promise((resolve, reject) => {
-      const fileId = `${file.name}-${Date.now()}`;
-      
-      // Update progress state to show this file is uploading
-      setFileUploadProgress(prev => new Map(prev).set(fileId, {
-        file,
-        progress: 0,
-        status: 'uploading',
-      }));
-      
-      // For PUBLISHED yearbooks, queue content pages instead of uploading
-      if (yearbook?.isPublished && pageType === "content") {
-        const tempId = Date.now();
-        const tempUrl = URL.createObjectURL(file);
-        setPendingPageUploads(prev => [...prev, { 
-          file, 
-          pageType, 
-          title, 
-          tempId,
-          tempUrl,
-          thumbnailUrl: tempUrl,
-          pageNumber: (yearbook?.pages?.filter(p => p.pageType === "content")?.length || 0) + prev.filter(p => p.pageType === "content").length + 1
-        }]);
-        createPendingPageThumbnail(file, tempId);
-        setHasUnsavedChanges(true);
-        
-        // Mark as completed immediately since we're queuing
-        setFileUploadProgress(prev => {
-          const newMap = new Map(prev);
-          newMap.set(fileId, { file, progress: 100, status: 'completed' });
-          return newMap;
-        });
-        
-        resolve({ tempId: Date.now(), queued: true });
-        return;
+      setFileUploadProgress(prev => {
+        const next = new Map(prev);
+        const current = next.get(fileId);
+        next.set(fileId, { ...current, file, progress: 0, status: 'uploading' });
+        return next;
+      });
+      if (file.type === 'application/pdf') {
+        setUploadProgress(prev => ({ ...prev, isProcessingPDF: true, currentFile: file.name }));
       }
-      
-      // For covers or unpublished yearbooks, upload immediately
       const formData = new FormData();
       formData.append('file', file);
       formData.append('pageType', pageType);
       formData.append('title', title);
+      if (pageType === 'content' && pageNumber !== undefined) {
+        formData.append('pageNumber', pageNumber.toString());
+      }
       
       const xhr = new XMLHttpRequest();
       activeUploadXhrRef.current = xhr;
@@ -1501,6 +1466,47 @@ export default function YearbookManage() {
     });
   };
   
+  const getUploadFileId = (file: File, index: number) => `${file.name}-${file.lastModified}-${index}`;
+
+  const startFileUploads = async (files: File[]) => {
+    if (!yearbook?.id) return;
+
+    uploadCancelledRef.current = false;
+    uploadedPageIdsRef.current.clear();
+    setIsUploading(true);
+    const initialProgress = new Map<string, { file: File; progress: number; status: 'pending' | 'uploading' | 'completed' | 'failed'; error?: string }>();
+    files.forEach((file, index) => {
+      initialProgress.set(getUploadFileId(file, index), { file, progress: 0, status: 'pending' });
+    });
+    setFileUploadProgress(initialProgress);
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        if (uploadCancelledRef.current) break;
+        const file = files[i];
+        const fileId = getUploadFileId(file, i);
+        const pageNumber = (yearbook.pages?.filter(p => p.pageType === 'content').length || 0) + i + 1;
+        const title = selectedPageType === 'front_cover' ? 'Front Cover' :
+          selectedPageType === 'back_cover' ? 'Back Cover' : `Page ${pageNumber}`;
+
+        try {
+          await uploadFileWithProgress(file, selectedPageType, title, yearbook.id, fileId, pageNumber);
+        } catch (error: any) {
+          setFileUploadProgress(prev => {
+            const next = new Map(prev);
+            const current = next.get(fileId);
+            if (current) next.set(fileId, { ...current, status: 'failed', error: error?.message || 'Upload failed' });
+            return next;
+          });
+          console.error(`Failed to upload ${file.name}:`, error);
+        }
+      }
+    } finally {
+      setIsUploading(false);
+      setUploadProgress({ isProcessingPDF: false, currentFile: '', totalFiles: 0, currentFileIndex: 0 });
+    }
+  };
+
   // Retry failed upload
   const retryUpload = async (fileId: string) => {
     const fileInfo = fileUploadProgress.get(fileId);
@@ -1512,7 +1518,8 @@ export default function YearbookManage() {
                   `Page ${pageNumber}`;
     
     try {
-      await uploadFileWithProgress(fileInfo.file, selectedPageType, title, yearbook.id);
+      setIsUploading(true);
+      await uploadFileWithProgress(fileInfo.file, selectedPageType, title, yearbook.id, fileId);
       toast({
         className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
         title: "Upload successful!",
@@ -1526,6 +1533,8 @@ export default function YearbookManage() {
         description: error.message,
         variant: "destructive"
       });
+    } finally {
+      setIsUploading(false);
     }
   };
   
@@ -1633,6 +1642,7 @@ export default function YearbookManage() {
       }
       
       setUploadingFiles(files);
+      void startFileUploads(files);
     }
   };
   
@@ -1641,72 +1651,30 @@ export default function YearbookManage() {
   };
 
   const handleUploadSubmit = async () => {
-    if (uploadingFiles.length === 0 || !yearbook?.id) return;
-    
-    setIsUploading(true);
-    setFileUploadProgress(new Map());
-    
-    try {
-      // Upload files one by one with progress tracking
-      for (let i = 0; i < uploadingFiles.length; i++) {
-        if (uploadCancelledRef.current) break;
-        const file = uploadingFiles[i];
-        const pageNumber = (yearbook?.pages?.filter(p => p.pageType === "content")?.length || 0) + i + 1;
-        const title = selectedPageType === "front_cover" ? "Front Cover" : 
-                      selectedPageType === "back_cover" ? "Back Cover" : 
-                      `Page ${pageNumber}`;
-        
-        try {
-          await uploadFileWithProgress(file, selectedPageType, title, yearbook.id);
-        } catch (error: any) {
-          // Error is already tracked in fileUploadProgress state
-          console.error(`Failed to upload ${file.name}:`, error);
-        }
-      }
-      
-      if (uploadCancelledRef.current) return;
-
-      // Check if all uploads completed successfully
-      const allCompleted = Array.from(fileUploadProgress.values()).every(f => f.status === 'completed');
-      const anyFailed = Array.from(fileUploadProgress.values()).some(f => f.status === 'failed');
-      
-      if (allCompleted) {
-        toast({
-          className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-          title: "All files uploaded successfully!",
-          description: `Successfully uploaded ${uploadingFiles.length} file(s).`
-        });
-        
-        // Refresh yearbook data
-        queryClient.invalidateQueries({ queryKey: ["/api/yearbooks", schoolId, year] });
-        
-        // Clear and close dialog after a short delay
-        setTimeout(() => {
-          setUploadingFiles([]);
-          setFileUploadProgress(new Map());
-          setShowUploadDialog(false);
-          
-          // Reset file input
-          const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-          if (fileInput) {
-            fileInput.value = '';
-          }
-        }, 1500);
-      } else if (anyFailed) {
-        toast({
-          className: "bg-orange-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-          title: "Some uploads failed",
-          description: "You can retry failed uploads using the retry button.",
-          variant: "default"
-        });
-        
-        // Refresh to show successful uploads
-        queryClient.invalidateQueries({ queryKey: ["/api/yearbooks", schoolId, year] });
-      }
-      
-    } finally {
-      setIsUploading(false);
+    if (uploadingFiles.length === 0) return;
+    if (!allSelectedFilesUploaded) {
+      toast({
+        className: "bg-orange-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Uploads are not finished",
+        description: "Wait for every file to finish uploading, then try again.",
+        variant: "default"
+      });
+      return;
     }
+
+    uploadedPageIdsRef.current.clear();
+    await queryClient.invalidateQueries({ queryKey: ["/api/yearbooks", schoolId, year] });
+    toast({
+      className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+      title: "Files added successfully!",
+      description: `${uploadingFiles.length} file${uploadingFiles.length === 1 ? '' : 's'} ready in the yearbook.`
+    });
+
+    setUploadingFiles([]);
+    setFileUploadProgress(new Map());
+    setShowUploadDialog(false);
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
   };
 
   const handleUploadCancel = async () => {
@@ -3202,9 +3170,9 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                     publishMutation.mutate();
                   }
                 }}
-                disabled={yearbook?.isPublished ? 
+                disabled={isUploading || (yearbook?.isPublished ? 
                   (!hasUnsavedChanges || saveChangesMutation.isPending) : 
-                  (!canPublish || publishMutation.isPending)
+                  (!canPublish || publishMutation.isPending))
                 }
                 data-testid="button-publish-yearbook"
               >
@@ -4105,10 +4073,11 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                 accept={selectedPageType === "content" ? "image/*,.pdf" : "image/*"}
                 multiple={selectedPageType === "content"}
                 onChange={handleFileUpload}
+                disabled={isUploading}
               />
               <p className="text-xs text-white/50 mt-1">
                 {selectedPageType === "content" 
-                  ? "You can select multiple images or PDFs for content pages. They will be uploaded in sequence."
+                  ? "Select files to start uploading immediately. Click Upload Files after every file shows Complete."
                   : yearbook?.detectedAspectRatio
                     ? `Upload images for this yearbook (page ratio: ${yearbook.detectedAspectRatio}). Change ratio in Settings.`
                     : "Upload images for this yearbook. Set a page ratio in Settings for consistent sizing."
@@ -4159,6 +4128,12 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                             <span className="text-xs">Complete</span>
                           </div>
                         )}
+                        {progress && progress.status === 'uploading' && (
+                          <span className="text-xs text-blue-200 ml-2">Uploading...</span>
+                        )}
+                        {progress && progress.status === 'pending' && (
+                          <span className="text-xs text-blue-200/70 ml-2">Waiting...</span>
+                        )}
                         {progress && progress.status === 'failed' && (
                           <div className="flex items-center gap-1 ml-2">
                             <Button
@@ -4185,7 +4160,7 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
                       </div>
                       
                       {/* Progress bar */}
-                      {progress && (progress.status === 'uploading' || progress.status === 'completed') && (
+                      {progress && progress.status !== 'failed' && (
                         <div className="space-y-1">
                           <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
                             <div 
@@ -4221,20 +4196,15 @@ function MobileDeleteDropZone({ isOver }: { isOver: boolean }) {
               </Button>
               <Button 
                 onClick={handleUploadSubmit}
-                disabled={uploadingFiles.length === 0 || uploadPageMutation.isPending}
+                disabled={uploadingFiles.length === 0 || isUploading || !allSelectedFilesUploaded}
                 data-testid="button-upload-files"
               >
-                {uploadPageMutation.isPending ? (
-                  uploadProgress.isProcessingPDF ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Processing PDF...</span>
-                    </div>
-                  ) : (
-                    "Uploading..."
-                  )
+                {isUploading ? (
+                  uploadProgress.isProcessingPDF ? "Processing PDF..." : "Uploading..."
+                ) : allSelectedFilesUploaded ? (
+                  "Add Uploaded Files"
                 ) : (
-                  `Upload ${uploadingFiles.length > 1 ? `${uploadingFiles.length} Files` : "File"}`
+                  "Retry failed uploads above"
                 )}
               </Button>
             </div>
