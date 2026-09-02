@@ -27,7 +27,8 @@ export async function apiRequest(
   if (data) {
     headers["Content-Type"] = "application/json";
   }
-  if (userId) {
+  const isPublicAuthRequest = url === "/api/auth/login";
+  if (userId && !isPublicAuthRequest) {
     headers["Authorization"] = `Bearer ${userId}`;
   }
 
