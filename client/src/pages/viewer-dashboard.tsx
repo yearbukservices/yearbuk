@@ -3154,10 +3154,10 @@ export default function ViewerDashboard() {
 
       {/* Mobile Bottom Navigation - Fixed at Bottom of Screen */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-lg border-t border-white/20 shadow-2xl z-20">
-        <div className="flex justify-around items-center px-2 py-3">
+        <div className="flex w-full justify-around items-center px-1 py-3">
           <button
             onClick={() => setActiveTab("home")}
-            className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 ${
+            className={`min-w-0 flex-1 flex flex-col items-center justify-center px-1 py-2 rounded-lg transition-all duration-300 ${
               activeTab === "home" 
                 ? "text-white" 
                 : "text-blue-200"
@@ -3169,7 +3169,7 @@ export default function ViewerDashboard() {
           </button>
           <button
             onClick={() => setActiveTab("search")}
-            className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 ${
+            className={`min-w-0 flex-1 flex flex-col items-center justify-center px-1 py-2 rounded-lg transition-all duration-300 ${
               activeTab === "search" 
                 ? "text-white" 
                 : "text-blue-200"
@@ -3181,7 +3181,7 @@ export default function ViewerDashboard() {
           </button>
           <button
             onClick={() => setActiveTab("library")}
-            className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 ${
+            className={`min-w-0 flex-1 flex flex-col items-center justify-center px-1 py-2 rounded-lg transition-all duration-300 ${
               activeTab === "library" 
                 ? "text-white" 
                 : "text-blue-200"
@@ -3193,7 +3193,7 @@ export default function ViewerDashboard() {
           </button>
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 ${
+            className={`min-w-0 flex-1 flex flex-col items-center justify-center px-1 py-2 rounded-lg transition-all duration-300 ${
               activeTab === "profile" 
                 ? "text-white" 
                 : "text-blue-200"
@@ -3205,7 +3205,7 @@ export default function ViewerDashboard() {
           </button>
           <button
             onClick={() => setActiveTab("memory-upload")}
-            className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 ${
+            className={`min-w-0 flex-1 flex flex-col items-center justify-center px-1 py-2 rounded-lg transition-all duration-300 ${
               activeTab === "memory-upload" 
                 ? "text-white" 
                 : "text-blue-200"
@@ -3218,7 +3218,7 @@ export default function ViewerDashboard() {
           {alumniBadges.some(badge => badge.status === 'verified') && (
             <button
               onClick={() => setActiveTab("alumni")}
-              className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 ${
+              className={`min-w-0 flex-1 flex flex-col items-center justify-center px-1 py-2 rounded-lg transition-all duration-300 ${
                 activeTab === "alumni" 
                   ? "text-white" 
                   : "text-blue-200"
