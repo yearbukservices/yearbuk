@@ -14,11 +14,19 @@ async function hashSecret(value: string): Promise<string> {
 }
 
 async function compareSecret(value: string, encoded: string): Promise<boolean> {
-  const [algorithm, salt, hash] = encoded.split(':');
-  if (algorithm !== 'scrypt' || !salt || !hash) return false;
-  const expected = Buffer.from(hash, 'hex');
-  const actual = (await scrypt(value, salt, expected.length)) as Buffer;
-  return expected.length === actual.length && timingSafeEqual(expected, actual);
+  if (typeof encoded !== 'string') return false;
+
+  try {
+    const [algorithm, salt, hash] = encoded.split(':');
+    if (algorithm !== 'scrypt' || !salt || !hash) return false;
+    const expected = Buffer.from(hash, 'hex');
+    if (expected.length === 0) return false;
+    const actual = (await scrypt(value, salt, expected.length)) as Buffer;
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
+  } catch (error) {
+    console.error('Password comparison failed:', error);
+    return false;
+  }
 }
 
 /**
