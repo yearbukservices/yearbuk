@@ -29,6 +29,10 @@ export default function LoginPage() {
     setEmailNotVerified(false);
     setResendSuccess(false);
 
+    // Do not attach a stale account ID to a fresh login attempt.
+    localStorage.removeItem("user");
+    localStorage.removeItem("superAdminToken");
+
     try {
       const response = await apiRequest("POST", "/api/auth/login", {
         username,
