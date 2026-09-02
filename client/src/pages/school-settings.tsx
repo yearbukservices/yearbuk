@@ -1883,8 +1883,18 @@ export default function SchoolSettings() {
   };
 
   const renderPaymentsTab = () => {
+    // API responses should be arrays, but normalize defensively so a malformed
+    // or unexpected response cannot crash the entire settings page.
+    const purchaseHistory = Array.isArray(paymentHistory) ? paymentHistory : [];
+    const revenueHistory = Array.isArray(salesHistory) ? salesHistory : [];
+
     const calculateTotal = (history: any[] = [], field: 'amount' = 'amount') => {
-      return history?.reduce((sum, item) => sum + (item[field] || 0), 0) || 0;
+      if (!Array.isArray(history)) return 0;
+
+      return history.reduce((sum, item) => {
+        const amount = Number(item?.[field] ?? 0);
+        return sum + (Number.isFinite(amount) ? amount : 0);
+      }, 0);
     };
 
     // Helper to convert amount based on its currency
@@ -1930,7 +1940,7 @@ export default function SchoolSettings() {
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-0">
               <div className="text-3xl font-bold text-white">
-                {formatPrice(convertPrice(calculateTotal(paymentHistory || [])))}
+                {formatPrice(convertPrice(calculateTotal(purchaseHistory)))}
               </div>
               <p className="text-sm text-white/60 mt-1">
                 Total amount spent on yearbook access
@@ -1948,8 +1958,8 @@ export default function SchoolSettings() {
             <CardContent className="p-4 sm:p-6 pt-0">
               <div className="text-3xl font-bold text-white">
                 {(() => {
-                  const total = calculateTotal(salesHistory || []);
-                  const currency = salesHistory?.[0]?.currency;
+                  const total = calculateTotal(revenueHistory);
+                  const currency = revenueHistory[0]?.currency;
                   return formatAmount(total, currency);
                 })()}
               </div>
@@ -1976,9 +1986,9 @@ export default function SchoolSettings() {
               <div className="flex items-center justify-center py-8">
                 <RefreshCw className="h-6 w-6 animate-spin text-white" />
               </div>
-            ) : paymentHistory && paymentHistory.length > 0 ? (
+            ) : purchaseHistory.length > 0 ? (
               <div className="space-y-3">
-                {paymentHistory.map((payment: any) => (
+                {purchaseHistory.map((payment: any) => (
                   <div key={payment.id} className="bg-white/5 backdrop-blur-lg border border-white/20 rounded-lg p-4">
                     <div className="flex justify-between items-start">
                       <div>
@@ -2026,9 +2036,9 @@ export default function SchoolSettings() {
               <div className="flex items-center justify-center py-8">
                 <RefreshCw className="h-6 w-6 animate-spin text-white" />
               </div>
-            ) : salesHistory && salesHistory.length > 0 ? (
+            ) : revenueHistory.length > 0 ? (
               <div className="space-y-3">
-                {salesHistory.map((sale: any) => (
+                {revenueHistory.map((sale: any) => (
                   <div key={sale.id} className="bg-white/5 backdrop-blur-lg border border-white/20 rounded-lg p-4">
                     <div className="flex justify-between items-start">
                       <div>
