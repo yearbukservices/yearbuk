@@ -432,7 +432,7 @@ export function createTwoFactorAuthEmail(code: string): string {
     greeting: 'Security Verification Required',
     body: `
       <p style="color: white; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-        A login attempt to your super admin account requires verification. Use the code below to complete your sign-in:
+        A login attempt to your Yearbuk account requires verification. Use the code below to complete your sign-in:
       </p>
       <div style="
         background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
@@ -471,5 +471,29 @@ export function createTwoFactorAuthEmail(code: string): string {
       </p>
     `,
     footer: 'This is an automated security message. Never share your verification codes with anyone.'
+  });
+}
+
+
+/**
+ * Two-Factor Authentication Settings Change Email
+ */
+export function createTwoFactorSettingChangeEmail(code: string, enabled: boolean): string {
+  const action = enabled ? "turn on" : "turn off";
+  return createEmailTemplate({
+    title: enabled ? "Confirm Two-Factor Authentication" : "Confirm Two-Factor Authentication Change",
+    preheader: "Confirm your Yearbuk security setting",
+    greeting: "Confirm Security Setting Change",
+    body: [
+      '<p style="color: white; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">',
+      "You requested to " + action + " two-factor authentication for your Yearbuk account. Enter the code below to confirm this change:",
+      "</p>",
+      '<div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%); border: 2px solid rgba(59, 130, 246, 0.3); border-radius: 16px; padding: 30px; margin: 30px 0; text-align: center;">',
+      '<p style="color: white; font-size: 48px; font-weight: 700; margin: 0; letter-spacing: 8px; font-family: Courier New, monospace;">' + code + "</p>",
+      '<p style="color: #cbd5e1; font-size: 14px; margin: 16px 0 0 0;">Code expires in 5 minutes</p>',
+      "</div>",
+      '<p style="color: #cbd5e1; font-size: 14px; line-height: 1.6; margin: 0;">This code can only be used once. If you did not request this change, secure your account immediately.</p>'
+    ].join(""),
+    footer: "This is an automated security message. Never share your verification codes with anyone."
   });
 }
