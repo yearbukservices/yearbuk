@@ -583,14 +583,36 @@ export default function YearbookManage() {
     }
   }, [yearbook?.detectedAspectRatio]);
 
-  // Sync frontend unsaved changes state with backend hasUnsavedDrafts field
+  // Draft pages are the source of truth when the backend flag is stale or omitted.
+  const hasDraftPages = useMemo(
+    () => yearbook?.pages?.some(page => page.status === "draft" || page.status === "draft_deleted") ?? false,
+    [yearbook?.pages]
+  );
+
+  // Sync frontend unsaved changes state with both the backend flag and page statuses.
   useEffect(() => {
-    if (yearbook?.hasUnsavedDrafts && !hasUnsavedChanges) {
+    const hasDraftState = Boolean(
+      yearbook?.hasUnsavedDrafts || (yearbook?.isPublished && hasDraftPages)
+    );
+
+    if (hasDraftState && !hasUnsavedChanges) {
       setHasUnsavedChanges(true);
-    } else if (!yearbook?.hasUnsavedDrafts && hasUnsavedChanges && pendingPageUploads.length === 0 && pendingTOCItems.length === 0) {
+    } else if (
+      !hasDraftState &&
+      hasUnsavedChanges &&
+      pendingPageUploads.length === 0 &&
+      pendingTOCItems.length === 0
+    ) {
       setHasUnsavedChanges(false);
     }
-  }, [yearbook?.hasUnsavedDrafts, hasUnsavedChanges, pendingPageUploads.length, pendingTOCItems.length]);
+  }, [
+    yearbook?.hasUnsavedDrafts,
+    yearbook?.isPublished,
+    hasDraftPages,
+    hasUnsavedChanges,
+    pendingPageUploads.length,
+    pendingTOCItems.length
+  ]);
 
   // Sync free status with yearbook data
   useEffect(() => {
