@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useEffect, useRef } from "react";
+import { Component, useEffect, useRef, type ErrorInfo, type ReactNode } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -48,6 +48,49 @@ import SchoolMemories from "@/pages/school-dashboard-tabs/memories";
 import SchoolOrders from "@/pages/school-dashboard-tabs/orders";
 import SchoolSettingsTab from "@/pages/school-dashboard-tabs/settings";
 import SchoolAlumni from "@/pages/school-dashboard-tabs/alumni";
+
+interface AppErrorBoundaryState {
+  error: Error | null;
+}
+
+class AppErrorBoundary extends Component<{ children: ReactNode }, AppErrorBoundaryState> {
+  state: AppErrorBoundaryState = { error: null };
+
+  static getDerivedStateFromError(error: Error): AppErrorBoundaryState {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Unhandled application error:", error, errorInfo);
+  }
+
+  handleReload = () => {
+    window.location.reload();
+  };
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+          <div className="max-w-lg w-full rounded-xl border border-white/20 bg-white/10 p-6 shadow-2xl">
+            <h1 className="text-xl font-semibold">Something went wrong</h1>
+            <p className="mt-2 text-sm text-white/70">The page could not be displayed. Reload to try again.</p>
+            <p className="mt-4 rounded-md bg-black/20 p-3 font-mono text-xs text-red-200 break-words">{this.state.error.message}</p>
+            <button
+              type="button"
+              onClick={this.handleReload}
+              className="mt-5 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+            >
+              Reload page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function NavigationHistorySync() {
   const [location] = useLocation();
@@ -200,7 +243,9 @@ function App() {
             <YearbookProtection />
             <PaymentCallbackHandler />
             <Toaster />
-            <Router />
+            <AppErrorBoundary>
+              <Router />
+            </AppErrorBoundary>
           </TooltipProvider>
         </CurrencyProvider>
       </ThemeProvider>
