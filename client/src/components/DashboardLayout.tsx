@@ -272,15 +272,13 @@ export function DashboardLayout({ children, userType = "viewer", onSearchTabClic
             {accountStatus && (
               <>
                 {/* Mobile Circle Status Indicator - Show only on small screens */}
-                <div className="sm:hidden relative" data-testid="account-status-mobile">
-                  {accountStatus.startsWith("Alumni") ? (
+                {accountStatus.startsWith("Alumni") && (
+                  <div className="sm:hidden relative" data-testid="account-status-mobile">
                     <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                       {alumniBadges.filter(b => b.status === "verified").length}
                     </div>
-                  ) : (
-                    <div className="w-6 h-6 bg-blue-500 rounded-full"></div>
-                  )}
-                </div>
+                  </div>
+                )}
                 
                 {/* Desktop Account Status Indicator - Hidden on small screens */}
                 <div 
