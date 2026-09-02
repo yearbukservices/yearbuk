@@ -26,7 +26,7 @@ export default function ViewerSettings() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const { toast } = useToast();
-  const { userCurrency, setUserCurrency, formatPrice } = useCurrency();
+  const { userCurrency, setUserCurrency, formatPrice, convertPrice } = useCurrency();
 
   // Set custom page title
   useEffect(() => {
