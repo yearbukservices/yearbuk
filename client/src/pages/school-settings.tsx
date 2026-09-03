@@ -441,7 +441,7 @@ export default function SchoolSettings() {
       <div className="space-y-4 sm:space-y-6 max-w-4xl">
         <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
           <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl text-white">Display Preferences</CardTitle>
+            <CardTitle className="text-lg sm:text-xl text-white">Displayed Currency</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
             {/* Currency Preference */}
@@ -2702,6 +2702,14 @@ export default function SchoolSettings() {
                   <User className="h-4 w-4 mr-2 flex-shrink-0" />
                   School Profile
                 </button>
+                
+              </nav>
+            </div>
+
+            {/* Billing Section */}
+            <div className={BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Billing</h3>
+              <nav className="space-y-1">
                 <button
                   onClick={() => setActiveTab("display")}
                   className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
@@ -2712,15 +2720,8 @@ export default function SchoolSettings() {
                   data-testid="tab-display"
                 >
                   <Monitor className="h-4 w-4 mr-2 flex-shrink-0" />
-                  Display Preferences
+                  Displayed Currency
                 </button>
-              </nav>
-            </div>
-
-            {/* Billing Section */}
-            <div className={BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Billing</h3>
-              <nav className="space-y-1">
                 <button
                   onClick={() => setActiveTab("revenue")}
                   className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
@@ -2812,6 +2813,14 @@ export default function SchoolSettings() {
                   <User className="h-5 w-5 mr-3 flex-shrink-0" />
                   School Profile
                 </button>
+                
+              </nav>
+            </div>
+
+            {/* Billing Section */}
+            <div className={BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Billing</h3>
+              <nav className="space-y-1">
                 <button
                   onClick={() => {
                     setActiveTab("display");
@@ -2825,15 +2834,8 @@ export default function SchoolSettings() {
                   data-testid="tab-display-mobile"
                 >
                   <Monitor className="h-5 w-5 mr-3 flex-shrink-0" />
-                  Display Preferences
+                  Displayed Currency
                 </button>
-              </nav>
-            </div>
-
-            {/* Billing Section */}
-            <div className={BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Billing</h3>
-              <nav className="space-y-1">
                 <button
                   onClick={() => {
                     setActiveTab("revenue");
