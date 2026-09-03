@@ -36,6 +36,7 @@ interface School {
   yearFounded?: number;
   country?: string;
   city?: string;
+  email?: string;
   phoneNumber?: string;
   website?: string;
   address?: string;
@@ -101,6 +102,10 @@ export default function SchoolSettings() {
     email: "",
     username: "",
     schoolName: "",
+    yearFounded: "",
+    country: "",
+    city: "",
+    phoneNumber: "",
     website: "",
     address: "",
     state: "",
@@ -119,6 +124,10 @@ export default function SchoolSettings() {
     email: "",
     username: "",
     schoolName: "",
+    yearFounded: "",
+    country: "",
+    city: "",
+    phoneNumber: "",
     website: "",
     address: "",
     state: "",
@@ -270,19 +279,25 @@ export default function SchoolSettings() {
     queryKey: ["/api/schools", user?.schoolId],
     enabled: !!user?.schoolId,
   });
-
-  // Update profile form when school data is loaded
+  // Keep the form synced with the single school profile source of truth.
   useEffect(() => {
-    if (school) {
-      setProfileForm(prev => ({
-        ...prev,
-        schoolName: school.name || "",
-        website: school.website || "",
-        address: school.address || "",
-        state: school.state || ""
-      }));
-    }
+    if (!school) return;
+    setProfileForm(prev => ({
+      ...prev,
+      username: school.username || "",
+      email: school.email || "",
+      schoolName: school.name || "",
+      yearFounded: school.yearFounded ? String(school.yearFounded) : "",
+      country: school.country || "",
+      city: school.city || "",
+      phoneNumber: school.phoneNumber || "",
+      website: school.website || "",
+      address: school.address || "",
+      state: school.state || ""
+    }));
   }, [school]);
+
+
 
   // Fetch notifications for this school
   const { data: notifications = [] } = useQuery<Notification[]>({
@@ -892,32 +907,34 @@ export default function SchoolSettings() {
     return () => clearTimeout(timeoutId);
   }, [bankAccountNumber, selectedBankCode]);
 
-  // Username availability checking effect
+  // School usernames power public profile URLs, so check the school record.
   React.useEffect(() => {
     const checkUsername = async () => {
-      if (!tempValues.username || editingField !== "username") {
+      const candidate = tempValues.username.trim().toLowerCase();
+      if (!candidate || editingField !== "username") {
         setUsernameAvailable(null);
         setUsernameMessage("");
         return;
       }
-
-      // Don't check if it's the same as current username
-      if (tempValues.username === profileForm.username) {
+      if (candidate === profileForm.username.trim().toLowerCase()) {
         setUsernameAvailable(true);
         setUsernameMessage("This is your current username");
         return;
       }
-
       setIsCheckingUsername(true);
       try {
-        const response = await apiRequest("POST", "/api/users/check-username", {
-          username: tempValues.username,
-          currentUserId: user?.id
-        });
-        const result = await response.json();
-
-        setUsernameAvailable(result.available);
-        setUsernameMessage(result.message);
+        const response = await fetch(`/api/schools/by-username/${encodeURIComponent(candidate)}`);
+        if (response.ok) {
+          const existingSchool = await response.json();
+          const isCurrentSchool = existingSchool.id === school?.id;
+          setUsernameAvailable(isCurrentSchool);
+          setUsernameMessage(isCurrentSchool ? "This is your current username" : "Username is already taken");
+        } else if (response.status === 404) {
+          setUsernameAvailable(true);
+          setUsernameMessage("Username is available");
+        } else {
+          throw new Error("Username lookup failed");
+        }
       } catch (error) {
         setUsernameAvailable(false);
         setUsernameMessage("Error checking username availability");
@@ -925,13 +942,9 @@ export default function SchoolSettings() {
         setIsCheckingUsername(false);
       }
     };
-
-    const timeoutId = setTimeout(() => {
-      checkUsername();
-    }, 500); // Debounce for 500ms
-
+    const timeoutId = setTimeout(checkUsername, 500);
     return () => clearTimeout(timeoutId);
-  }, [tempValues.username, editingField, profileForm.username, user?.id]);
+  }, [tempValues.username, editingField, profileForm.username, school?.id]);
 
   // Send 2FA code for bank account change
   const send2FACode = async () => {
@@ -1180,7 +1193,7 @@ export default function SchoolSettings() {
     setIsUpdatingProfile(true);
     
     // For school-specific fields, update the school record
-    if (['schoolName', 'website', 'address', 'state'].includes(field)) {
+    if (['username', 'schoolName', 'yearFounded', 'country', 'city', 'phoneNumber', 'email', 'website', 'address', 'state'].includes(field)) {
       if (!school?.id) {
         toast({
           className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
@@ -1272,6 +1285,34 @@ export default function SchoolSettings() {
     }));
   };
 
+  const renderEditableSchoolField = (
+    field: "email" | "yearFounded" | "country" | "city" | "phoneNumber",
+    label: string,
+    options: { type?: "text" | "email" | "number" | "tel"; placeholder?: string; min?: number; max?: number } = {}
+  ) => {
+    const displayValue = profileForm[field] || "";
+    const editValue = tempValues[field] || "";
+    return (
+      <div className="grid gap-2">
+        <Label htmlFor={field} className="text-sm font-medium text-white">{label}</Label>
+        <div className="flex items-center gap-2">
+          {editingField === field ? (
+            <>
+              <Input id={field} type={options.type || "text"} value={editValue} onChange={(e) => setTempValues(prev => ({ ...prev, [field]: e.target.value }))} placeholder={options.placeholder} min={options.min} max={options.max} className="flex-1 h-10 sm:h-11 bg-white/10 border border-white/20 text-white placeholder:text-white/50" data-testid={`input-${field}-edit`} />
+              <Button size="icon" variant="ghost" onClick={() => handleConfirmSave(field)} disabled={isUpdatingProfile} data-testid={`button-save-${field}`} className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 border border-white/20 text-white"><Check className="h-4 w-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => handleCancelEdit(field)} disabled={isUpdatingProfile} data-testid={`button-cancel-${field}`} className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 border border-white/20 text-white"><X className="h-4 w-4" /></Button>
+            </>
+          ) : (
+            <>
+              <Input id={field} type={options.type || "text"} value={displayValue || "Not provided"} readOnly className="flex-1 bg-gray-50 h-10 sm:h-11 bg-white/10 border border-white/20 text-white" data-testid={`input-${field}`} />
+              <Button size="icon" variant="ghost" onClick={() => startEditing(field)} data-testid={`button-edit-${field}`} className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 border border-white/20 text-white"><Edit className="h-4 w-4" /></Button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderProfileTab = () => (
     <div className="space-y-4 sm:space-y-6 max-w-4xl">
       {/* Basic Account Information */}
@@ -1355,7 +1396,7 @@ export default function SchoolSettings() {
 
           {/* Username Field */}
           <div className="grid gap-2">
-            <Label htmlFor="username" data-testid="label-username" className="text-sm font-medium text-white">Username</Label>
+            <Label htmlFor="username" data-testid="label-username" className="text-sm font-medium text-white">School Username</Label>
             <div className="flex items-center gap-2">
               {editingField === "username" ? (
                 <>
@@ -1432,6 +1473,16 @@ export default function SchoolSettings() {
               )}
             </div>
           </div>
+
+           {school?.username && (
+             <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+               <Label className="text-sm font-medium text-white">Public Profile URL</Label>
+               <div className="flex items-center gap-2 mt-2">
+                 <a href={`/${school.username}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-sm text-cyan-300 hover:text-cyan-200">{window.location.origin}/{school.username}</a>
+                 <Button size="icon" variant="ghost" onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/${school.username}`); toast({ title: "Profile URL copied" }); }} className="h-9 w-9 flex-shrink-0 border border-white/20 text-white" data-testid="button-copy-profile-url"><Copy className="h-4 w-4" /></Button>
+               </div>
+             </div>
+           )}
 
           {/* School Logo */}
           <div className="grid gap-2">
@@ -1520,79 +1571,31 @@ export default function SchoolSettings() {
             </div>
           </div>
 
-          {/* Email Field */}
-          <div className="grid gap-2">
-            <Label htmlFor="email" data-testid="label-email" className="text-sm font-medium text-white">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={profileForm.email}
-              readOnly
-              disabled
-              className="bg-white/5 backdrop-blur-lg border border-white/20 text-white/70 h-10 sm:h-11 cursor-not-allowed"
-              data-testid="input-email"
-            />
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+       </Card>
 
-      {/* School Information Card - Read Only */}
+       {/* School Details */}
+       <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
+         <CardHeader className="p-4 sm:p-6">
+           <CardTitle className="text-lg sm:text-xl text-white">School Details</CardTitle>
+           <p className="text-sm text-blue-50">Manage the information shown on your public Yearbuk profile.</p>
+         </CardHeader>
+         <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             {renderEditableSchoolField("email", "Public School Email", { type: "email", placeholder: "school@example.com" })}
+             {renderEditableSchoolField("phoneNumber", "Public School Phone", { type: "tel", placeholder: "(234)8012345678" })}
+             {renderEditableSchoolField("yearFounded", "Year Founded", { type: "number", min: 1000, max: new Date().getFullYear(), placeholder: "e.g. 1998" })}
+             {renderEditableSchoolField("country", "Country", { placeholder: "Enter country" })}
+             {renderEditableSchoolField("city", "City", { placeholder: "Enter city" })}
+           </div>
+         </CardContent>
+       </Card>
+
+      {/* Location & Website */}
       <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
         <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl text-white">School Information</CardTitle>
-          <p className="text-sm text-blue-50">Basic school information (contact support to modify)</p>
-        </CardHeader>
-        <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="yearFounded" className="text-sm font-medium text-blue-50">Year Founded</Label>
-              <Input
-                id="yearFounded"
-                value={school?.yearFounded || ""}
-                readOnly
-                className="bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                data-testid="input-year-founded"
-              />
-            </div>
-            <div>
-              <Label htmlFor="country" className="text-sm font-medium text-blue-50">Country</Label>
-              <Input
-                id="country"
-                value={school?.country || ""}
-                readOnly
-                className="bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                data-testid="input-country"
-              />
-            </div>
-            <div>
-              <Label htmlFor="city" className="text-sm font-medium text-blue-50">City</Label>
-              <Input
-                id="city"
-                value={school?.city || ""}
-                readOnly
-                className="bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                data-testid="input-city"
-              />
-            </div>
-            <div>
-              <Label htmlFor="phoneNumber" className="text-sm font-medium text-blue-50">Phone Number</Label>
-              <Input
-                id="phoneNumber"
-                value={school?.phoneNumber || ""}
-                readOnly
-                className="bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                data-testid="input-phone-number"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Editable School Information */}
-      <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl text-white">Additional Information</CardTitle>
-          <p className="text-sm text-blue-50">Update optional school information</p>
+          <CardTitle className="text-lg sm:text-xl text-white">Location & Website</CardTitle>
+          <p className="text-sm text-blue-50">Update the public location and website information.</p>
         </CardHeader>
         <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
           <div className="grid gap-2">
@@ -3042,10 +3045,10 @@ export default function SchoolSettings() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Confirm Username Change</AlertDialogTitle>
             <AlertDialogDescription className="text-white/80">
-              Are you sure you want to change your username from <span className="font-bold text-blue-300">"{profileForm.username}"</span> to <span className="font-bold text-green-300">"{tempValues.username}"</span>?
+              Are you sure you want to change your school username from <span className="font-bold text-blue-300">"{profileForm.username}"</span> to <span className="font-bold text-green-300">"{tempValues.username}"</span>?
               <div className="mt-2 text-amber-200">
                 <Clock className="h-4 w-4 inline mr-1" />
-                Note: Username can only be changed once every 14 days.
+                This username controls the school's public profile URL.
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
