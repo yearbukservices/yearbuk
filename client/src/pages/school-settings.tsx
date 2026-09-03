@@ -2447,14 +2447,6 @@ export default function SchoolSettings() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-          <CardHeader className="p-4 sm:p-6"><CardTitle className="text-lg sm:text-xl text-white">Security Overview</CardTitle></CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0 space-y-3 text-sm">
-            <div className="flex justify-between gap-4"><span className="text-white/70">Email verification</span><span className={emailVerified ? "text-green-300" : "text-amber-200"}>{emailVerified ? "Verified" : "Not verified"}</span></div>
-            <div className="flex justify-between gap-4"><span className="text-white/70">Two-factor authentication</span><span className={twoFactorEnabled ? "text-green-300" : "text-white/70"}>{twoFactorEnabled ? "Enabled" : "Disabled"}</span></div>
-            <div className="flex justify-between gap-4"><span className="text-white/70">Password</span><span className="text-white/70">Protected</span></div>
-          </CardContent>
-        </Card>
       </div>
     );
   };
