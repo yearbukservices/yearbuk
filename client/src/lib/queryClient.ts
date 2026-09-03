@@ -21,7 +21,9 @@ export async function apiRequest(
 ): Promise<Response> {
   // Get user data from localStorage to include user ID in authorization header
   const userData = localStorage.getItem("user");
-  const userId = userData ? JSON.parse(userData).id : null;
+  const storedUser = userData ? JSON.parse(userData) : null;
+  const userId = storedUser?.id || null;
+  const authVersion = storedUser?.authVersion;
   
   const headers: Record<string, string> = {};
   if (data) {
@@ -30,6 +32,7 @@ export async function apiRequest(
   const isPublicAuthRequest = url === "/api/auth/login";
   if (userId && !isPublicAuthRequest) {
     headers["Authorization"] = `Bearer ${userId}`;
+    if (authVersion !== undefined) headers["X-Auth-Version"] = String(authVersion);
   }
 
   const res = await fetch(url, {
@@ -50,11 +53,14 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const userData = localStorage.getItem("user");
-    const userId = userData ? JSON.parse(userData).id : null;
+    const storedUser = userData ? JSON.parse(userData) : null;
+    const userId = storedUser?.id || null;
+    const authVersion = storedUser?.authVersion;
     
     const headers: Record<string, string> = {};
     if (userId) {
       headers["Authorization"] = `Bearer ${userId}`;
+      if (authVersion !== undefined) headers["X-Auth-Version"] = String(authVersion);
     }
 
     const res = await fetch(queryKey.join("/") as string, {
