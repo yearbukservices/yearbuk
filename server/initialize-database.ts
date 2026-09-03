@@ -113,6 +113,7 @@ export async function initializeDatabase() {
       await db.execute(sql`
         ALTER TABLE IF EXISTS "users"
           ADD COLUMN IF NOT EXISTS "two_factor_enabled" boolean NOT NULL DEFAULT false,
+          ADD COLUMN IF NOT EXISTS "auth_version" integer NOT NULL DEFAULT 0,
           ADD COLUMN IF NOT EXISTS "two_factor_code" text,
           ADD COLUMN IF NOT EXISTS "two_factor_code_expires_at" timestamp,
           ADD COLUMN IF NOT EXISTS "two_factor_code_sent_at" timestamp,
