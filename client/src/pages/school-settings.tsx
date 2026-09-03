@@ -145,6 +145,11 @@ export default function SchoolSettings() {
   // Confirmation dialog states
   const [showUsernameConfirm, setShowUsernameConfirm] = useState(false);
   const [showSchoolNameConfirm, setShowSchoolNameConfirm] = useState(false);
+  const [showEmailChangeConfirm, setShowEmailChangeConfirm] = useState(false);
+  const [showEmailOtpDialog, setShowEmailOtpDialog] = useState(false);
+  const [emailOtp, setEmailOtp] = useState("");
+  const [isRequestingEmailChange, setIsRequestingEmailChange] = useState(false);
+  const [isVerifyingEmailChange, setIsVerifyingEmailChange] = useState(false);
 
   // Yearbook codes state
   const [selectedYear, setSelectedYear] = useState<number>(CURRENT_YEAR);
@@ -1160,7 +1165,61 @@ export default function SchoolSettings() {
     }
   });
 
+  const requestEmailChange = async () => {
+    const newEmail = tempValues.email.trim().toLowerCase();
+    if (!user || !newEmail) return;
+    setIsRequestingEmailChange(true);
+    try {
+      await apiRequest("POST", "/api/auth/request-email-change", { email: newEmail });
+      setEmailOtp("");
+      setShowEmailChangeConfirm(false);
+      setShowEmailOtpDialog(true);
+      toast({ title: "Verification code sent", description: `Enter the 6-digit code sent to ${newEmail}.` });
+    } catch (error: any) {
+      const errorText = await error.response?.text();
+      let errorData;
+      try { errorData = errorText ? JSON.parse(errorText) : {}; } catch { errorData = {}; }
+      toast({ title: "Unable to send verification code", description: errorData.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setIsRequestingEmailChange(false);
+    }
+  };
+
+  const resendEmailChangeCode = async () => {
+    await requestEmailChange();
+  };
+
+  const verifyEmailChange = async () => {
+    if (!/^\d{6}$/.test(emailOtp.trim())) {
+      toast({ title: "Invalid code", description: "Enter the 6-digit code from your new mailbox.", variant: "destructive" });
+      return;
+    }
+    setIsVerifyingEmailChange(true);
+    try {
+      await apiRequest("POST", "/api/auth/verify-email-change", { code: emailOtp.trim() });
+      setShowEmailOtpDialog(false);
+      setEditingField(null);
+      localStorage.removeItem("user");
+      localStorage.removeItem("superAdminToken");
+      window.dispatchEvent(new Event("userChanged"));
+      setLocation("/home");
+    } catch (error: any) {
+      const errorText = await error.response?.text();
+      let errorData;
+      try { errorData = errorText ? JSON.parse(errorText) : {}; } catch { errorData = {}; }
+      toast({ title: "Email verification failed", description: errorData.message || "Invalid or expired code.", variant: "destructive" });
+    } finally {
+      setIsVerifyingEmailChange(false);
+    }
+  };
+
   const handleConfirmSave = (field: string) => {
+    // Email changes require a code sent to the proposed new mailbox.
+    if (field === "email") {
+      setShowEmailChangeConfirm(true);
+      return;
+    }
+
     // Show confirmation dialog for username and schoolName
     if (field === "username") {
       setShowUsernameConfirm(true);
@@ -1194,7 +1253,7 @@ export default function SchoolSettings() {
     setIsUpdatingProfile(true);
     
     // For school-specific fields, update the school record
-    if (['username', 'schoolName', 'yearFounded', 'country', 'city', 'phoneNumber', 'email', 'website', 'address', 'state'].includes(field)) {
+    if (['username', 'schoolName', 'yearFounded', 'country', 'city', 'phoneNumber', 'website', 'address', 'state'].includes(field)) {
       if (!school?.id) {
         toast({
           className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
@@ -3112,6 +3171,42 @@ export default function SchoolSettings() {
             >
               {isUpdatingProfile ? "Saving..." : "Confirm Change"}
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Email Change Confirmation Dialog */}
+      <AlertDialog open={showEmailChangeConfirm} onOpenChange={(open) => { if (!open && !isRequestingEmailChange) { setShowEmailChangeConfirm(false); handleCancelEdit("email"); } }}>
+        <AlertDialogContent className="bg-gradient-to-br from-blue-900/95 to-purple-900/95 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Verify your new email</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/80">
+              We’ll send a one-time code to <span className="font-bold text-green-300">"{tempValues.email}"</span>. The email changes only after the code is verified, and you’ll be signed out to log in again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="ghost" onClick={() => { setShowEmailChangeConfirm(false); handleCancelEdit("email"); }} disabled={isRequestingEmailChange} className="bg-red-600/60 border border-white/20 text-white" data-testid="button-cancel-email-change">Cancel</Button>
+            <Button onClick={requestEmailChange} disabled={isRequestingEmailChange} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-confirm-email-change">{isRequestingEmailChange ? "Sending..." : "Send verification code"}</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Email Change OTP Dialog */}
+      <AlertDialog open={showEmailOtpDialog} onOpenChange={(open) => { if (!open && !isVerifyingEmailChange) { setShowEmailOtpDialog(false); setEmailOtp(""); } }}>
+        <AlertDialogContent className="bg-gradient-to-br from-blue-900/95 to-purple-900/95 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Enter verification code</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/80">
+              Enter the 6-digit code sent to <span className="font-bold text-green-300">{tempValues.email}</span>. It expires in 5 minutes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-2">
+            <Input value={emailOtp} onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" maxLength={6} placeholder="000000" className="h-12 text-center text-xl tracking-[0.5em] bg-white/10 border border-white/20 text-white" data-testid="input-email-change-otp" autoFocus />
+            <Button type="button" variant="ghost" onClick={resendEmailChangeCode} disabled={isRequestingEmailChange || isVerifyingEmailChange} className="w-full text-blue-200 hover:text-white" data-testid="button-resend-email-change-code">{isRequestingEmailChange ? "Sending..." : "Resend code"}</Button>
+          </div>
+          <AlertDialogFooter>
+            <Button variant="ghost" onClick={() => { setShowEmailOtpDialog(false); setEmailOtp(""); }} disabled={isVerifyingEmailChange} className="bg-white/10 border border-white/20 text-white" data-testid="button-cancel-email-otp">Cancel</Button>
+            <Button onClick={verifyEmailChange} disabled={isVerifyingEmailChange || emailOtp.length !== 6} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-verify-email-change">{isVerifyingEmailChange ? "Verifying..." : "Verify and sign out"}</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
