@@ -8,7 +8,7 @@ import * as fsSync from "fs";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { storage } from "./storage";
-import { insertUserSchema, insertSchoolSchema, insertMemorySchema, insertPublicUploadLinkSchema, insertSchoolGalleryImageSchema, insertRecentSearchSchema, passwordResetTokens, users, schools, yearbooks, yearbookPages, tableOfContents } from "@shared/schema";
+import { insertUserSchema, insertSchoolSchema, insertMemorySchema, insertPublicUploadLinkSchema, insertSchoolGalleryImageSchema, insertRecentSearchSchema, passwordResetTokens, users, yearbooks, yearbookPages, tableOfContents } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
@@ -890,8 +890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!targetEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
         return res.status(400).json({ message: "Enter a valid email address" });
       }
-      const school = user.userType === "school" && user.schoolId ? await storage.getSchoolById(user.schoolId) : undefined;
-      if (targetEmail === user.email?.toLowerCase() && (!school || targetEmail === school.email?.toLowerCase())) {
+      if (targetEmail === user.email?.toLowerCase()) {
         return res.status(400).json({ message: "Enter a different email address" });
       }
       const existingUser = await storage.getUserByEmail(targetEmail);
@@ -963,9 +962,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           twoFactorCodeSentAt: null,
           twoFactorCodePurpose: null
         }).where(eq(users.id, user.id));
-        if (user.userType === "school" && user.schoolId) {
-          await tx.update(schools).set({ email: targetEmail, isEmailVerified: true }).where(eq(schools.id, user.schoolId));
-        }
       });
       res.json({ message: "Email updated successfully", email: targetEmail });
     } catch (error) {
@@ -2488,10 +2484,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentSchool = await storage.getSchoolById(schoolId);
       if (!currentSchool) {
         return res.status(404).json({ message: "School not found" });
-      }
-
-      if (email !== undefined) {
-        return res.status(400).json({ message: "Email changes require verification through the email change flow" });
       }
 
       const updateData: any = {};
