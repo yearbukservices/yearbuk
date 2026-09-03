@@ -147,6 +147,7 @@ export default function SchoolSettings() {
   const [showSchoolNameConfirm, setShowSchoolNameConfirm] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [pendingTwoFactorEnabled, setPendingTwoFactorEnabled] = useState(false);
+  const [showSecurityTwoFactorConfirmDialog, setShowSecurityTwoFactorConfirmDialog] = useState(false);
   const [showSecurityTwoFactorDialog, setShowSecurityTwoFactorDialog] = useState(false);
   const [securityTwoFactorCode, setSecurityTwoFactorCode] = useState("");
   const [isRequestingTwoFactor, setIsRequestingTwoFactor] = useState(false);
@@ -1167,12 +1168,18 @@ export default function SchoolSettings() {
     }
   });
 
-  const requestTwoFactorToggle = async (enabled: boolean) => {
+  const openTwoFactorToggleDialog = (enabled: boolean) => {
     setPendingTwoFactorEnabled(enabled);
+    setShowSecurityTwoFactorConfirmDialog(true);
+  };
+
+  const requestTwoFactorToggle = async () => {
+    const enabled = pendingTwoFactorEnabled;
     setIsRequestingTwoFactor(true);
     try {
       await apiRequest("POST", "/api/auth/request-2fa-toggle", { enabled });
       setSecurityTwoFactorCode("");
+      setShowSecurityTwoFactorConfirmDialog(false);
       setShowSecurityTwoFactorDialog(true);
       toast({ title: "Verification code sent", description: "Check your account email for the 6-digit security code." });
     } catch (error: any) {
@@ -1184,7 +1191,6 @@ export default function SchoolSettings() {
       setIsRequestingTwoFactor(false);
     }
   };
-
   const verifyTwoFactorToggle = async () => {
     if (!/^\d{6}$/.test(securityTwoFactorCode.trim())) {
       toast({ title: "Invalid code", description: "Enter the 6-digit security code.", variant: "destructive" });
@@ -1194,14 +1200,14 @@ export default function SchoolSettings() {
     try {
       const response = await apiRequest("POST", "/api/auth/verify-2fa-toggle", { enabled: pendingTwoFactorEnabled, code: securityTwoFactorCode.trim() });
       const updatedAccount = await response.json();
-      setTwoFactorEnabled(pendingTwoFactorEnabled);
-      setUser(prev => prev ? { ...prev, ...updatedAccount } : prev);
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) localStorage.setItem("user", JSON.stringify({ ...JSON.parse(storedUser), ...updatedAccount }));
-      queryClient.invalidateQueries({ queryKey: ["/api/users", user?.id] });
+      localStorage.removeItem("user");
+      localStorage.removeItem("superAdminToken");
+      sessionStorage.clear();
+      window.dispatchEvent(new Event("userChanged"));
       setShowSecurityTwoFactorDialog(false);
       setSecurityTwoFactorCode("");
-      toast({ title: pendingTwoFactorEnabled ? "2FA enabled" : "2FA disabled", description: pendingTwoFactorEnabled ? "Your account now requires a code at login." : "Two-factor authentication has been disabled." });
+      toast({ title: pendingTwoFactorEnabled ? "2FA enabled" : "2FA disabled", description: "All sessions have been signed out. You will need a 6-digit code the next time you log in." });
+      setTimeout(() => setLocation("/login"), 400);
     } catch (error: any) {
       const errorText = await error.response?.text();
       let errorData;
@@ -1213,7 +1219,7 @@ export default function SchoolSettings() {
   };
 
   const resendTwoFactorToggleCode = async () => {
-    await requestTwoFactorToggle(pendingTwoFactorEnabled);
+    await requestTwoFactorToggle();
   };
 
   const handleConfirmSave = (field: string) => {
@@ -2419,7 +2425,6 @@ export default function SchoolSettings() {
 
   const renderSecurityTab = () => {
     const account = accountUser || user;
-    const accountEmail = account?.email || "";
     const emailVerified = Boolean(account?.isEmailVerified);
     return (
       <div className="space-y-4 sm:space-y-6 max-w-4xl">
@@ -2436,7 +2441,7 @@ export default function SchoolSettings() {
           <CardContent className="p-4 sm:p-6 pt-0 space-y-3">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div><p className="text-white font-medium">{twoFactorEnabled ? "Enabled" : "Disabled"}</p><p className="text-sm text-white/60">{twoFactorEnabled ? "A verification code is required at login." : "Protect this account with email-based verification at login."}</p></div>
-              <Button onClick={() => requestTwoFactorToggle(!twoFactorEnabled)} disabled={isRequestingTwoFactor} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-toggle-account-2fa">{isRequestingTwoFactor ? "Sending..." : twoFactorEnabled ? "Disable 2FA" : "Enable 2FA"}</Button>
+              <Button onClick={() => openTwoFactorToggleDialog(!twoFactorEnabled)} disabled={isRequestingTwoFactor} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-toggle-account-2fa">{isRequestingTwoFactor ? "Sending..." : twoFactorEnabled ? "Disable 2FA" : "Enable 2FA"}</Button>
             </div>
           </CardContent>
         </Card>
@@ -3078,6 +3083,48 @@ export default function SchoolSettings() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* 2FA confirmation dialog */}
+      <AlertDialog open={showSecurityTwoFactorConfirmDialog} onOpenChange={(open) => { if (!open && !isRequestingTwoFactor) setShowSecurityTwoFactorConfirmDialog(false); }}>
+        <AlertDialogContent className="bg-gradient-to-br from-blue-900/95 to-purple-900/95 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Confirm {pendingTwoFactorEnabled ? "Enable" : "Disable"} 2FA</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/80">
+              A verification code will be sent to your mailbox.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRequestingTwoFactor} className="bg-white/10 border-white/20 text-white hover:bg-white/20">Cancel</AlertDialogCancel>
+            <Button onClick={requestTwoFactorToggle} disabled={isRequestingTwoFactor} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-send-2fa-code">
+              {isRequestingTwoFactor ? "Sending..." : "Send code"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 2FA verification dialog */}
+      <AlertDialog open={showSecurityTwoFactorDialog} onOpenChange={(open) => { if (!open && !isVerifyingTwoFactor) { setShowSecurityTwoFactorDialog(false); setSecurityTwoFactorCode(""); } }}>
+        <AlertDialogContent className="bg-gradient-to-br from-blue-900/95 to-purple-900/95 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Enter verification code</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/80">
+              Enter the 6-digit code sent to your mailbox. You will be signed out of all devices after verification.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 py-2">
+            <Label htmlFor="security-two-factor-code" className="text-white">Verification code</Label>
+            <Input id="security-two-factor-code" value={securityTwoFactorCode} onChange={(e) => setSecurityTwoFactorCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" maxLength={6} placeholder="000000" className="h-12 text-center text-xl tracking-[0.5em] bg-white/10 border border-white/20 text-white" data-testid="input-security-2fa-code" autoFocus />
+            <Button type="button" variant="ghost" onClick={resendTwoFactorToggleCode} disabled={isRequestingTwoFactor || isVerifyingTwoFactor} className="w-full text-blue-200 hover:text-white" data-testid="button-resend-security-2fa-code">
+              {isRequestingTwoFactor ? "Sending..." : "Resend code"}
+            </Button>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isVerifyingTwoFactor} className="bg-white/10 border-white/20 text-white hover:bg-white/20">Cancel</AlertDialogCancel>
+            <Button onClick={verifyTwoFactorToggle} disabled={isVerifyingTwoFactor || securityTwoFactorCode.length !== 6} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-verify-security-2fa">
+              {isVerifyingTwoFactor ? "Verifying..." : "Verify and log out"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
