@@ -96,6 +96,7 @@ export default function ViewerSettings() {
   });
   const [showPhoneToAlumni, setShowPhoneToAlumni] = useState(true);
   const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState(false);
+  const [showTwoFactorConfirmDialog, setShowTwoFactorConfirmDialog] = useState(false);
   const [showTwoFactorDialog, setShowTwoFactorDialog] = useState(false);
   const [twoFactorTarget, setTwoFactorTarget] = useState<boolean | null>(null);
   const [twoFactorCode, setTwoFactorCode] = useState("");
@@ -346,7 +347,7 @@ export default function ViewerSettings() {
     }
   });
 
-  const handleTwoFactorToggle = async (enabled: boolean) => {
+  const handleTwoFactorToggle = (enabled: boolean) => {
     if (!user?.email) {
       toast({ title: "Email required", description: "Add and verify an email address before changing two-factor authentication.", variant: "destructive" });
       return;
@@ -354,12 +355,19 @@ export default function ViewerSettings() {
 
     setTwoFactorTarget(enabled);
     setTwoFactorCode("");
+    setShowTwoFactorConfirmDialog(true);
+  };
+
+  const requestTwoFactorCode = async () => {
+    if (twoFactorTarget === null) return;
+
     setIsRequestingTwoFactorCode(true);
     try {
-      await apiRequest("POST", "/api/auth/request-2fa-toggle", { enabled });
+      await apiRequest("POST", "/api/auth/request-2fa-toggle", { enabled: twoFactorTarget });
+      setShowTwoFactorConfirmDialog(false);
       setShowTwoFactorDialog(true);
+      toast({ title: "Verification code sent", description: "Check your account email for the 6-digit security code." });
     } catch (error: any) {
-      setTwoFactorTarget(null);
       toast({ title: "Unable to send verification code", description: error.message || "Please try again later.", variant: "destructive" });
     } finally {
       setIsRequestingTwoFactorCode(false);
@@ -376,18 +384,20 @@ export default function ViewerSettings() {
         enabled: twoFactorTarget,
         code: twoFactorCode,
       });
-      const updatedUser = await response.json();
-      localStorage.setItem("user", JSON.stringify(updatedUser));
+      await response.json();
+      localStorage.removeItem("user");
+      localStorage.removeItem("superAdminToken");
+      sessionStorage.clear();
+      queryClient.clear();
       window.dispatchEvent(new Event("userChanged"));
-      setUser(updatedUser);
-      setIsTwoFactorEnabled(updatedUser.twoFactorEnabled === true);
       setShowTwoFactorDialog(false);
       setTwoFactorTarget(null);
       setTwoFactorCode("");
       toast({
         title: twoFactorTarget ? "Two-factor authentication enabled" : "Two-factor authentication disabled",
-        description: twoFactorTarget ? "Future logins will require an email verification code." : "Future logins will no longer require an email verification code.",
+        description: "All sessions have been signed out. You will need to log in again.",
       });
+      setTimeout(() => setLocation("/login"), 400);
     } catch (error: any) {
       toast({ title: "Verification failed", description: error.message || "The code could not be verified.", variant: "destructive" });
     } finally {
@@ -1338,6 +1348,47 @@ export default function ViewerSettings() {
           </CardContent>
         </Card>
       <Dialog
+        open={showTwoFactorConfirmDialog}
+        onOpenChange={(open) => {
+          if (!open && !isRequestingTwoFactorCode) {
+            setShowTwoFactorConfirmDialog(false);
+            setTwoFactorTarget(null);
+          }
+        }}
+      >
+        <DialogContent className="bg-slate-900 border-white/20 text-white">
+          <DialogHeader>
+            <DialogTitle>Confirm {twoFactorTarget ? "enabling" : "disabling"} two-factor authentication</DialogTitle>
+            <DialogDescription className="text-white/70">
+              A verification code will be sent to your mailbox.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowTwoFactorConfirmDialog(false);
+                setTwoFactorTarget(null);
+              }}
+              disabled={isRequestingTwoFactorCode}
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={requestTwoFactorCode}
+              disabled={isRequestingTwoFactorCode}
+              className="bg-blue-600 hover:bg-blue-700"
+              data-testid="button-send-two-factor-code"
+            >
+              {isRequestingTwoFactorCode ? "Sending..." : "Send code"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
         open={showTwoFactorDialog}
         onOpenChange={(open) => {
           if (!open && !isVerifyingTwoFactor) {
@@ -1351,7 +1402,7 @@ export default function ViewerSettings() {
           <DialogHeader>
             <DialogTitle>Confirm {twoFactorTarget ? "enabling" : "disabling"} two-factor authentication</DialogTitle>
             <DialogDescription className="text-white/70">
-              We sent a 6-digit verification code to {user?.email}. Enter it to confirm this security change.
+              Enter the 6-digit code sent to your mailbox. You will be signed out of all devices after verification.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleTwoFactorVerification} className="space-y-4">
@@ -1370,7 +1421,7 @@ export default function ViewerSettings() {
               />
             </div>
             <Button type="submit" disabled={isVerifyingTwoFactor || twoFactorCode.length !== 6} className="w-full">
-              {isVerifyingTwoFactor ? "Verifying..." : "Confirm change"}
+              {isVerifyingTwoFactor ? "Verifying..." : "Verify and log out"}
             </Button>
           </form>
         </DialogContent>
