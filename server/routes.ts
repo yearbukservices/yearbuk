@@ -9,7 +9,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { storage } from "./storage";
 import { insertUserSchema, insertSchoolSchema, insertMemorySchema, insertPublicUploadLinkSchema, insertSchoolGalleryImageSchema, insertRecentSearchSchema, passwordResetTokens, users, yearbooks, yearbookPages, tableOfContents } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import crypto from "crypto";
 
 // Database connection for direct queries
@@ -863,17 +863,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid verification code" });
       }
 
-      const updatedUser = await storage.updateUser(user.id, {
+      const [updatedUser] = await db.update(users).set({
         twoFactorEnabled: enabled,
+        authVersion: sql`${users.authVersion} + 1`,
         twoFactorCode: null,
         twoFactorCodeExpiresAt: null,
         twoFactorCodeSentAt: null,
         twoFactorCodePurpose: null
-      });
+      }).where(eq(users.id, user.id)).returning();
       if (!updatedUser) return res.status(404).json({ message: "User not found" });
 
       const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, twoFactorCodePurpose: _____, ...safeUser } = updatedUser;
-      res.json(safeUser);
     } catch (error) {
       console.error("2FA settings verification error:", error);
       res.status(500).json({ message: "Failed to update two-factor authentication" });
