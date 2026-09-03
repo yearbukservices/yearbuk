@@ -8,7 +8,7 @@ import * as fsSync from "fs";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { storage } from "./storage";
-import { insertUserSchema, insertSchoolSchema, insertMemorySchema, insertPublicUploadLinkSchema, insertSchoolGalleryImageSchema, insertRecentSearchSchema, passwordResetTokens, users, yearbooks, yearbookPages, tableOfContents } from "@shared/schema";
+import { insertUserSchema, insertSchoolSchema, insertMemorySchema, insertPublicUploadLinkSchema, insertSchoolGalleryImageSchema, insertRecentSearchSchema, passwordResetTokens, users, schools, yearbooks, yearbookPages, tableOfContents } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
@@ -26,7 +26,8 @@ import {
   createSchoolVerificationEmail,
   createSchoolApprovalEmail,
   createSchoolRejectionEmail,
-  createTestEmail
+  createTestEmail,
+  createEmailChangeVerificationEmail
 } from "./utils/emailTemplates";
 import { uploadToCloudinary, uploadSecureYearbookPage, uploadPdfToCloudinary, deleteFromCloudinary, testCloudinaryConnection, generateFolderPath, deleteSchoolAssets, generateSignedUrl, generateSignedUrlsForPages, generateCloudinaryUrl } from "./cloudinary-config";
 import { getImageUrl } from "./watermark-service";
@@ -877,6 +878,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("2FA settings verification error:", error);
       res.status(500).json({ message: "Failed to update two-factor authentication" });
+    }
+  });
+
+  // Send a one-time code to the proposed new mailbox before changing the account email.
+  app.post("/api/auth/request-email-change", requireAuth, async (req: any, res) => {
+    try {
+      const { email } = req.body || {};
+      const user = req.user;
+      const targetEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+      if (!targetEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
+        return res.status(400).json({ message: "Enter a valid email address" });
+      }
+      const school = user.userType === "school" && user.schoolId ? await storage.getSchoolById(user.schoolId) : undefined;
+      if (targetEmail === user.email?.toLowerCase() && (!school || targetEmail === school.email?.toLowerCase())) {
+        return res.status(400).json({ message: "Enter a different email address" });
+      }
+      const existingUser = await storage.getUserByEmail(targetEmail);
+      if (existingUser && existingUser.id !== user.id) {
+        return res.status(400).json({ message: "That email address is already in use" });
+      }
+      if (user.twoFactorCodePurpose?.startsWith("email_change:") && user.twoFactorCodeSentAt) {
+        const secondsSinceLastSend = (Date.now() - new Date(user.twoFactorCodeSentAt).getTime()) / 1000;
+        if (secondsSinceLastSend < 50) {
+          const remainingTime = Math.ceil(50 - secondsSinceLastSend);
+          return res.status(429).json({ message: `Please wait ${remainingTime} seconds before requesting a new code.`, remainingTime });
+        }
+      }
+      const code = crypto.randomInt(100000, 1000000).toString();
+      const hashedCode = await hashPassword(code);
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 5);
+      const purpose = `email_change:${targetEmail}`;
+      await storage.updateUser(user.id, {
+        twoFactorCode: hashedCode,
+        twoFactorCodeExpiresAt: expiresAt,
+        twoFactorCodeSentAt: new Date(),
+        twoFactorCodePurpose: purpose
+      });
+      const emailResult = await sendEmail(targetEmail, "Confirm your new Yearbuk email", createEmailChangeVerificationEmail(code));
+      if (!emailResult.success) {
+        await storage.updateUser(user.id, { twoFactorCode: null, twoFactorCodeExpiresAt: null, twoFactorCodeSentAt: null, twoFactorCodePurpose: null });
+        return res.status(500).json({ message: "Failed to send verification code" });
+      }
+      res.json({ message: "Verification code sent", email: targetEmail, expiresIn: 300 });
+    } catch (error) {
+      console.error("Email change code request error:", error);
+      res.status(500).json({ message: "Failed to request email change verification" });
+    }
+  });
+
+  // Verify the code, update the linked account and school emails, then let the client force re-login.
+  app.post("/api/auth/verify-email-change", requireAuth, async (req: any, res) => {
+    try {
+      const { code } = req.body || {};
+      const user = req.user;
+      if (typeof code !== "string" || !/^\d{6}$/.test(code.trim())) {
+        return res.status(400).json({ message: "A valid 6-digit verification code is required" });
+      }
+      const purpose = user.twoFactorCodePurpose || "";
+      const prefix = "email_change:";
+      if (!purpose.startsWith(prefix) || !user.twoFactorCode || !user.twoFactorCodeExpiresAt) {
+        return res.status(400).json({ message: "No matching email change code found. Please request a new one." });
+      }
+      if (new Date() > new Date(user.twoFactorCodeExpiresAt)) {
+        return res.status(400).json({ message: "Verification code has expired. Please request a new one." });
+      }
+      const isCodeValid = await comparePassword(code.trim(), user.twoFactorCode);
+      if (!isCodeValid) return res.status(401).json({ message: "Invalid verification code" });
+      const targetEmail = purpose.slice(prefix.length);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
+        return res.status(400).json({ message: "Invalid pending email change" });
+      }
+      const existingUser = await storage.getUserByEmail(targetEmail);
+      if (existingUser && existingUser.id !== user.id) {
+        return res.status(400).json({ message: "That email address is already in use" });
+      }
+      await db.transaction(async (tx) => {
+        await tx.update(users).set({
+          email: targetEmail,
+          isEmailVerified: true,
+          twoFactorCode: null,
+          twoFactorCodeExpiresAt: null,
+          twoFactorCodeSentAt: null,
+          twoFactorCodePurpose: null
+        }).where(eq(users.id, user.id));
+        if (user.userType === "school" && user.schoolId) {
+          await tx.update(schools).set({ email: targetEmail, isEmailVerified: true }).where(eq(schools.id, user.schoolId));
+        }
+      });
+      res.json({ message: "Email updated successfully", email: targetEmail });
+    } catch (error) {
+      console.error("Email change verification error:", error);
+      res.status(500).json({ message: "Failed to update email address" });
     }
   });
 
@@ -2394,6 +2488,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentSchool = await storage.getSchoolById(schoolId);
       if (!currentSchool) {
         return res.status(404).json({ message: "School not found" });
+      }
+
+      if (email !== undefined) {
+        return res.status(400).json({ message: "Email changes require verification through the email change flow" });
       }
 
       const updateData: any = {};
