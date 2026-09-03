@@ -874,6 +874,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedUser) return res.status(404).json({ message: "User not found" });
 
       const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, twoFactorCodePurpose: _____, ...safeUser } = updatedUser;
+      res.json({
+        message: "Two-factor authentication updated. All sessions have been signed out.",
+        loggedOut: true,
+        user: safeUser,
+      });
     } catch (error) {
       console.error("2FA settings verification error:", error);
       res.status(500).json({ message: "Failed to update two-factor authentication" });
