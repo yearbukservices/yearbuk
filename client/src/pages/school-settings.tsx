@@ -2441,7 +2441,7 @@ export default function SchoolSettings() {
           <CardHeader className="p-4 sm:p-6"><CardTitle className="text-lg sm:text-xl flex items-center text-white"><Shield className="h-5 w-5 mr-2 text-purple-400" />Two-Factor Authentication</CardTitle></CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 space-y-3">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div><p className="text-white font-medium">{twoFactorEnabled ? "Enabled" : "Disabled"}</p><p className="text-sm text-white/60">{twoFactorEnabled ? "A verification code is required at login." : "Protect this account with email-based verification at login."}</p></div>
+              <div><p className="text-white font-medium">{twoFactorEnabled ? "Enabled" : "Disabled"}</p><p className="text-sm text-white/60">{twoFactorEnabled ? "A verification code is required at login." : "Add an extra layer of security with email-based authentication at login."}</p></div>
               <Button onClick={() => openTwoFactorToggleDialog(!twoFactorEnabled)} disabled={isRequestingTwoFactor} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-toggle-account-2fa">{isRequestingTwoFactor ? "Sending..." : twoFactorEnabled ? "Disable 2FA" : "Enable 2FA"}</Button>
             </div>
           </CardContent>
