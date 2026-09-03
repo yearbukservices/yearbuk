@@ -1017,15 +1017,17 @@ text-white">
                           </div>
                         </Button>
                         {/* Status badge */}
-                        <div className={`absolute top-0.5 sm:top-1 right-0.5 sm:right-1 px-1 sm:px-1.5 py-0.5 rounded text-xs font-medium ${
-                          viewerPurchased 
-                            ? "bg-green-100 text-green-800"
-                            : yearbook.isFree
-                            ? "bg-orange-100 text-orange-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}>
-                          {viewerPurchased ? "Purchased" : yearbook.isFree ? "Free" : "For Sale"}
-                        </div>
+                         {!BETA_VERSION && (
+                           <div className={`absolute top-0.5 sm:top-1 right-0.5 sm:right-1 px-1 sm:px-1.5 py-0.5 rounded text-xs font-medium ${
+                             viewerPurchased 
+                               ? "bg-green-100 text-green-800"
+                               : yearbook.isFree
+                               ? "bg-orange-100 text-orange-800"
+                               : "bg-blue-100 text-blue-800"
+                           }`}>
+                             {viewerPurchased ? "Purchased" : yearbook.isFree ? "Free" : "For Sale"}
+                           </div>
+                         )}
                       </div>
                     );
                   })}
