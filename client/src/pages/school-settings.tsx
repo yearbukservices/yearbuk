@@ -145,13 +145,6 @@ export default function SchoolSettings() {
   // Confirmation dialog states
   const [showUsernameConfirm, setShowUsernameConfirm] = useState(false);
   const [showSchoolNameConfirm, setShowSchoolNameConfirm] = useState(false);
-  const [showEmailChangeConfirm, setShowEmailChangeConfirm] = useState(false);
-  const [showEmailOtpDialog, setShowEmailOtpDialog] = useState(false);
-  const [emailOtp, setEmailOtp] = useState("");
-  const [accountEmailDraft, setAccountEmailDraft] = useState("");
-  const [isEditingAccountEmail, setIsEditingAccountEmail] = useState(false);
-  const [isRequestingEmailChange, setIsRequestingEmailChange] = useState(false);
-  const [isVerifyingEmailChange, setIsVerifyingEmailChange] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [pendingTwoFactorEnabled, setPendingTwoFactorEnabled] = useState(false);
   const [showSecurityTwoFactorDialog, setShowSecurityTwoFactorDialog] = useState(false);
@@ -269,7 +262,6 @@ export default function SchoolSettings() {
     }
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
-    setAccountEmailDraft(parsedUser.email || "");
     setTwoFactorEnabled(Boolean(parsedUser.twoFactorEnabled));
     
     // Initialize profile form with current user data  
@@ -321,7 +313,6 @@ export default function SchoolSettings() {
   useEffect(() => {
     const account = accountUser || user;
     if (!account) return;
-    setAccountEmailDraft(account.email || "");
     setTwoFactorEnabled(Boolean(account.twoFactorEnabled));
   }, [accountUser?.id]);
 
@@ -1176,55 +1167,6 @@ export default function SchoolSettings() {
     }
   });
 
-  const requestEmailChange = async () => {
-    const newEmail = accountEmailDraft.trim().toLowerCase();
-    if (!user || !newEmail) return;
-    setIsRequestingEmailChange(true);
-    try {
-      await apiRequest("POST", "/api/auth/request-email-change", { email: newEmail });
-      setEmailOtp("");
-      setShowEmailChangeConfirm(false);
-      setShowEmailOtpDialog(true);
-      toast({ title: "Verification code sent", description: `Enter the 6-digit code sent to ${newEmail}.` });
-    } catch (error: any) {
-      const errorText = await error.response?.text();
-      let errorData;
-      try { errorData = errorText ? JSON.parse(errorText) : {}; } catch { errorData = {}; }
-      toast({ title: "Unable to send verification code", description: errorData.message || "Please try again.", variant: "destructive" });
-    } finally {
-      setIsRequestingEmailChange(false);
-    }
-  };
-
-  const resendEmailChangeCode = async () => {
-    await requestEmailChange();
-  };
-
-  const verifyEmailChange = async () => {
-    if (!/^\d{6}$/.test(emailOtp.trim())) {
-      toast({ title: "Invalid code", description: "Enter the 6-digit code from your new mailbox.", variant: "destructive" });
-      return;
-    }
-    setIsVerifyingEmailChange(true);
-    try {
-      await apiRequest("POST", "/api/auth/verify-email-change", { code: emailOtp.trim() });
-      setShowEmailOtpDialog(false);
-      setEditingField(null);
-      setIsEditingAccountEmail(false);
-      localStorage.removeItem("user");
-      localStorage.removeItem("superAdminToken");
-      window.dispatchEvent(new Event("userChanged"));
-      setLocation("/home");
-    } catch (error: any) {
-      const errorText = await error.response?.text();
-      let errorData;
-      try { errorData = errorText ? JSON.parse(errorText) : {}; } catch { errorData = {}; }
-      toast({ title: "Email verification failed", description: errorData.message || "Invalid or expired code.", variant: "destructive" });
-    } finally {
-      setIsVerifyingEmailChange(false);
-    }
-  };
-
   const requestTwoFactorToggle = async (enabled: boolean) => {
     setPendingTwoFactorEnabled(enabled);
     setIsRequestingTwoFactor(true);
@@ -1272,19 +1214,6 @@ export default function SchoolSettings() {
 
   const resendTwoFactorToggleCode = async () => {
     await requestTwoFactorToggle(pendingTwoFactorEnabled);
-  };
-
-  const resendAccountVerificationEmail = async () => {
-    if (!user?.id) return;
-    try {
-      await apiRequest("POST", "/api/resend-verification", { userId: user.id });
-      toast({ title: "Verification email sent", description: "Check your account email to verify it." });
-    } catch (error: any) {
-      const errorText = await error.response?.text();
-      let errorData;
-      try { errorData = errorText ? JSON.parse(errorText) : {}; } catch { errorData = {}; }
-      toast({ title: "Unable to resend verification email", description: errorData.message || "Please try again.", variant: "destructive" });
-    }
   };
 
   const handleConfirmSave = (field: string) => {
@@ -2495,43 +2424,6 @@ export default function SchoolSettings() {
     return (
       <div className="space-y-4 sm:space-y-6 max-w-4xl">
         <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl flex items-center text-white"><Shield className="h-5 w-5 mr-2 text-green-400" />Account &amp; Security</CardTitle>
-            <p className="text-sm text-white/70 mt-2">Manage the private email and security settings for this Yearbuk account.</p>
-          </CardHeader>
-          <CardContent className="space-y-5 p-4 sm:p-6 pt-0">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-white">Account Email</Label>
-              <div className="flex items-center gap-2">
-                {isEditingAccountEmail ? (
-                  <>
-                    <Input type="email" value={accountEmailDraft} onChange={(e) => setAccountEmailDraft(e.target.value)} className="flex-1 h-10 sm:h-11 bg-white/10 border border-white/20 text-white placeholder:text-white/50" data-testid="input-account-email-edit" />
-                    <Button size="icon" variant="ghost" onClick={() => setShowEmailChangeConfirm(true)} disabled={isRequestingEmailChange || !accountEmailDraft.trim() || accountEmailDraft.trim().toLowerCase() === accountEmail.toLowerCase()} className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 border border-white/20 text-white" data-testid="button-save-account-email"><Check className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => { setIsEditingAccountEmail(false); setAccountEmailDraft(accountEmail); }} disabled={isRequestingEmailChange} className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 border border-white/20 text-white" data-testid="button-cancel-account-email"><X className="h-4 w-4" /></Button>
-                  </>
-                ) : (
-                  <>
-                    <Input type="email" value={accountEmail || "Not provided"} readOnly className="flex-1 h-10 sm:h-11 bg-white/10 border border-white/20 text-white" data-testid="input-account-email" />
-                    <Button size="icon" variant="ghost" onClick={() => { setAccountEmailDraft(accountEmail); setIsEditingAccountEmail(true); }} className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 border border-white/20 text-white" data-testid="button-edit-account-email"><Edit className="h-4 w-4" /></Button>
-                  </>
-                )}
-              </div>
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <p className={`text-sm ${emailVerified ? "text-green-300" : "text-amber-200"}`}>{emailVerified ? "✓ Verified" : "⚠ Email not verified"}</p>
-                {!emailVerified && <Button variant="ghost" size="sm" onClick={resendAccountVerificationEmail} className="text-blue-200 hover:text-white" data-testid="button-resend-account-verification">Resend Verification Email</Button>}
-              </div>
-              <p className="text-xs text-white/60">Changing this email requires a code sent to the new mailbox and signs you out after verification.</p>
-            </div>
-            <Separator className="bg-white/10" />
-            <div className="space-y-2">
-              <h3 className="text-white font-medium">Account Owner</h3>
-              <p className="text-sm text-white/70">{account?.username || "Current school administrator"}</p>
-              <p className="text-xs text-white/60">Role: {account?.role || account?.userType || "School administrator"}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
           <CardHeader className="p-4 sm:p-6"><CardTitle className="text-lg sm:text-xl text-white">Password</CardTitle></CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0">
             <p className="text-sm text-white/70 mb-3">Use the existing secure password reset flow to change your password.</p>
@@ -2879,7 +2771,7 @@ export default function SchoolSettings() {
 
             {/* Security Section */}
             <div>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Account &amp; Security</h3>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Security</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => setActiveTab("security")}
@@ -2891,7 +2783,7 @@ export default function SchoolSettings() {
                   data-testid="tab-security"
                 >
                   <Shield className="h-4 w-4 mr-2 flex-shrink-0" />
-                  Account & Security
+                  Security
                 </button>
               </nav>
             </div>
@@ -3001,7 +2893,7 @@ export default function SchoolSettings() {
 
             {/* Security Section */}
             <div>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Account &amp; Security</h3>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Security</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => {
@@ -3016,7 +2908,7 @@ export default function SchoolSettings() {
                   data-testid="tab-security-mobile"
                 >
                   <Shield className="h-5 w-5 mr-3 flex-shrink-0" />
-                  Account & Security
+                  Security
                 </button>
               </nav>
             </div>
@@ -3186,41 +3078,6 @@ export default function SchoolSettings() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Email Change Confirmation Dialog */}
-      <AlertDialog open={showEmailChangeConfirm} onOpenChange={(open) => { if (!open && !isRequestingEmailChange) { setShowEmailChangeConfirm(false); setIsEditingAccountEmail(false); } }}>
-        <AlertDialogContent className="bg-gradient-to-br from-blue-900/95 to-purple-900/95 backdrop-blur-lg border border-white/20 shadow-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Verify your new email</AlertDialogTitle>
-            <AlertDialogDescription className="text-white/80">
-              We’ll send a one-time code to <span className="font-bold text-green-300">"{accountEmailDraft}"</span>. The email changes only after the code is verified, and you’ll be signed out to log in again.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <Button variant="ghost" onClick={() => { setShowEmailChangeConfirm(false); setIsEditingAccountEmail(false); }} disabled={isRequestingEmailChange} className="bg-red-600/60 border border-white/20 text-white" data-testid="button-cancel-email-change">Cancel</Button>
-            <Button onClick={requestEmailChange} disabled={isRequestingEmailChange} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-confirm-email-change">{isRequestingEmailChange ? "Sending..." : "Send verification code"}</Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Email Change OTP Dialog */}
-      <AlertDialog open={showEmailOtpDialog} onOpenChange={(open) => { if (!open && !isVerifyingEmailChange) { setShowEmailOtpDialog(false); setEmailOtp(""); } }}>
-        <AlertDialogContent className="bg-gradient-to-br from-blue-900/95 to-purple-900/95 backdrop-blur-lg border border-white/20 shadow-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Enter verification code</AlertDialogTitle>
-            <AlertDialogDescription className="text-white/80">
-              Enter the 6-digit code sent to <span className="font-bold text-green-300">{accountEmailDraft}</span>. It expires in 5 minutes.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-3 py-2">
-            <Input value={emailOtp} onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" maxLength={6} placeholder="000000" className="h-12 text-center text-xl tracking-[0.5em] bg-white/10 border border-white/20 text-white" data-testid="input-email-change-otp" autoFocus />
-            <Button type="button" variant="ghost" onClick={resendEmailChangeCode} disabled={isRequestingEmailChange || isVerifyingEmailChange} className="w-full text-blue-200 hover:text-white" data-testid="button-resend-email-change-code">{isRequestingEmailChange ? "Sending..." : "Resend code"}</Button>
-          </div>
-          <AlertDialogFooter>
-            <Button variant="ghost" onClick={() => { setShowEmailOtpDialog(false); setEmailOtp(""); }} disabled={isVerifyingEmailChange} className="bg-white/10 border border-white/20 text-white" data-testid="button-cancel-email-otp">Cancel</Button>
-            <Button onClick={verifyEmailChange} disabled={isVerifyingEmailChange || emailOtp.length !== 6} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-verify-email-change">{isVerifyingEmailChange ? "Verifying..." : "Verify and sign out"}</Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
