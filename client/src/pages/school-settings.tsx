@@ -148,8 +148,16 @@ export default function SchoolSettings() {
   const [showEmailChangeConfirm, setShowEmailChangeConfirm] = useState(false);
   const [showEmailOtpDialog, setShowEmailOtpDialog] = useState(false);
   const [emailOtp, setEmailOtp] = useState("");
+  const [accountEmailDraft, setAccountEmailDraft] = useState("");
+  const [isEditingAccountEmail, setIsEditingAccountEmail] = useState(false);
   const [isRequestingEmailChange, setIsRequestingEmailChange] = useState(false);
   const [isVerifyingEmailChange, setIsVerifyingEmailChange] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [pendingTwoFactorEnabled, setPendingTwoFactorEnabled] = useState(false);
+  const [showSecurityTwoFactorDialog, setShowSecurityTwoFactorDialog] = useState(false);
+  const [securityTwoFactorCode, setSecurityTwoFactorCode] = useState("");
+  const [isRequestingTwoFactor, setIsRequestingTwoFactor] = useState(false);
+  const [isVerifyingTwoFactor, setIsVerifyingTwoFactor] = useState(false);
 
   // Yearbook codes state
   const [selectedYear, setSelectedYear] = useState<number>(CURRENT_YEAR);
@@ -302,6 +310,19 @@ export default function SchoolSettings() {
       state: school.state || ""
     }));
   }, [school]);
+  // Read the authenticated account from the backend for real security state.
+  const { data: accountUser } = useQuery<UserType>({
+    queryKey: ["/api/users", user?.id],
+    enabled: !!user?.id && activeTab === "security",
+  });
+
+  useEffect(() => {
+    const account = accountUser || user;
+    if (!account) return;
+    setAccountEmailDraft(account.email || "");
+    setTwoFactorEnabled(Boolean(account.twoFactorEnabled));
+  }, [accountUser?.id]);
+
 
 
 
@@ -419,18 +440,6 @@ export default function SchoolSettings() {
   const { data: salesHistory = [], isLoading: loadingSales } = useQuery<any[]>({
     queryKey: ["/api/schools", school?.id, "sales-history"],
     enabled: !!school?.id && !!user?.id && activeTab === "payments",
-  });
-
-  // Fetch login activity (for security tab)
-  const { data: loginActivity = [], isLoading: loadingLoginActivity } = useQuery<any[]>({
-    queryKey: ["/api/users", user?.id, "login-activity"],
-    enabled: !!user?.id && activeTab === "security",
-  });
-
-  // Fetch most recent login (for security tab)
-  const { data: recentLogin, isLoading: loadingRecentLogin } = useQuery<any>({
-    queryKey: ["/api/users", user?.id, "recent-login"],
-    enabled: !!user?.id && activeTab === "security",
   });
 
   const renderDisplayTab = () => {
@@ -1166,7 +1175,7 @@ export default function SchoolSettings() {
   });
 
   const requestEmailChange = async () => {
-    const newEmail = tempValues.email.trim().toLowerCase();
+    const newEmail = accountEmailDraft.trim().toLowerCase();
     if (!user || !newEmail) return;
     setIsRequestingEmailChange(true);
     try {
@@ -1199,6 +1208,7 @@ export default function SchoolSettings() {
       await apiRequest("POST", "/api/auth/verify-email-change", { code: emailOtp.trim() });
       setShowEmailOtpDialog(false);
       setEditingField(null);
+      setIsEditingAccountEmail(false);
       localStorage.removeItem("user");
       localStorage.removeItem("superAdminToken");
       window.dispatchEvent(new Event("userChanged"));
@@ -1213,13 +1223,69 @@ export default function SchoolSettings() {
     }
   };
 
-  const handleConfirmSave = (field: string) => {
-    // Email changes require a code sent to the proposed new mailbox.
-    if (field === "email") {
-      setShowEmailChangeConfirm(true);
+  const requestTwoFactorToggle = async (enabled: boolean) => {
+    setPendingTwoFactorEnabled(enabled);
+    setIsRequestingTwoFactor(true);
+    try {
+      await apiRequest("POST", "/api/auth/request-2fa-toggle", { enabled });
+      setSecurityTwoFactorCode("");
+      setShowSecurityTwoFactorDialog(true);
+      toast({ title: "Verification code sent", description: "Check your account email for the 6-digit security code." });
+    } catch (error: any) {
+      const errorText = await error.response?.text();
+      let errorData;
+      try { errorData = errorText ? JSON.parse(errorText) : {}; } catch { errorData = {}; }
+      toast({ title: "Unable to update 2FA", description: errorData.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setIsRequestingTwoFactor(false);
+    }
+  };
+
+  const verifyTwoFactorToggle = async () => {
+    if (!/^\d{6}$/.test(securityTwoFactorCode.trim())) {
+      toast({ title: "Invalid code", description: "Enter the 6-digit security code.", variant: "destructive" });
       return;
     }
+    setIsVerifyingTwoFactor(true);
+    try {
+      const response = await apiRequest("POST", "/api/auth/verify-2fa-toggle", { enabled: pendingTwoFactorEnabled, code: securityTwoFactorCode.trim() });
+      const updatedAccount = await response.json();
+      setTwoFactorEnabled(pendingTwoFactorEnabled);
+      setUser(prev => prev ? { ...prev, ...updatedAccount } : prev);
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) localStorage.setItem("user", JSON.stringify({ ...JSON.parse(storedUser), ...updatedAccount }));
+      queryClient.invalidateQueries({ queryKey: ["/api/users", user?.id] });
+      setShowSecurityTwoFactorDialog(false);
+      setSecurityTwoFactorCode("");
+      toast({ title: pendingTwoFactorEnabled ? "2FA enabled" : "2FA disabled", description: pendingTwoFactorEnabled ? "Your account now requires a code at login." : "Two-factor authentication has been disabled." });
+    } catch (error: any) {
+      const errorText = await error.response?.text();
+      let errorData;
+      try { errorData = errorText ? JSON.parse(errorText) : {}; } catch { errorData = {}; }
+      toast({ title: "2FA verification failed", description: errorData.message || "Invalid or expired code.", variant: "destructive" });
+    } finally {
+      setIsVerifyingTwoFactor(false);
+    }
+  };
 
+  const resendTwoFactorToggleCode = async () => {
+    await requestTwoFactorToggle(pendingTwoFactorEnabled);
+  };
+
+  const resendAccountVerificationEmail = async () => {
+    if (!user?.id) return;
+    try {
+      await apiRequest("POST", "/api/resend-verification", { userId: user.id });
+      toast({ title: "Verification email sent", description: "Check your account email to verify it." });
+    } catch (error: any) {
+      const errorText = await error.response?.text();
+      let errorData;
+      try { errorData = errorText ? JSON.parse(errorText) : {}; } catch { errorData = {}; }
+      toast({ title: "Unable to resend verification email", description: errorData.message || "Please try again.", variant: "destructive" });
+    }
+  };
+
+  const handleConfirmSave = (field: string) => {
     // Show confirmation dialog for username and schoolName
     if (field === "username") {
       setShowUsernameConfirm(true);
@@ -1253,7 +1319,7 @@ export default function SchoolSettings() {
     setIsUpdatingProfile(true);
     
     // For school-specific fields, update the school record
-    if (['username', 'schoolName', 'yearFounded', 'country', 'city', 'phoneNumber', 'website', 'address', 'state'].includes(field)) {
+    if (['username', 'schoolName', 'yearFounded', 'country', 'city', 'phoneNumber', 'email', 'website', 'address', 'state'].includes(field)) {
       if (!school?.id) {
         toast({
           className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
@@ -2421,129 +2487,72 @@ export default function SchoolSettings() {
   };
 
   const renderSecurityTab = () => {
+    const account = accountUser || user;
+    const accountEmail = account?.email || "";
+    const emailVerified = Boolean(account?.isEmailVerified);
     return (
-      <div className="space-y-4 sm:space-y-6 max-w-6xl">
-        {/* Most Recent Login Card */}
-        {recentLogin && (
-          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-lg sm:text-xl flex items-center text-white">
-                <Shield className="h-5 w-5 mr-2 text-green-400" />
-                Most Recent Login
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <div className="flex items-center text-white/70 text-sm">
-                    <Smartphone className="h-4 w-4 mr-2" />
-                    <span>Device: {recentLogin.deviceType || 'Unknown'} - {recentLogin.browser || 'Unknown'}</span>
-                  </div>
-                  <div className="flex items-center text-white/70 text-sm">
-                    <Monitor className="h-4 w-4 mr-2" />
-                    <span>OS: {recentLogin.os || 'Unknown'}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center text-white/70 text-sm">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <span>Location: {recentLogin.city || recentLogin.country || 'Unknown'}</span>
-                  </div>
-                  <div className="flex items-center text-white/70 text-sm">
-                    <Clock className="h-4 w-4 mr-2" />
-                    <span>{new Date(recentLogin.createdAt).toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Login Activity History */}
+      <div className="space-y-4 sm:space-y-6 max-w-4xl">
         <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
           <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl flex items-center text-white">
-              <Clock className="h-5 w-5 mr-2 text-blue-400" />
-              Login Activity
-            </CardTitle>
-            <p className="text-sm text-white/70 mt-2">
-              Review your recent login history and security activity
-            </p>
+            <CardTitle className="text-lg sm:text-xl flex items-center text-white"><Shield className="h-5 w-5 mr-2 text-green-400" />Account &amp; Security</CardTitle>
+            <p className="text-sm text-white/70 mt-2">Manage the private email and security settings for this Yearbuk account.</p>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0">
-            {loadingLoginActivity ? (
-              <div className="flex items-center justify-center py-8">
-                <RefreshCw className="h-6 w-6 animate-spin text-white" />
+          <CardContent className="space-y-5 p-4 sm:p-6 pt-0">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-white">Account Email</Label>
+              <div className="flex items-center gap-2">
+                {isEditingAccountEmail ? (
+                  <>
+                    <Input type="email" value={accountEmailDraft} onChange={(e) => setAccountEmailDraft(e.target.value)} className="flex-1 h-10 sm:h-11 bg-white/10 border border-white/20 text-white placeholder:text-white/50" data-testid="input-account-email-edit" />
+                    <Button size="icon" variant="ghost" onClick={() => setShowEmailChangeConfirm(true)} disabled={isRequestingEmailChange || !accountEmailDraft.trim() || accountEmailDraft.trim().toLowerCase() === accountEmail.toLowerCase()} className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 border border-white/20 text-white" data-testid="button-save-account-email"><Check className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => { setIsEditingAccountEmail(false); setAccountEmailDraft(accountEmail); }} disabled={isRequestingEmailChange} className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 border border-white/20 text-white" data-testid="button-cancel-account-email"><X className="h-4 w-4" /></Button>
+                  </>
+                ) : (
+                  <>
+                    <Input type="email" value={accountEmail || "Not provided"} readOnly className="flex-1 h-10 sm:h-11 bg-white/10 border border-white/20 text-white" data-testid="input-account-email" />
+                    <Button size="icon" variant="ghost" onClick={() => { setAccountEmailDraft(accountEmail); setIsEditingAccountEmail(true); }} className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 border border-white/20 text-white" data-testid="button-edit-account-email"><Edit className="h-4 w-4" /></Button>
+                  </>
+                )}
               </div>
-            ) : loginActivity && loginActivity.length > 0 ? (
-              <div className="max-h-96 overflow-y-auto pr-2 space-y-3">
-                {loginActivity.map((activity: any, index: number) => (
-                  <div key={activity.id || index} className="bg-white/5 backdrop-blur-lg border border-white/20 rounded-lg p-4">
-                    <div className="flex justify-between items-start flex-wrap gap-2">
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <span className={`inline-flex items-center px-2 py-1 rounded text-xs ${
-                            activity.loginStatus === 'success' 
-                              ? 'bg-green-500/20 text-green-200' 
-                              : 'bg-red-500/20 text-red-200'
-                          }`}>
-                            {activity.loginStatus === 'success' ? 'Successful' : 'Failed'}
-                          </span>
-                          {activity.failureReason && (
-                            <span className="text-xs text-red-300">({activity.failureReason})</span>
-                          )}
-                        </div>
-                        <div className="text-white/80 text-sm">
-                          {activity.browser} on {activity.os} - {activity.deviceType}
-                        </div>
-                        <div className="text-white/60 text-xs">
-                          {activity.city || activity.country || 'Unknown location'} • {activity.ipAddress}
-                        </div>
-                      </div>
-                      <div className="text-white/60 text-xs whitespace-nowrap">
-                        {new Date(activity.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <p className={`text-sm ${emailVerified ? "text-green-300" : "text-amber-200"}`}>{emailVerified ? "✓ Verified" : "⚠ Email not verified"}</p>
+                {!emailVerified && <Button variant="ghost" size="sm" onClick={resendAccountVerificationEmail} className="text-blue-200 hover:text-white" data-testid="button-resend-account-verification">Resend Verification Email</Button>}
               </div>
-            ) : (
-              <div className="text-center py-8 text-white/60">
-                <Shield className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No login activity recorded</p>
-              </div>
-            )}
+              <p className="text-xs text-white/60">Changing this email requires a code sent to the new mailbox and signs you out after verification.</p>
+            </div>
+            <Separator className="bg-white/10" />
+            <div className="space-y-2">
+              <h3 className="text-white font-medium">Account Owner</h3>
+              <p className="text-sm text-white/70">{account?.username || "Current school administrator"}</p>
+              <p className="text-xs text-white/60">Role: {account?.role || account?.userType || "School administrator"}</p>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Security Settings - Can be expanded */}
         <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl flex items-center text-white">
-              <Settings className="h-5 w-5 mr-2 text-purple-400" />
-              Security Settings
-            </CardTitle>
-          </CardHeader>
+          <CardHeader className="p-4 sm:p-6"><CardTitle className="text-lg sm:text-xl text-white">Password</CardTitle></CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0">
-            <div className="space-y-4">
-              {/* Change Password Section */}
-              <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                <h3 className="text-white font-medium mb-2">Change Password</h3>
-                <p className="text-white/60 text-sm mb-3">
-                  Reset your password securely via email verification
-                </p>
-                <PasswordChangeDialog />
-              </div>
+            <p className="text-sm text-white/70 mb-3">Use the existing secure password reset flow to change your password.</p>
+            <PasswordChangeDialog />
+          </CardContent>
+        </Card>
 
-              <div className="p-4 bg-white/5 rounded-lg border border-white/10">
-                <h3 className="text-white font-medium mb-2">Two-Factor Authentication</h3>
-                <p className="text-white/60 text-sm mb-3">Add an extra layer of security to your account</p>
-                <Button variant="outline" size="sm" className="text-white border-white/20" disabled>
-                  Coming Soon
-                </Button>
-              </div>
-              
+        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <CardHeader className="p-4 sm:p-6"><CardTitle className="text-lg sm:text-xl flex items-center text-white"><Shield className="h-5 w-5 mr-2 text-purple-400" />Two-Factor Authentication</CardTitle></CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-3">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div><p className="text-white font-medium">{twoFactorEnabled ? "Enabled" : "Disabled"}</p><p className="text-sm text-white/60">{twoFactorEnabled ? "A verification code is required at login." : "Protect this account with email-based verification at login."}</p></div>
+              <Button onClick={() => requestTwoFactorToggle(!twoFactorEnabled)} disabled={isRequestingTwoFactor} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-toggle-account-2fa">{isRequestingTwoFactor ? "Sending..." : twoFactorEnabled ? "Disable 2FA" : "Enable 2FA"}</Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <CardHeader className="p-4 sm:p-6"><CardTitle className="text-lg sm:text-xl text-white">Security Overview</CardTitle></CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-3 text-sm">
+            <div className="flex justify-between gap-4"><span className="text-white/70">Email verification</span><span className={emailVerified ? "text-green-300" : "text-amber-200"}>{emailVerified ? "Verified" : "Not verified"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-white/70">Two-factor authentication</span><span className={twoFactorEnabled ? "text-green-300" : "text-white/70"}>{twoFactorEnabled ? "Enabled" : "Disabled"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-white/70">Password</span><span className="text-white/70">Protected</span></div>
           </CardContent>
         </Card>
       </div>
@@ -2868,7 +2877,7 @@ export default function SchoolSettings() {
 
             {/* Security Section */}
             <div>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Security</h3>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Account &amp; Security</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => setActiveTab("security")}
@@ -2880,7 +2889,7 @@ export default function SchoolSettings() {
                   data-testid="tab-security"
                 >
                   <Shield className="h-4 w-4 mr-2 flex-shrink-0" />
-                  Login Activity
+                  Account & Security
                 </button>
               </nav>
             </div>
@@ -2990,7 +2999,7 @@ export default function SchoolSettings() {
 
             {/* Security Section */}
             <div>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Security</h3>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Account &amp; Security</h3>
               <nav className="space-y-1">
                 <button
                   onClick={() => {
@@ -3005,7 +3014,7 @@ export default function SchoolSettings() {
                   data-testid="tab-security-mobile"
                 >
                   <Shield className="h-5 w-5 mr-3 flex-shrink-0" />
-                  Login Activity
+                  Account & Security
                 </button>
               </nav>
             </div>
@@ -3176,16 +3185,16 @@ export default function SchoolSettings() {
       </AlertDialog>
 
       {/* Email Change Confirmation Dialog */}
-      <AlertDialog open={showEmailChangeConfirm} onOpenChange={(open) => { if (!open && !isRequestingEmailChange) { setShowEmailChangeConfirm(false); handleCancelEdit("email"); } }}>
+      <AlertDialog open={showEmailChangeConfirm} onOpenChange={(open) => { if (!open && !isRequestingEmailChange) { setShowEmailChangeConfirm(false); setIsEditingAccountEmail(false); } }}>
         <AlertDialogContent className="bg-gradient-to-br from-blue-900/95 to-purple-900/95 backdrop-blur-lg border border-white/20 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Verify your new email</AlertDialogTitle>
             <AlertDialogDescription className="text-white/80">
-              We’ll send a one-time code to <span className="font-bold text-green-300">"{tempValues.email}"</span>. The email changes only after the code is verified, and you’ll be signed out to log in again.
+              We’ll send a one-time code to <span className="font-bold text-green-300">"{accountEmailDraft}"</span>. The email changes only after the code is verified, and you’ll be signed out to log in again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button variant="ghost" onClick={() => { setShowEmailChangeConfirm(false); handleCancelEdit("email"); }} disabled={isRequestingEmailChange} className="bg-red-600/60 border border-white/20 text-white" data-testid="button-cancel-email-change">Cancel</Button>
+            <Button variant="ghost" onClick={() => { setShowEmailChangeConfirm(false); setIsEditingAccountEmail(false); }} disabled={isRequestingEmailChange} className="bg-red-600/60 border border-white/20 text-white" data-testid="button-cancel-email-change">Cancel</Button>
             <Button onClick={requestEmailChange} disabled={isRequestingEmailChange} className="bg-blue-600/60 border border-white/20 text-white" data-testid="button-confirm-email-change">{isRequestingEmailChange ? "Sending..." : "Send verification code"}</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -3197,7 +3206,7 @@ export default function SchoolSettings() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Enter verification code</AlertDialogTitle>
             <AlertDialogDescription className="text-white/80">
-              Enter the 6-digit code sent to <span className="font-bold text-green-300">{tempValues.email}</span>. It expires in 5 minutes.
+              Enter the 6-digit code sent to <span className="font-bold text-green-300">{accountEmailDraft}</span>. It expires in 5 minutes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 py-2">
