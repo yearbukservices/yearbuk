@@ -476,6 +476,28 @@ export function createTwoFactorAuthEmail(code: string): string {
 
 
 /**
+ * Email change verification code
+ */
+export function createEmailChangeVerificationEmail(code: string): string {
+  return createEmailTemplate({
+    title: "Confirm Your New Yearbuk Email",
+    preheader: "Verify your new email address",
+    greeting: "Confirm Your New Email",
+    body: [
+      '<p style="color: white; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">',
+      "You requested to change the email address associated with your Yearbuk account. Enter this code to confirm the new mailbox:",
+      "</p>",
+      '<div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%); border: 2px solid rgba(59, 130, 246, 0.3); border-radius: 16px; padding: 30px; margin: 30px 0; text-align: center;">',
+      '<p style="color: white; font-size: 48px; font-weight: 700; margin: 0; letter-spacing: 8px; font-family: Courier New, monospace;">' + code + "</p>",
+      '<p style="color: #cbd5e1; font-size: 14px; margin: 16px 0 0 0;">Code expires in 5 minutes</p>',
+      "</div>",
+      '<p style="color: #cbd5e1; font-size: 14px; line-height: 1.6; margin: 0;">If you did not request this change, you can ignore this email. Your current email remains unchanged until the code is verified.</p>'
+    ].join(""),
+    footer: "This is an automated security message. Never share your verification codes with anyone."
+  });
+}
+
+/**
  * Two-Factor Authentication Settings Change Email
  */
 export function createTwoFactorSettingChangeEmail(code: string, enabled: boolean): string {
