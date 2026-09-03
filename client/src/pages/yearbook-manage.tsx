@@ -2583,11 +2583,6 @@ function SortablePage({
               onCancelEditingPageNumber={onCancelEditingPageNumber}
               onManualPageChange={onManualPageChange}
             />
-            {page.status === 'draft' && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500 text-white font-semibold">
-                DRAFT
-              </span>
-            )}
             {page.status === 'draft_deleted' && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500 text-white font-semibold">
                 DELETED
