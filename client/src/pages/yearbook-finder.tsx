@@ -697,14 +697,16 @@ export default function YearbookFinder() {
                         </span>
                       </div>
                     </Button>
-                    {/* Status badge */}
-                    <div className={`absolute top-0.5 sm:top-1 right-0.5 sm:right-1 px-1 sm:px-1.5 py-0.5 rounded text-xs font-medium ${
-                      yearData.status === 'Purchased' 
-                        ? "bg-green-100 text-green-800"
-                        : "bg-orange-100 text-orange-800"
-                    }`}>
-                      {yearData.status}
-                    </div>
+                    {/* Status badge - hidden during beta */}
+                    {!BETA_VERSION && (
+                      <div className={`absolute top-0.5 sm:top-1 right-0.5 sm:right-1 px-1 sm:px-1.5 py-0.5 rounded text-xs font-medium ${
+                        yearData.status === 'Purchased' 
+                          ? "bg-green-100 text-green-800"
+                          : "bg-orange-100 text-orange-800"
+                      }`}>
+                        {yearData.status}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -717,13 +719,15 @@ export default function YearbookFinder() {
                         <span className="text-lg sm:text-xl font-bold text-gray-900">{yearData.year}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          yearData.status === 'Purchased' 
-                            ? "bg-green-100 text-green-800"
-                            : "bg-orange-100 text-orange-800"
-                        }`}>
-                          {yearData.status}
-                        </span>
+                        {!BETA_VERSION && (
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            yearData.status === 'Purchased' 
+                              ? "bg-green-100 text-green-800"
+                              : "bg-orange-100 text-orange-800"
+                          }`}>
+                            {yearData.status}
+                          </span>
+                        )}
                         {yearData.canPurchase && (
                           <span className="text-sm font-semibold text-blue-600">
                             {formatPrice(convertPrice(yearData.price))}
