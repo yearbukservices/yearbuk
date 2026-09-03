@@ -2389,51 +2389,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update school profile
   app.patch("/api/schools/:id", async (req, res) => {
     try {
-      const { address, state, email, city, website, name, motto, aboutDescription } = req.body;
+      const { username, address, state, email, city, website, name, country, phoneNumber, yearFounded, motto, aboutDescription } = req.body;
       const schoolId = req.params.id;
-      
-      // Validate that only optional fields are being updated
-      const updateData: any = {};
-      if (address !== undefined) updateData.address = address;
-      if (state !== undefined) updateData.state = state;
-      if (email !== undefined) updateData.email = email;
-      if (city !== undefined) updateData.city = city;
-      if (website !== undefined) updateData.website = website;
-      if (motto !== undefined) updateData.motto = motto;
-      if (aboutDescription !== undefined) updateData.aboutDescription = aboutDescription;
-      
-      // Handle school name change with 30-day restriction
-      if (name !== undefined) {
-        const school = await storage.getSchoolById(schoolId);
-        
-        if (!school) {
-          return res.status(404).json({ message: "School not found" });
-        }
-        
-        // Check if 30-day restriction applies
-        if (school.lastSchoolNameChange) {
-          const lastChange = new Date(school.lastSchoolNameChange);
-          const now = new Date();
-          const daysSinceLastChange = (now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
-          
-          if (daysSinceLastChange < 30) {
-            const daysRemaining = Math.ceil(30 - daysSinceLastChange);
-            return res.status(400).json({ 
-              message: `School name can only be changed once every 30 days. Please wait ${daysRemaining} more day${daysRemaining === 1 ? '' : 's'}.` 
-            });
-          }
-        }
-        
-        updateData.name = name;
-        updateData.lastSchoolNameChange = new Date();
-      }
-      
-      const updatedSchool = await storage.updateSchoolProfile(schoolId, updateData);
-      
-      if (!updatedSchool) {
+      const currentSchool = await storage.getSchoolById(schoolId);
+      if (!currentSchool) {
         return res.status(404).json({ message: "School not found" });
       }
-      
+
+      const updateData: any = {};
+
+      if (username !== undefined) {
+        if (typeof username !== "string") return res.status(400).json({ message: "Username must be text" });
+        const normalizedUsername = username.trim().toLowerCase();
+        if (normalizedUsername.length < 3 || normalizedUsername.length > 50 || !/^[a-z0-9_]+$/.test(normalizedUsername)) {
+          return res.status(400).json({ message: "Username must be 3–50 characters and use only letters, numbers, and underscores" });
+        }
+        const existingSchool = await storage.getSchoolByUsername(normalizedUsername);
+        if (existingSchool && existingSchool.id !== schoolId) {
+          return res.status(400).json({ message: "Username is already taken" });
+        }
+        updateData.username = normalizedUsername;
+      }
+
+      if (name !== undefined) {
+        const normalizedName = typeof name === "string" ? name.trim() : "";
+        if (!normalizedName) return res.status(400).json({ message: "School name cannot be empty" });
+        if (normalizedName !== currentSchool.name) {
+          if (currentSchool.lastSchoolNameChange) {
+            const lastChange = new Date(currentSchool.lastSchoolNameChange);
+            const daysSinceLastChange = (Date.now() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
+            if (daysSinceLastChange < 30) {
+              const daysRemaining = Math.ceil(30 - daysSinceLastChange);
+              return res.status(400).json({ message: `School name can only be changed once every 30 days. Please wait ${daysRemaining} more day${daysRemaining === 1 ? "" : "s"}.` });
+            }
+          }
+          updateData.name = normalizedName;
+          updateData.lastSchoolNameChange = new Date();
+        }
+      }
+
+      if (yearFounded !== undefined) {
+        const parsedYear = Number(yearFounded);
+        const currentYear = new Date().getFullYear();
+        if (!Number.isInteger(parsedYear) || parsedYear < 1000 || parsedYear > currentYear) {
+          return res.status(400).json({ message: `Year founded must be a whole year between 1000 and ${currentYear}` });
+        }
+        updateData.yearFounded = parsedYear;
+      }
+      if (country !== undefined) {
+        const normalizedCountry = typeof country === "string" ? country.trim() : "";
+        if (!normalizedCountry) return res.status(400).json({ message: "Country cannot be empty" });
+        updateData.country = normalizedCountry;
+      }
+      if (city !== undefined) {
+        const normalizedCity = typeof city === "string" ? city.trim() : "";
+        if (!normalizedCity) return res.status(400).json({ message: "City cannot be empty" });
+        updateData.city = normalizedCity;
+      }
+      if (phoneNumber !== undefined) {
+        const normalizedPhone = typeof phoneNumber === "string" ? phoneNumber.trim() : "";
+        if (!normalizedPhone) return res.status(400).json({ message: "Phone number cannot be empty" });
+        updateData.phoneNumber = normalizedPhone;
+      }
+      if (email !== undefined) {
+        const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+        if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+          return res.status(400).json({ message: "Enter a valid school email address" });
+        }
+        updateData.email = normalizedEmail;
+      }
+      if (website !== undefined) {
+        const normalizedWebsite = typeof website === "string" ? website.trim() : "";
+        if (normalizedWebsite) {
+          try {
+            const parsedWebsite = new URL(normalizedWebsite);
+            if (!["http:", "https:"].includes(parsedWebsite.protocol)) throw new Error("Unsupported protocol");
+          } catch {
+            return res.status(400).json({ message: "Website must be a valid http(s) URL" });
+          }
+        }
+        updateData.website = normalizedWebsite || null;
+      }
+      if (address !== undefined) updateData.address = typeof address === "string" ? address.trim() || null : null;
+      if (state !== undefined) updateData.state = typeof state === "string" ? state.trim() || null : null;
+      if (motto !== undefined) updateData.motto = motto;
+      if (aboutDescription !== undefined) updateData.aboutDescription = aboutDescription;
+
+      const updatedSchool = await storage.updateSchoolProfile(schoolId, updateData);
+      if (!updatedSchool) return res.status(404).json({ message: "School not found" });
       res.json(updatedSchool);
     } catch (error) {
       console.error("Error updating school profile:", error);
