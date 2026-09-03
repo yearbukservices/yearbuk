@@ -927,7 +927,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Verify the code, update the linked account and school emails, then let the client force re-login.
+  // Verify the code, update the authenticated account email, then let the client force re-login.
   app.post("/api/auth/verify-email-change", requireAuth, async (req: any, res) => {
     try {
       const { code } = req.body || {};
@@ -1596,7 +1596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      const { password: _, ...userInfo } = user;
+      const { password: _, twoFactorCode: __, twoFactorCodeExpiresAt: ___, twoFactorCodeSentAt: ____, twoFactorCodePurpose: _____, emailVerificationToken: ______, emailVerificationTokenExpiresAt: _______, ...userInfo } = user;
       res.json(userInfo);
     } catch (error) {
       res.status(500).json({ message: "Failed to get user" });
