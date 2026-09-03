@@ -32,6 +32,7 @@ import { navigateBack, navigateWithTracking } from "@/lib/navigation";
 
 interface School {
   id: string;
+  username?: string;
   name: string;
   yearFounded?: number;
   country?: string;
