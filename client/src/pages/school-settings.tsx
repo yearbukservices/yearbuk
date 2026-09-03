@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, ShoppingCart, Bell, Settings, Menu, Eye, EyeOff, Edit, Check, X, LogOut, MenuIcon, Home, DollarSign, Building2, CheckCircle, AlertCircle, CreditCard, Monitor, Key, Copy, RefreshCw, Search, Upload, Receipt, Shield, Smartphone, MapPin, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, User, ShoppingCart, Bell, Settings, Menu, Eye, EyeOff, Edit, Check, X, LogOut, MenuIcon, Home, DollarSign, Building2, CheckCircle, AlertCircle, CreditCard, Monitor, Key, Copy, RefreshCw, Search, Upload, Receipt, Shield, Clock, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
