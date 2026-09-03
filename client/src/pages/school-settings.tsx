@@ -1199,10 +1199,11 @@ export default function SchoolSettings() {
     setIsVerifyingTwoFactor(true);
     try {
       const response = await apiRequest("POST", "/api/auth/verify-2fa-toggle", { enabled: pendingTwoFactorEnabled, code: securityTwoFactorCode.trim() });
-      const updatedAccount = await response.json();
+      await response.json();
       localStorage.removeItem("user");
       localStorage.removeItem("superAdminToken");
       sessionStorage.clear();
+      queryClient.clear();
       window.dispatchEvent(new Event("userChanged"));
       setShowSecurityTwoFactorDialog(false);
       setSecurityTwoFactorCode("");
