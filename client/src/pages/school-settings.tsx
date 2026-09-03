@@ -269,6 +269,8 @@ export default function SchoolSettings() {
     }
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
+    setAccountEmailDraft(parsedUser.email || "");
+    setTwoFactorEnabled(Boolean(parsedUser.twoFactorEnabled));
     
     // Initialize profile form with current user data  
     setProfileForm(prev => ({
