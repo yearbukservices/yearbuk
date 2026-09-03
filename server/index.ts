@@ -29,6 +29,36 @@ app.use('/public', (req, res, next) => {
 // Serve memory images directly (they are freely accessible)
 app.use('/uploads/memories', express.static('public/uploads/memories'));
 
+
+// Reject authenticated requests from sessions created before a security change.
+// Legacy versionless requests remain valid until the account's first invalidation.
+app.use(async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return next();
+
+  const userId = authHeader.substring(7);
+  try {
+    const user = await storage.getUserById(userId);
+    if (!user) return next();
+
+    const rawVersion = req.headers["x-auth-version"];
+    const suppliedVersion = Array.isArray(rawVersion) ? rawVersion[0] : rawVersion;
+    const currentVersion = Number(user.authVersion ?? 0);
+
+    if (suppliedVersion === undefined) {
+      if (currentVersion > 0) {
+        return res.status(401).json({ message: "Session expired. Please log in again." });
+      }
+    } else if (!/^\d+$/.test(suppliedVersion) || Number(suppliedVersion) !== currentVersion) {
+      return res.status(401).json({ message: "Session expired. Please log in again." });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Auth session validation error:", error);
+    res.status(500).json({ message: "Unable to validate session" });
+  }
+});
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
