@@ -653,7 +653,7 @@ export class MemStorage implements IStorage {
     return updatedSchool;
   }
 
-  async updateSchoolProfile(schoolId: string, updates: Partial<Pick<School, 'address' | 'state' | 'email' | 'city'>>): Promise<School | undefined> {
+  async updateSchoolProfile(schoolId: string, updates: Partial<Pick<School, 'username' | 'name' | 'address' | 'state' | 'email' | 'city' | 'country' | 'phoneNumber' | 'website' | 'yearFounded' | 'motto' | 'aboutDescription'>>): Promise<School | undefined> {
     const school = this.schools.get(schoolId);
     if (!school) {
       return undefined;
@@ -1913,7 +1913,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async updateSchoolProfile(schoolId: string, updates: Partial<Pick<School, 'address' | 'state' | 'email' | 'city'>>): Promise<School | undefined> {
+  async updateSchoolProfile(schoolId: string, updates: Partial<Pick<School, 'username' | 'name' | 'address' | 'state' | 'email' | 'city' | 'country' | 'phoneNumber' | 'website' | 'yearFounded' | 'motto' | 'aboutDescription'>>): Promise<School | undefined> {
     const result = await db.update(schools).set(updates).where(eq(schools.id, schoolId)).returning();
     return result[0];
   }
