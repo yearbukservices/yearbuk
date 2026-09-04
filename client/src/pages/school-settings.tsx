@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, ShoppingCart, Bell, Settings, Menu, Eye, EyeOff, Edit, Check, X, LogOut, MenuIcon, Home, DollarSign, Building2, CheckCircle, AlertCircle, CreditCard, Monitor, Key, Copy, RefreshCw, Search, Upload, Receipt, Shield, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, User, ShoppingCart, Bell, Settings, Menu, Eye, EyeOff, Edit, Check, X, LogOut, MenuIcon, Home, DollarSign, Building2, CheckCircle, AlertCircle, CreditCard, Monitor, Key, Copy, RefreshCw, Search, Upload, Receipt, Shield, Clock, Trash2, LifeBuoy, Mail } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -2453,6 +2453,87 @@ export default function SchoolSettings() {
     );
   };
 
+  const renderSupportLegalTab = () => {
+    const supportHref = "mailto:support@yearbuk.com?subject=Yearbuk%20Support%20Request";
+    const reportHref = "mailto:support@yearbuk.com?subject=Yearbuk%20Report%20a%20Problem";
+
+    return (
+      <div className="space-y-4 sm:space-y-6 max-w-4xl">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">Support & Legal</h2>
+          <p className="text-white/70 mt-1">Get help with your school account and find important Yearbuk resources.</p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl flex items-center text-white">
+                <LifeBuoy className="h-5 w-5 mr-2 text-emerald-300" />
+                Help & Support
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6 pt-0">
+              <p className="text-sm text-white/70 mb-4">Need help with your school account or Yearbuk?</p>
+              <p className="text-sm text-white/90 mb-4">Yearbuk Support · support@yearbuk.com</p>
+              <a
+                href={supportHref}
+                className="inline-flex items-center justify-center gap-2 min-h-11 rounded-md bg-emerald-500/80 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                data-testid="button-contact-support"
+              >
+                <Mail className="h-4 w-4" />
+                Contact Support
+              </a>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl flex items-center text-white">
+                <AlertCircle className="h-5 w-5 mr-2 text-amber-300" />
+                Report a Problem
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6 pt-0">
+              <p className="text-sm text-white/70 mb-4">Report a technical issue, account problem, or other concern.</p>
+              <a
+                href={reportHref}
+                className="inline-flex items-center justify-center gap-2 min-h-11 rounded-md border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40"
+                data-testid="button-report-problem"
+              >
+                <Mail className="h-4 w-4" />
+                Report a Problem
+              </a>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl flex items-center text-white">
+              <Shield className="h-5 w-5 mr-2 text-blue-300" />
+              Legal
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-3">
+            <div className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-white/5 p-4">
+              <div>
+                <p className="text-white font-medium">Terms of Service</p>
+                <p className="text-sm text-white/60">Canonical link coming soon.</p>
+              </div>
+              <span className="shrink-0 rounded-full border border-white/20 px-3 py-1 text-xs text-white/60">Coming soon</span>
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-white/5 p-4">
+              <div>
+                <p className="text-white font-medium">Privacy Policy</p>
+                <p className="text-sm text-white/60">Canonical link coming soon.</p>
+              </div>
+              <span className="shrink-0 rounded-full border border-white/20 px-3 py-1 text-xs text-white/60">Coming soon</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
   const renderContent = () => {
     switch (activeTab) {
       case "profile":
@@ -2465,6 +2546,8 @@ export default function SchoolSettings() {
         return renderCreateCodesTab();
       case "security":
         return renderSecurityTab();
+      case "support-legal":
+        return renderSupportLegalTab();
       default:
         return renderProfileTab();
     }
@@ -2804,6 +2887,20 @@ export default function SchoolSettings() {
           </div>
         </div>
 
+            {/* Support & Legal Section */}
+            <div>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Support & Legal</h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveTab("support-legal")}
+                  className={"flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors " + (activeTab === "support-legal" ? "bg-white/20 text-white font-medium" : "text-white/70 hover:text-white hover:bg-white/10")}
+                  data-testid="tab-support-legal"
+                >
+                  <LifeBuoy className="h-4 w-4 mr-2 flex-shrink-0" />
+                  Support & Legal
+                </button>
+              </nav>
+            </div>
         {/* Mobile Sidebar */}
         <div className={`fixed top-0 left-0 h-full w-64 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto lg:hidden ${
           showSidebar ? 'translate-x-0' : '-translate-x-full'
@@ -2939,6 +3036,23 @@ export default function SchoolSettings() {
           </div>
         </div>
 
+            {/* Support & Legal Section */}
+            <div>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Support & Legal</h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => {
+                    setActiveTab("support-legal");
+                    setShowSidebar(false);
+                  }}
+                  className={"flex items-center w-full px-3 py-3 text-sm rounded-md transition-colors touch-manipulation " + (activeTab === "support-legal" ? "bg-white/20 text-white font-medium" : "text-white/70 hover:text-white hover:bg-white/10")}
+                  data-testid="tab-support-legal-mobile"
+                >
+                  <LifeBuoy className="h-5 w-5 mr-3 flex-shrink-0" />
+                  Support & Legal
+                </button>
+              </nav>
+            </div>
         {/* Main Content */}
         <div className="flex-1 min-w-0">
           <div className="p-4 sm:p-6">
