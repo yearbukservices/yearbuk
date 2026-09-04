@@ -1105,7 +1105,7 @@ export default function SchoolSettings() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleBackClick}
+              onClick={() => navigateBack(setLocation, "/school-dashboard")}
               className="text-white hover:bg-white/20 flex-shrink-0"
               data-testid="button-back"
             >
