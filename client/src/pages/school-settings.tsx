@@ -437,7 +437,7 @@ export default function SchoolSettings() {
   });
 
 
-  type ProfileField = keyof typeof profileForm;
+  type ProfileField = "email" | "username" | "schoolName" | "yearFounded" | "country" | "city" | "phoneNumber" | "website" | "address" | "state";
 
   const startEditing = (field: ProfileField) => {
     setTempValues(prev => ({ ...prev, [field]: profileForm[field] || "" }));
@@ -1783,6 +1783,86 @@ export default function SchoolSettings() {
         </Card>
       </div>
     );
+  };
+
+
+  const openTwoFactorToggleDialog = (enabled: boolean) => {
+    setPendingTwoFactorEnabled(enabled);
+    setShowSecurityTwoFactorConfirmDialog(true);
+  };
+
+  const requestTwoFactorToggle = async () => {
+    setIsRequestingTwoFactor(true);
+    try {
+      await apiRequest("POST", "/api/auth/request-2fa-toggle", {
+        enabled: pendingTwoFactorEnabled,
+      });
+      setShowSecurityTwoFactorConfirmDialog(false);
+      setSecurityTwoFactorCode("");
+      setShowSecurityTwoFactorDialog(true);
+      toast({
+        title: "Verification code sent",
+        description: "Check your email for the 6-digit verification code.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Could not send verification code",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRequestingTwoFactor(false);
+    }
+  };
+
+  const resendTwoFactorToggleCode = async () => {
+    setIsRequestingTwoFactor(true);
+    try {
+      await apiRequest("POST", "/api/auth/request-2fa-toggle", {
+        enabled: pendingTwoFactorEnabled,
+      });
+      toast({
+        title: "Verification code resent",
+        description: "Check your email for the new 6-digit code.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Could not resend verification code",
+        description: error?.message || "Please wait a moment and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRequestingTwoFactor(false);
+    }
+  };
+
+  const verifyTwoFactorToggle = async () => {
+    setIsVerifyingTwoFactor(true);
+    try {
+      const response = await apiRequest("POST", "/api/auth/verify-2fa-toggle", {
+        enabled: pendingTwoFactorEnabled,
+        code: securityTwoFactorCode,
+      });
+      const data = await response.json();
+      setTwoFactorEnabled(pendingTwoFactorEnabled);
+      setShowSecurityTwoFactorDialog(false);
+      setSecurityTwoFactorCode("");
+      toast({
+        title: pendingTwoFactorEnabled ? "2FA enabled" : "2FA disabled",
+        description: data?.message || "Your security setting was updated. Please sign in again.",
+      });
+      localStorage.removeItem("user");
+      window.dispatchEvent(new Event("userChanged"));
+      setLocation("/home");
+    } catch (error: any) {
+      toast({
+        title: "Verification failed",
+        description: error?.message || "The code was invalid or expired.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingTwoFactor(false);
+    }
   };
 
   const renderSecurityTab = () => {
