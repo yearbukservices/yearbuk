@@ -427,13 +427,13 @@ export default function SchoolSettings() {
   // Fetch payment history (for payments tab)
   const { data: paymentHistory = [], isLoading: loadingPayments } = useQuery<any[]>({
     queryKey: ["/api/schools", school?.id, "payment-history"],
-    enabled: !!school?.id && !!user?.id && activeTab === "revenue",
+    enabled: !!school?.id && !!user?.id && activeTab === "payments",
   });
 
   // Fetch sales history (for payments tab)
   const { data: salesHistory = [], isLoading: loadingSales } = useQuery<any[]>({
     queryKey: ["/api/schools", school?.id, "sales-history"],
-    enabled: !!school?.id && !!user?.id && activeTab === "revenue",
+    enabled: !!school?.id && !!user?.id && activeTab === "payments",
   });
 
 
@@ -608,6 +608,339 @@ export default function SchoolSettings() {
     setLocation("/home");
   };
 
+  // Real-time bank verification for preview
+  const verifyBankAccount = async (accountNumber: string, bankCode: string) => {
+    if (!accountNumber || accountNumber.length !== 10 || !bankCode) {
+      setAccountHolderName("");
+      setVerificationError("");
+      return;
+    }
+
+    setIsVerifyingAccount(true);
+    setVerificationError("");
+
+    try {
+      const response = await apiRequest("POST", "/api/banks/verify-preview", {
+        accountNumber,
+        bankCode
+      });
+      
+      const result = await response.json();
+      
+      if (result.status) {
+        setAccountHolderName(result.data.account_name);
+        setVerificationError("");
+      } else {
+        setAccountHolderName("");
+        setVerificationError(result.message || "Unable to verify account");
+      }
+    } catch (error) {
+      setAccountHolderName("");
+      setVerificationError("Error verifying account. Please try again.");
+    } finally {
+      setIsVerifyingAccount(false);
+    }
+  };
+
+  // Create subaccount mutation
+  const createSubaccountMutation = useMutation({
+    mutationFn: async (data: { bankAccountNumber: string; bankCode: string }) => {
+      const response = await apiRequest("POST", `/api/schools/${user?.schoolId}/create-subaccount`, data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.status) {
+        toast({
+          className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "Revenue sharing setup successful!",
+          description: `Your account is now set up to receive 80% of yearbook sales. Account holder: ${data.data.account_holder_name}`,
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/schools", user?.schoolId] });
+        setBankAccountNumber("");
+        setSelectedBankCode("");
+        setAccountHolderName("");
+        setVerificationError("");
+      } else {
+        toast({
+          className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "Setup failed",
+          description: data.message || "Failed to set up revenue sharing. Please try again.",
+          variant: "destructive"
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Error",
+        description: error.message || "An error occurred while setting up revenue sharing.",
+        variant: "destructive"
+      });
+    },
+  });
+
+  // Update bank account mutation
+  const updateAccountMutation = useMutation({
+    mutationFn: async (data: { bankAccountNumber: string; bankCode: string; userId?: string }) => {
+      const response = await apiRequest("POST", `/api/schools/${user?.schoolId}/update-account`, data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.status) {
+        toast({
+          className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "Bank account updated successfully!",
+          description: `Your new account (${data.data.account_holder_name}) is now set up to receive payments.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/schools", user?.schoolId] });
+        setBankAccountNumber("");
+        setSelectedBankCode("");
+        setAccountHolderName("");
+        setVerificationError("");
+        setIsChangingAccount(false);
+        setIs2FAVerified(false);
+        setTwoFactorCode("");
+      } else {
+        toast({
+          className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "Update failed",
+          description: data.message || "Failed to update bank account. Please try again.",
+          variant: "destructive"
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Error",
+        description: error.message || "An error occurred while updating bank account.",
+        variant: "destructive"
+      });
+    },
+  });
+
+  // Real-time verification effect
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (bankAccountNumber && selectedBankCode) {
+        verifyBankAccount(bankAccountNumber, selectedBankCode);
+      }
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [bankAccountNumber, selectedBankCode]);
+
+  // School usernames power public profile URLs, so check the school record.
+  React.useEffect(() => {
+    const checkUsername = async () => {
+      const candidate = tempValues.username.trim().toLowerCase();
+      if (!candidate || editingField !== "username") {
+        setUsernameAvailable(null);
+        setUsernameMessage("");
+        return;
+      }
+      if (candidate === profileForm.username.trim().toLowerCase()) {
+        setUsernameAvailable(true);
+        setUsernameMessage("This is your current username");
+        return;
+      }
+      setIsCheckingUsername(true);
+      try {
+        const response = await fetch(`/api/schools/by-username/${encodeURIComponent(candidate)}`);
+        if (response.ok) {
+          const existingSchool = await response.json();
+          const isCurrentSchool = existingSchool.id === school?.id;
+          setUsernameAvailable(isCurrentSchool);
+          setUsernameMessage(isCurrentSchool ? "This is your current username" : "Username is already taken");
+        } else if (response.status === 404) {
+          setUsernameAvailable(true);
+          setUsernameMessage("Username is available");
+        } else {
+          throw new Error("Username lookup failed");
+        }
+      } catch (error) {
+        setUsernameAvailable(false);
+        setUsernameMessage("Error checking username availability");
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    };
+    const timeoutId = setTimeout(checkUsername, 500);
+    return () => clearTimeout(timeoutId);
+  }, [tempValues.username, editingField, profileForm.username, school?.id]);
+
+  // Send 2FA code for bank account change
+  const send2FACode = async () => {
+    if (!user?.id || !user?.schoolId) return;
+
+    setIsSending2FA(true);
+    try {
+      const response = await apiRequest("POST", `/api/schools/${user.schoolId}/send-bank-2fa`, {
+        userId: user.id
+      });
+      const result = await response.json();
+
+      if (result.status) {
+        toast({
+          className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "Code sent",
+          description: result.message || "Verification code sent to your email"
+        });
+        setShow2FADialog(true);
+        setCanResend2FA(false);
+        setResendCooldown(60);
+      } else {
+        toast({
+          className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "Failed to send code",
+          description: result.message || "Could not send verification code",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Error",
+        description: error.message || "Failed to send verification code",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSending2FA(false);
+    }
+  };
+
+  // Verify 2FA code
+  const verify2FACode = async () => {
+    if (!user?.id || !user?.schoolId || !twoFactorCode) return;
+
+    setIsVerifying2FA(true);
+    try {
+      const response = await apiRequest("POST", `/api/schools/${user.schoolId}/verify-bank-2fa`, {
+        userId: user.id,
+        code: twoFactorCode
+      });
+      const result = await response.json();
+
+      if (result.status) {
+        setIs2FAVerified(true);
+        setShow2FADialog(false);
+        toast({
+          className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "Verified",
+          description: "You can now update your bank account"
+        });
+      } else {
+        toast({
+          className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "Invalid code",
+          description: result.message || "The verification code is incorrect",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Error",
+        description: error.message || "Failed to verify code",
+        variant: "destructive"
+      });
+    } finally {
+      setIsVerifying2FA(false);
+    }
+  };
+
+  // Cooldown timer for resend
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (resendCooldown === 0 && !canResend2FA) {
+      setCanResend2FA(true);
+    }
+  }, [resendCooldown, canResend2FA]);
+
+  const handleRevenueSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!bankAccountNumber || !selectedBankCode) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Missing information",
+        description: "Please provide both bank account number and select a bank.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!accountHolderName) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Account verification required",
+        description: "Please wait for account verification to complete.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (isChangingAccount) {
+      // For changing account, require 2FA
+      if (!is2FAVerified) {
+        toast({
+          className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "2FA required",
+          description: "Please complete 2FA verification first",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      updateAccountMutation.mutate({
+        bankAccountNumber,
+        bankCode: selectedBankCode,
+        userId: user?.id
+      });
+    } else {
+      createSubaccountMutation.mutate({
+        bankAccountNumber,
+        bankCode: selectedBankCode
+      });
+    }
+  };
+
+  const handleChangeAccount = async () => {
+    // Check if 30-day restriction applies
+    if (school?.lastBankAccountChange) {
+      const lastChange = new Date(school.lastBankAccountChange);
+      const now = new Date();
+      const daysSinceLastChange = (now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
+      
+      if (daysSinceLastChange < 30) {
+        const daysRemaining = Math.ceil(30 - daysSinceLastChange);
+        toast({
+          className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "Change restricted",
+          description: `You can only change your bank account once every 30 days. Please wait ${daysRemaining} more day${daysRemaining === 1 ? '' : 's'}.`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    setIsChangingAccount(true);
+    setBankAccountNumber("");
+    setSelectedBankCode("");
+    setAccountHolderName("");
+    setVerificationError("");
+    setIs2FAVerified(false);
+    setTwoFactorCode("");
+    
+    // Send 2FA code
+    await send2FACode();
+  };
+
+
   const renderDisplayTab = () => {
     return (
       <div className="space-y-4 sm:space-y-6 max-w-4xl">
@@ -665,649 +998,295 @@ export default function SchoolSettings() {
   };
 
   const renderRevenueTab = () => {
-    const revenueHistory = Array.isArray(salesHistory) ? salesHistory : [];
+    const isAlreadySetup = school?.paystackSubaccountCode && school?.subaccountStatus === 'active';
 
     return (
       <div className="space-y-4 sm:space-y-6 max-w-4xl">
-        {renderDisplayTab()}
-
-        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="flex items-center text-white">
-              <CreditCard className="h-5 w-5 mr-2 text-blue-300" />
-              Payment status
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0">
-            <div className="rounded-lg border border-blue-300/30 bg-blue-500/10 p-4">
-              <p className="font-medium text-white">Payments are not currently active.</p>
-              <p className="mt-1 text-sm text-white/70">
-                Yearbook payments will be processed through Paystack when online payments are enabled for Yearbuk.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="flex items-center text-white">
-              <DollarSign className="h-5 w-5 mr-2 text-green-300" />
-              Planned revenue split
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0">
-            <p className="text-sm text-white/70">
-              When payments are enabled, schools are planned to receive 90% of eligible yearbook revenue while Yearbuk retains 10%.
-            </p>
-            <p className="mt-2 text-xs text-white/50">This is a future platform model, not a current balance or payout.</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-lg sm:text-xl text-white">Revenue history</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0">
-            {loadingSales ? (
-              <p className="text-sm text-white/70">Loading revenue history...</p>
-            ) : revenueHistory.length === 0 ? (
-              <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-                Revenue tracking will appear here once Yearbuk payments are enabled.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {revenueHistory.map((sale: any) => (
-                  <div key={sale.id} className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="font-medium text-white">{sale.description || "Yearbook access sale"}</p>
-                      <p className="text-xs text-white/60">
-                        {sale.date ? new Date(sale.date).toLocaleDateString() : "Date unavailable"}
-                        {sale.reference ? " · Ref: " + sale.reference : ""}
-                      </p>
-                    </div>
-                    <span className="font-medium text-green-200">
-                      {sale.currency === "NGN" ? "₦" : sale.currency === "USD" ? "$" : ""}{Number(sale.amount || 0).toLocaleString()}
-                    </span>
+        {isAlreadySetup && !isChangingAccount ? (
+          <Card className="bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center text-green-400">
+                <CheckCircle className="h-5 w-5 mr-2" />
+                Revenue Sharing Active
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6 pt-0">
+              <div className="space-y-4">
+                <div className="bg-green-500/20 backdrop-blur-lg border border-green-400/30 rounded-lg p-4">
+                  <h3 className="font-medium text-green-100 mb-2">Your revenue sharing is successfully configured!</h3>
+                  <div className="text-sm text-green-200 space-y-1">
+                    <p><strong>Revenue Share:</strong> You receive {school?.revenueSharePercentage || 80}% of all yearbook sales</p>
+                    <p><strong>Bank Account:</strong> ****{school?.bankAccountNumber?.slice(-4)}</p>
+                    <p><strong>Status:</strong> Active and ready to receive payments</p>
                   </div>
-                ))}
+                </div>
+                <div className="flex items-start space-x-3 text-sm text-white/70">
+                  <Building2 className="h-4 w-4 mt-1 text-blue-400" />
+                  <div>
+                    <p className="font-medium text-white">How it works:</p>
+                    <ul className="list-disc list-inside space-y-1 mt-1">
+                      <li>When viewers purchase yearbooks, 80% goes directly to your bank account</li>
+                      <li>Payments are processed automatically through Paystack</li>
+                      <li>You'll receive settlements according to Paystack's schedule</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="pt-4 border-t">
+                  <Button 
+                    onClick={handleChangeAccount}
+                    variant="outline"
+                    className="w-full sm:w-auto text-black hover:bg-white/20 backdrop-blur-lg border border-white/20 hover:text-white"
+                    data-testid="button-change-account"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Change Bank Account
+                  </Button>
+                  <p className="text-xs text-white/60 mt-2">
+                    Need to update your bank account? Click above to change your payment details.
+                  </p>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
-
-  const renderProfileTab = () => (
-    <div className="space-y-4 sm:space-y-6 max-w-4xl">
-      {/* Basic Account Information */}
-      <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl text-white">Account Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
-          {/* School Name Field */}
-          <div className="grid gap-2">
-            <Label htmlFor="schoolName" data-testid="label-school-name" className="text-sm font-medium text-white">School Name</Label>
-            <div className="flex items-center gap-2">
-              {editingField === "schoolName" ? (
-                <>
-                  <Input
-                    id="schoolName"
-                    value={tempValues.schoolName}
-                    onChange={(e) => setTempValues(prev => ({ ...prev, schoolName: e.target.value }))}
-                    className="flex-1 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                    data-testid="input-school-name-edit"
-                  />
+            </CardContent>
+          </Card>
+        ) : (
+          <Card
+            className={`bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl ${BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}`}
+            aria-disabled={BETA_VERSION}
+          >
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center text-white">
+                <CreditCard className="h-5 w-5 mr-2" />
+                {isChangingAccount ? "Change Bank Account" : "Set Up Revenue Sharing"}
+              </CardTitle>
+              <p className="text-sm text-white/70">
+                {isChangingAccount 
+                  ? "Update your bank account details for receiving revenue payments." 
+                  : "Configure your bank account to automatically receive 80% of yearbook sales revenue."
+                }
+              </p>
+              {isChangingAccount && (
+                <div className="flex items-center space-x-2 mt-2">
                   <Button
-                    size="icon"
                     variant="ghost"
-                    onClick={() => handleConfirmSave("schoolName")}
-                    disabled={isUpdatingProfile || tempValues.schoolName === profileForm.schoolName || !tempValues.schoolName.trim()}
-                    data-testid="button-save-school-name"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                    size="sm"
+                    onClick={() => setIsChangingAccount(false)}
+                    data-testid="button-cancel-change"
                   >
-                    <Check className="h-4 w-4" />
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
                   </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleCancelEdit("schoolName")}
-                    disabled={isUpdatingProfile}
-                    data-testid="button-cancel-school-name"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Input
-                    id="schoolName"
-                    value={profileForm.schoolName}
-                    readOnly
-                    className="flex-1 bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                    data-testid="input-school-name"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => startEditing("schoolName")}
-                    data-testid="button-edit-school-name"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 touch-manipulation bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </>
+                </div>
               )}
-            </div>
-            {school?.lastSchoolNameChange && (() => {
-              const lastChange = new Date(school.lastSchoolNameChange);
-              const now = new Date();
-              const daysSinceLastChange = (now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
-              const daysRemaining = Math.max(0, Math.ceil(30 - daysSinceLastChange));
-              
-              return daysRemaining > 0 ? (
-                <p className="text-xs text-amber-200 mt-1 flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  School name can be changed again in {daysRemaining} day{daysRemaining === 1 ? '' : 's'}
-                </p>
-              ) : null;
-            })()}
-            <p className="text-xs text-white/70 mt-1">
-              School name can only be changed once every 30 days
-            </p>
-          </div>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6 pt-0">
+              <div className="mb-6">
+                <div className="bg-blue-500/20 backdrop-blur-lg border border-blue-400/30 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="h-5 w-5 text-blue-400 mt-0.5" />
+                    <div className="text-sm text-blue-200">
+                      <p className="font-medium mb-1 text-white">Revenue Split Details:</p>
+                      <ul className="space-y-1">
+                        <li>• <strong>Your school receives:</strong> 80% of every yearbook sale</li>
+                        <li>• <strong>Platform fee:</strong> 20% (covers processing, hosting, and maintenance)</li>
+                        <li>• <strong>Payment processor:</strong> Paystack (secure and reliable)</li>
+                        <li>• <strong>Settlement:</strong> Automatic transfer to your bank account</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-          {/* Username Field */}
-          <div className="grid gap-2">
-            <Label htmlFor="username" data-testid="label-username" className="text-sm font-medium text-white">School Username</Label>
-            <div className="flex items-center gap-2">
-              {editingField === "username" ? (
-                <>
-                  <div className="flex-1">
+              <form onSubmit={handleRevenueSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium text-white">Select Bank</Label><Label className="text-sm font-medium text-red-500"> *</Label>
+                    <div className="relative mt-1" ref={bankDropdownRef}>
+                      <div
+                        className="flex items-center w-full px-3 py-2 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20 rounded-md cursor-pointer hover:border-white/40"
+                        onClick={() => setShowBankDropdown(!showBankDropdown)}
+                        data-testid="select-bank"
+                      >
+                        <Search className="w-4 h-4 text-gray-400 mr-2" />
+                        <input
+                          type="text"
+                          value={bankSearchQuery}
+                          onChange={(e) => setBankSearchQuery(e.target.value)}
+                          placeholder="Search for your bank..."
+                          className="flex-1 outline-none bg-transparent"
+                          onFocus={() => setShowBankDropdown(true)}
+                        />
+                      </div>
+                      
+                      {showBankDropdown && (
+                        <div className="absolute z-10 w-full mt-1 bg-blue-700/100 backdrop-blur-lg border border-white/20 text-white max-h-60 overflow-auto">
+                          {banksData?.data
+                            ?.filter((bank) => 
+                              bank.name.toLowerCase().includes(bankSearchQuery.toLowerCase())
+                            )
+                            ?.map((bank) => (
+                              <div
+                                key={bank.code}
+                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-white"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setSelectedBankCode(bank.code);
+                                  setSelectedBankName(bank.name);
+                                  setBankSearchQuery(bank.name);
+                                  setShowBankDropdown(false);
+                                }}
+                                data-testid={`bank-option-${bank.code}`}
+                              >
+                                {bank.name}
+                              </div>
+                            )) || []}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="accountNumber" className="text-white" data-testid="label-account-number">Account Number</Label>
                     <Input
-                      id="username"
-                      value={tempValues.username}
-                      onChange={(e) => setTempValues(prev => ({ ...prev, username: e.target.value }))}
-                      className="h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                      data-testid="input-username-edit"
+                      id="accountNumber"
+                      type="text"
+                      value={bankAccountNumber}
+                      onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ''))}
+                      placeholder="Enter your 10-digit account number"
+                      maxLength={10}
+                      className="bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50"
+                      data-testid="input-account-number"
                     />
-                    {/* Real-time Username Availability Status */}
-                    {tempValues.username && (
+                    
+                    {/* Real-time Account Verification Preview */}
+                    {bankAccountNumber && selectedBankCode && (
                       <div className="mt-2">
-                        {isCheckingUsername ? (
-                          <div className="flex items-center space-x-2 text-sm text-blue-200">
+                        {isVerifyingAccount ? (
+                          <div className="flex items-center space-x-2 text-sm text-blue-600">
                             <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-                            <span>Checking availability...</span>
+                            <span>Verifying account...</span>
                           </div>
-                        ) : usernameAvailable === true ? (
+                        ) : accountHolderName ? (
                           <div className="flex items-center space-x-2 text-sm text-green-200 bg-green-500/20 backdrop-blur-lg border border-green-400/30 rounded-md p-2">
                             <CheckCircle className="h-4 w-4" />
-                            <span>{usernameMessage}</span>
+                            <span><strong>Account Holder:</strong> {accountHolderName}</span>
                           </div>
-                        ) : usernameAvailable === false ? (
+                        ) : verificationError ? (
                           <div className="flex items-center space-x-2 text-sm text-red-200 bg-red-500/20 backdrop-blur-lg border border-red-400/30 rounded-md p-2">
                             <AlertCircle className="h-4 w-4" />
-                            <span>{usernameMessage}</span>
+                            <span>{verificationError}</span>
                           </div>
                         ) : null}
                       </div>
                     )}
+                    
+                    <p className="text-xs text-white/60 mt-1">
+                      {accountHolderName 
+                        ? "Account verified! You can proceed with the setup." 
+                        : "This will be verified with your bank in real-time."
+                      }
+                    </p>
                   </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleConfirmSave("username")}
-                    disabled={isUpdatingProfile || !usernameAvailable || isCheckingUsername || tempValues.username === profileForm.username}
-                    data-testid="button-save-username"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleCancelEdit("username")}
-                    disabled={isUpdatingProfile}
-                    data-testid="button-cancel-username"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Input
-                    id="username"
-                    value={profileForm.username}
-                    readOnly
-                    className="flex-1 bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                    data-testid="input-username"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => startEditing("username")}
-                    data-testid="button-edit-username"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 touch-manipulation bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
+                </div>
 
-           {school?.username && (
-             <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-               <Label className="text-sm font-medium text-white">Public Profile URL</Label>
-               <div className="flex items-center gap-2 mt-2">
-                 <a href={`/${school.username}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-sm text-cyan-300 hover:text-cyan-200">{window.location.origin}/{school.username}</a>
-                 <Button size="icon" variant="ghost" onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/${school.username}`); toast({ title: "Profile URL copied" }); }} className="h-9 w-9 flex-shrink-0 border border-white/20 text-white" data-testid="button-copy-profile-url"><Copy className="h-4 w-4" /></Button>
-               </div>
-             </div>
-           )}
+                <Button 
+                  type="submit" 
+                  disabled={
+                    (isChangingAccount ? updateAccountMutation.isPending : createSubaccountMutation.isPending) || 
+                    !bankAccountNumber || 
+                    !selectedBankCode ||
+                    !accountHolderName
+                  }
+                  className="w-full"
+                  data-testid={isChangingAccount ? "button-update-account" : "button-setup-revenue-sharing"}
+                >
+                  {isChangingAccount
+                    ? (updateAccountMutation.isPending ? "Updating Account..." : "Update Bank Account")
+                    : (createSubaccountMutation.isPending ? "Setting up..." : "Set Up Revenue Sharing")
+                  }
+                </Button>
+              </form>
 
-          {/* School Logo */}
-          <div className="grid gap-2">
-            <Label className="text-sm font-medium text-white">School Logo</Label>
-            <div className="flex items-center gap-4">
-              {/* Current Logo Display */}
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {school?.logo ? (
-                  <img 
-                    src={school.logo.startsWith('http') ? school.logo : (school.logo.startsWith('/') ? school.logo : `/${school.logo}`)}
-                    alt="School logo"
-                    className="w-full h-full object-cover"
-                    style={{ aspectRatio: '1 / 1' }}
-                  />
-                ) : (
-                  <Upload className="w-8 h-8 text-white" />
-                )}
-              </div>
-              
-              {/* Upload Input */}
-              <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setSelectedImageFile(file);
-                      setShowCropDialog(true);
-                      // Clear the input so the same file can be selected again
-                      e.target.value = '';
-                    }
-                  }}
-                  className="w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer"
-                  data-testid="input-logo-upload"
-                />
-                <p className="text-xs text-white/70 mt-1">
-                  Upload any image. You'll be able to crop and adjust it before saving.
+              <div className="mt-6 text-xs text-gray-500">
+                <p>
+                  By setting up revenue sharing, you agree to receive payments through Paystack.
+                  Your bank details will be securely stored and used only for payment processing.
                 </p>
               </div>
-            </div>
-          </div>
-
-          {/* School Banner */}
-          <div className="grid gap-2">
-            <Label className="text-sm font-medium text-white">School Banner (Profile Cover Photo)</Label>
-            <div className="space-y-3">
-              {/* Current Banner Display */}
-              <div className="w-full h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center overflow-hidden">
-                {school?.coverPhoto ? (
-                  <img 
-                    src={school.coverPhoto.startsWith('http') ? school.coverPhoto : (school.coverPhoto.startsWith('/') ? school.coverPhoto : `/${school.coverPhoto}`)}
-                    alt="School banner"
-                    className="w-full h-full object-cover"
-                    style={{ aspectRatio: '3 / 1' }}
-                  />
-                ) : (
-                  <div className="text-center">
-                    <Upload className="w-8 h-8 text-white mx-auto mb-2" />
-                    <p className="text-xs text-white/80">No banner uploaded</p>
-                  </div>
-                )}
-              </div>
-              
-              {/* Upload Input */}
-              <div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setSelectedBannerFile(file);
-                      setShowBannerCropDialog(true);
-                      // Clear the input so the same file can be selected again
-                      e.target.value = '';
-                    }
-                  }}
-                  className="w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer"
-                  data-testid="input-banner-upload"
-                />
-                <p className="text-xs text-white/70 mt-1">
-                  <strong>Required aspect ratio: 3:1 (1200x400 pixels minimum HD quality).</strong> You'll be able to crop and adjust it before saving.
-                </p>
-              </div>
-            </div>
-          </div>
-
             </CardContent>
-       </Card>
-
-       {/* School Details */}
-       <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
-         <CardHeader className="p-4 sm:p-6">
-           <CardTitle className="text-lg sm:text-xl text-white">School Details</CardTitle>
-           <p className="text-sm text-blue-50">Manage the information shown on your public Yearbuk profile.</p>
-         </CardHeader>
-         <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             {renderEditableSchoolField("email", "Public School Email", { type: "email", placeholder: "school@example.com" })}
-             {renderEditableSchoolField("phoneNumber", "Public School Phone", { type: "tel", placeholder: "(234)8012345678" })}
-             {renderEditableSchoolField("yearFounded", "Year Founded", { type: "number", min: 1000, max: new Date().getFullYear(), placeholder: "e.g. 1998" })}
-             {renderEditableSchoolField("country", "Country", { placeholder: "Enter country" })}
-             {renderEditableSchoolField("city", "City", { placeholder: "Enter city" })}
-           </div>
-         </CardContent>
-       </Card>
-
-      {/* Location & Website */}
-      <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="text-lg sm:text-xl text-white">Location & Website</CardTitle>
-          <p className="text-sm text-blue-50">Update the public location and website information.</p>
-        </CardHeader>
-        <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
-          <div className="grid gap-2">
-            <Label htmlFor="website" data-testid="label-website" className="text-sm font-medium text-white">School Website (Optional)</Label>
-            <div className="flex items-center gap-2">
-              {editingField === "website" ? (
-                <>
-                  <Input
-                    id="website"
-                    type="url"
-                    value={tempValues.website || ""}
-                    onChange={(e) => setTempValues(prev => ({ ...prev, website: e.target.value }))}
-                    className="flex-1 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                    placeholder="https://www.yourschool.com"
-                    data-testid="input-website-edit"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleConfirmSave("website")}
-                    disabled={isUpdatingProfile}
-                    data-testid="button-save-website"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleCancelEdit("website")}
-                    disabled={isUpdatingProfile}
-                    data-testid="button-cancel-website"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Input
-                    id="website"
-                    value={school?.website || "Not provided"}
-                    readOnly
-                    className="flex-1 bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                    data-testid="input-website"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => startEditing("website")}
-                    data-testid="button-edit-website"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 touch-manipulation bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </>
+          </Card>
+        )}
+        
+        {/* 2FA Verification Dialog */}
+        <AlertDialog open={show2FADialog} onOpenChange={setShow2FADialog}>
+          <AlertDialogContent className="bg-gradient-to-br from-blue-900/95 to-purple-900/95 backdrop-blur-lg border border-white/20 shadow-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center text-white">
+                <Shield className="h-5 w-5 mr-2 text-blue-400" />
+                Two-Factor Authentication Required
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-white/80">
+                For security purposes, please enter the 6-digit verification code sent to your email to confirm this bank account change.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="twoFactorCode" className="text-white">Verification Code</Label>
+                <Input
+                  id="twoFactorCode"
+                  type="text"
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Enter 6-digit code"
+                  maxLength={6}
+                  className="mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50"
+                  data-testid="input-2fa-code"
+                />
+                <p className="text-xs text-white/60 mt-1">
+                  The code will expire in 5 minutes
+                </p>
+              </div>
+              
+              {!canResend2FA && resendCooldown > 0 && (
+                <div className="flex items-center space-x-2 text-sm text-white/70">
+                  <Clock className="h-4 w-4" />
+                  <span>Resend code in {resendCooldown}s</span>
+                </div>
               )}
             </div>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="address" data-testid="label-address" className="text-sm font-medium text-white">School Address (Optional)</Label>
-            <div className="flex items-start gap-2">
-              {editingField === "address" ? (
-                <>
-                  <textarea
-                    id="address"
-                    value={tempValues.address || ""}
-                    onChange={(e) => setTempValues(prev => ({ ...prev, address: e.target.value }))}
-                    className="flex-1 min-h-[80px] p-2 border rounded-md text-sm resize-none bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                    placeholder="Enter school address"
-                    data-testid="textarea-address-edit"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleConfirmSave("address")}
-                    disabled={isUpdatingProfile}
-                    data-testid="button-save-address"
-                    className="h-10 w-10 flex-shrink-0 mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleCancelEdit("address")}
-                    disabled={isUpdatingProfile}
-                    data-testid="button-cancel-address"
-                    className="h-10 w-10 flex-shrink-0 mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <textarea
-                    id="address"
-                    value={school?.address || "Not provided"}
-                    readOnly
-                    className="flex-1 min-h-[80px] p-2 rounded-md text-sm resize-none bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                    data-testid="textarea-address"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => startEditing("address")}
-                    data-testid="button-edit-address"
-                    className="h-10 w-10 flex-shrink-0 mt-1 touch-manipulation bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </>
+            
+            <AlertDialogFooter>
+              {canResend2FA && (
+                <Button
+                  variant="outline"
+                  onClick={send2FACode}
+                  disabled={isSending2FA}
+                  className="text-white border-white/20 hover:bg-white/10"
+                  data-testid="button-resend-2fa"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isSending2FA ? 'animate-spin' : ''}`} />
+                  Resend Code
+                </Button>
               )}
-            </div>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="state" data-testid="label-state" className="text-sm font-medium text-white">State/Province (Optional)</Label>
-            <div className="flex items-center gap-2">
-              {editingField === "state" ? (
-                <>
-                  <Input
-                    id="state"
-                    value={tempValues.state || ""}
-                    onChange={(e) => setTempValues(prev => ({ ...prev, state: e.target.value }))}
-                    className="flex-1 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                    placeholder="Enter state or province"
-                    data-testid="input-state-edit"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleConfirmSave("state")}
-                    disabled={isUpdatingProfile}
-                    data-testid="button-save-state"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleCancelEdit("state")}
-                    disabled={isUpdatingProfile}
-                    data-testid="button-cancel-state"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Input
-                    id="state"
-                    value={school?.state || "Not provided"}
-                    readOnly
-                    className="flex-1 bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                    data-testid="input-state"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => startEditing("state")}
-                    data-testid="button-edit-state"
-                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 touch-manipulation bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  // Generate yearbook codes
-  const generateCodes = async () => {
-    if (!user?.schoolId) return;
-    
-    setIsGeneratingCodes(true);
-    try {
-      const response = await apiRequest("POST", "/api/yearbook-codes/create", {
-        schoolId: user.schoolId,
-        year: selectedYear,
-        count: codeCount
-      });
-      
-      const data = await response.json();
-      
-      if (data.codes) {
-        setGeneratedCodes(data.codes);
-        toast({
-          className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-          title: "Codes Generated!",
-          description: `Successfully generated ${codeCount} yearbook codes for ${selectedYear}`,
-        });
-        // Refresh existing codes
-        queryClient.invalidateQueries({ queryKey: ["/api/yearbook-codes/school", user.schoolId] });
-      } else {
-        throw new Error(data.message || "Failed to generate codes");
-      }
-    } catch (error: any) {
-      toast({
-        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-        title: "Generation Failed",
-        description: error.message || "Failed to generate codes",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGeneratingCodes(false);
-    }
-  };
-
-  // Copy code to clipboard
-  const copyToClipboard = async (code: string) => {
-    try {
-      await navigator.clipboard.writeText(code);
-      toast({
-        className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-        title: "Copied!",
-        description: `Code ${code} copied to clipboard`,
-      });
-    } catch (err) {
-      toast({
-        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
-        title: "Copy Failed",
-        description: "Could not copy code to clipboard",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Delete individual code
-  const handleDeleteCode = async () => {
-    if (!codeToDelete || !user?.id) return;
-    
-    setIsDeletingCode(true);
-    try {
-      await apiRequest("DELETE", `/api/yearbook-codes/${codeToDelete.id}`);
-      
-      toast({
-        title: "Code deleted",
-        description: `Code ${codeToDelete.code} has been deleted`,
-      });
-      
-      // Refresh codes list
-      queryClient.invalidateQueries({ queryKey: [`/api/yearbook-codes/school/${user.schoolId}`] });
-      setCodeToDelete(null);
-    } catch (error) {
-      toast({
-        title: "Failed to delete code",
-        description: "Could not delete the code. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeletingCode(false);
-    }
-  };
-
-  // Delete all codes for a year
-  const handleDeleteAllCodes = async () => {
-    if (!yearToDeleteAll || !user?.id || !user?.schoolId) return;
-    
-    setIsDeletingCode(true);
-    try {
-      await apiRequest("DELETE", `/api/yearbook-codes/school/${user.schoolId}/year/${yearToDeleteAll}`);
-      
-      toast({
-        title: "All codes deleted",
-        description: `All codes for year ${yearToDeleteAll} have been deleted`,
-      });
-      
-      // Refresh codes list
-      queryClient.invalidateQueries({ queryKey: [`/api/yearbook-codes/school/${user.schoolId}`] });
-      setYearToDeleteAll(null);
-    } catch (error) {
-      toast({
-        title: "Failed to delete codes",
-        description: "Could not delete the codes. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeletingCode(false);
-    }
+              <AlertDialogCancel 
+                className="text-white border-white/20 hover:bg-white/10"
+                data-testid="button-cancel-2fa"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={verify2FACode}
+                disabled={isVerifying2FA || twoFactorCode.length !== 6}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                data-testid="button-verify-2fa"
+              >
+                {isVerifying2FA ? "Verifying..." : "Verify Code"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
   };
 
   const renderPaymentsTab = () => {
@@ -1897,9 +1876,11 @@ export default function SchoolSettings() {
       case "profile":
         return renderProfileTab();
       case "display":
+        return renderDisplayTab();
       case "revenue":
-      case "payments":
         return renderRevenueTab();
+      case "payments":
+        return renderPaymentsTab();
       case "codes":
         return renderCreateCodesTab();
       case "security":
