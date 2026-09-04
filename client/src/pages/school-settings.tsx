@@ -2743,7 +2743,7 @@ export default function SchoolSettings() {
 
             {/* Billing Section */}
             <div className={BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Billing</h3>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Payments &amp; Revenue</h3>
               <nav className="space-y-1">
                 
                 <button
@@ -2832,7 +2832,7 @@ export default function SchoolSettings() {
 
             {/* Billing Section */}
             <div className={BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}>
-              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Billing</h3>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Payments &amp; Revenue</h3>
               <nav className="space-y-1">
                 
                 <button
