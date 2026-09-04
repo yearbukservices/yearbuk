@@ -2064,41 +2064,6 @@ export default function SchoolSettings() {
 
   const renderBillingTab = () => (
     <div className="space-y-4 sm:space-y-6 max-w-6xl">
-      <div className="rounded-lg bg-white/5 backdrop-blur-lg border border-white/10 p-1.5" role="tablist" aria-label="Billing settings">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={billingTab === "revenue"}
-            onClick={() => setBillingTab("revenue")}
-            className={billingTab === "revenue" ? "rounded-md bg-white/20 px-4 py-3 text-sm font-medium text-white shadow" : "rounded-md px-4 py-3 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white"}
-            data-testid="billing-tab-revenue"
-          >
-            Revenue Settings
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={billingTab === "payments"}
-            onClick={() => setBillingTab("payments")}
-            className={billingTab === "payments" ? "rounded-md bg-white/20 px-4 py-3 text-sm font-medium text-white shadow" : "rounded-md px-4 py-3 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white"}
-            data-testid="billing-tab-payments"
-          >
-            Payment History
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={billingTab === "currency"}
-            onClick={() => setBillingTab("currency")}
-            className={billingTab === "currency" ? "rounded-md bg-white/20 px-4 py-3 text-sm font-medium text-white shadow" : "rounded-md px-4 py-3 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white"}
-            data-testid="billing-tab-currency"
-          >
-            Displayed Currency
-          </button>
-        </div>
-      </div>
-
       {billingTab === "revenue" && renderRevenueTab()}
       {billingTab === "payments" && renderPaymentsTab()}
       {billingTab === "currency" && renderDisplayTab()}
@@ -2744,21 +2709,58 @@ export default function SchoolSettings() {
             {/* Billing Section */}
             <div className={BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}>
               <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Payments &amp; Revenue</h3>
-              <nav className="space-y-1">
-                
+              <nav className="space-y-1" aria-label="Payments & Revenue" role="tablist">
                 <button
-                  onClick={() => setActiveTab("revenue")}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === "revenue" && billingTab === "revenue"}
+                  onClick={() => {
+                    setActiveTab("revenue");
+                    setBillingTab("revenue");
+                  }}
                   className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
-                    activeTab === "revenue"
+                    activeTab === "revenue" && billingTab === "revenue"
                       ? "bg-white/20 text-white font-medium"
                       : "text-white/70 hover:text-white hover:bg-white/10"
                   }`}
-                  data-testid="tab-revenue"
+                  data-testid="billing-tab-revenue"
                 >
-                  <CreditCard className="h-4 w-4 mr-2 flex-shrink-0" />
-                  Payments & Revenue
+                  Revenue Settings
                 </button>
-                
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === "revenue" && billingTab === "payments"}
+                  onClick={() => {
+                    setActiveTab("revenue");
+                    setBillingTab("payments");
+                  }}
+                  className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
+                    activeTab === "revenue" && billingTab === "payments"
+                      ? "bg-white/20 text-white font-medium"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  }`}
+                  data-testid="billing-tab-payments"
+                >
+                  Payment History
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === "revenue" && billingTab === "currency"}
+                  onClick={() => {
+                    setActiveTab("revenue");
+                    setBillingTab("currency");
+                  }}
+                  className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
+                    activeTab === "revenue" && billingTab === "currency"
+                      ? "bg-white/20 text-white font-medium"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  }`}
+                  data-testid="billing-tab-currency"
+                >
+                  Displayed Currency
+                </button>
               </nav>
             </div>
 
@@ -2833,24 +2835,61 @@ export default function SchoolSettings() {
             {/* Billing Section */}
             <div className={BETA_VERSION ? 'pointer-events-none opacity-50 select-none' : ''}>
               <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Payments &amp; Revenue</h3>
-              <nav className="space-y-1">
-                
+              <nav className="space-y-1" aria-label="Payments & Revenue" role="tablist">
                 <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === "revenue" && billingTab === "revenue"}
                   onClick={() => {
                     setActiveTab("revenue");
+                    setBillingTab("revenue");
                     setShowSidebar(false);
                   }}
                   className={`flex items-center w-full px-3 py-3 text-sm rounded-md transition-colors touch-manipulation ${
-                    activeTab === "revenue"
+                    activeTab === "revenue" && billingTab === "revenue"
                       ? "bg-white/20 text-white font-medium"
                       : "text-white/70 hover:text-white hover:bg-white/10"
                   }`}
-                  data-testid="tab-revenue-mobile"
+                  data-testid="billing-tab-revenue-mobile"
                 >
-                  <CreditCard className="h-5 w-5 mr-3 flex-shrink-0" />
-                  Payments & Revenue
+                  Revenue Settings
                 </button>
-                
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === "revenue" && billingTab === "payments"}
+                  onClick={() => {
+                    setActiveTab("revenue");
+                    setBillingTab("payments");
+                    setShowSidebar(false);
+                  }}
+                  className={`flex items-center w-full px-3 py-3 text-sm rounded-md transition-colors touch-manipulation ${
+                    activeTab === "revenue" && billingTab === "payments"
+                      ? "bg-white/20 text-white font-medium"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  }`}
+                  data-testid="billing-tab-payments-mobile"
+                >
+                  Payment History
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === "revenue" && billingTab === "currency"}
+                  onClick={() => {
+                    setActiveTab("revenue");
+                    setBillingTab("currency");
+                    setShowSidebar(false);
+                  }}
+                  className={`flex items-center w-full px-3 py-3 text-sm rounded-md transition-colors touch-manipulation ${
+                    activeTab === "revenue" && billingTab === "currency"
+                      ? "bg-white/20 text-white font-medium"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  }`}
+                  data-testid="billing-tab-currency-mobile"
+                >
+                  Displayed Currency
+                </button>
               </nav>
             </div>
 
