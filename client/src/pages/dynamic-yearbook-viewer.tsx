@@ -1276,7 +1276,7 @@ export default function DynamicYearbookViewer() {
 
           {/* Hamburger Menu Dropdown */}
           {showHamburgerMenu && user && (
-            <div className="hamburger-dropdown fixed top-16 right-4 w-48 bg-blue-600/60 backdrop-blur-lg border border-white/20  shadow-xl z-[999999] rounded-lg">
+            <div className="hamburger-dropdown fixed top-16 right-4 w-48 bg-blue-950/95 backdrop-blur-lg border border-white/20  shadow-xl z-[999999] rounded-lg">
               <div className="py-1">
                 <button
                   className="flex items-center w-full px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
