@@ -2548,7 +2548,7 @@ export default function SchoolSettings() {
               </Button>
 
               {showHamburgerMenu && (
-                <div className="hamburger-dropdown fixed top-16 right-4 w-48 bg-blue-600/70 backdrop-blur-lg border border-white/20 rounded-lg shadow-xl z-[999999]">
+                <div className="hamburger-dropdown fixed top-16 right-4 w-48 bg-blue-950/95 backdrop-blur-lg border border-white/20 rounded-lg shadow-xl z-[999999]">
                   <div className="py-1">
                     <button
                       className="flex items-center w-full px-3 sm:px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
