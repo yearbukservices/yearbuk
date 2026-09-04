@@ -24,7 +24,7 @@ window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
 const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement || document.createElement('link');
 link.type = 'image/png';
 link.rel = 'icon';
-link.href = "/chrome_search_logo.png";
+link.href = "/tab_logo_good.png?v=2";
 if (!document.querySelector("link[rel~='icon']")) {
   document.head.appendChild(link);
 }
