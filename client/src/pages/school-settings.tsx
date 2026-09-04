@@ -64,6 +64,7 @@ export default function SchoolSettings() {
   const [, setLocation] = useLocation();
   const [user, setUser] = useState<UserType | null>(null);
   const [activeTab, setActiveTab] = useState("profile");
+  const [billingTab, setBillingTab] = useState<"revenue" | "payments" | "currency">("revenue");
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -2060,6 +2061,50 @@ export default function SchoolSettings() {
     );
   };
 
+
+  const renderBillingTab = () => (
+    <div className="space-y-4 sm:space-y-6 max-w-6xl">
+      <div className="rounded-lg bg-white/5 backdrop-blur-lg border border-white/10 p-1.5" role="tablist" aria-label="Billing settings">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={billingTab === "revenue"}
+            onClick={() => setBillingTab("revenue")}
+            className={billingTab === "revenue" ? "rounded-md bg-white/20 px-4 py-3 text-sm font-medium text-white shadow" : "rounded-md px-4 py-3 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white"}
+            data-testid="billing-tab-revenue"
+          >
+            Revenue Settings
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={billingTab === "payments"}
+            onClick={() => setBillingTab("payments")}
+            className={billingTab === "payments" ? "rounded-md bg-white/20 px-4 py-3 text-sm font-medium text-white shadow" : "rounded-md px-4 py-3 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white"}
+            data-testid="billing-tab-payments"
+          >
+            Payment History
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={billingTab === "currency"}
+            onClick={() => setBillingTab("currency")}
+            className={billingTab === "currency" ? "rounded-md bg-white/20 px-4 py-3 text-sm font-medium text-white shadow" : "rounded-md px-4 py-3 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white"}
+            data-testid="billing-tab-currency"
+          >
+            Displayed Currency
+          </button>
+        </div>
+      </div>
+
+      {billingTab === "revenue" && renderRevenueTab()}
+      {billingTab === "payments" && renderPaymentsTab()}
+      {billingTab === "currency" && renderDisplayTab()}
+    </div>
+  );
+
   const renderCreateCodesTab = () => {
     return (
       <div
@@ -2450,9 +2495,9 @@ export default function SchoolSettings() {
       case "display":
         return renderDisplayTab();
       case "revenue":
-        return renderRevenueTab();
       case "payments":
-        return renderPaymentsTab();
+      case "display":
+        return renderBillingTab();
       case "codes":
         return renderCreateCodesTab();
       case "security":
