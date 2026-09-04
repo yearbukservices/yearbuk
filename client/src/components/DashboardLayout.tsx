@@ -187,7 +187,7 @@ export function DashboardLayout({ children, userType = "viewer", onSearchTabClic
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications", user?.id] });
       toast({
-        className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        className: "bg-blue-950/95 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
         title: "All notifications cleared",
         description: "Your notification history has been cleared.",
       });
