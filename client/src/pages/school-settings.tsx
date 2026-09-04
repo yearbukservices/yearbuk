@@ -566,6 +566,578 @@ export default function SchoolSettings() {
     );
   };
 
+  const renderProfileTab = () => (
+    <div className="space-y-4 sm:space-y-6 max-w-4xl">
+      {/* Basic Account Information */}
+      <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl text-white">Account Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
+          {/* School Name Field */}
+          <div className="grid gap-2">
+            <Label htmlFor="schoolName" data-testid="label-school-name" className="text-sm font-medium text-white">School Name</Label>
+            <div className="flex items-center gap-2">
+              {editingField === "schoolName" ? (
+                <>
+                  <Input
+                    id="schoolName"
+                    value={tempValues.schoolName}
+                    onChange={(e) => setTempValues(prev => ({ ...prev, schoolName: e.target.value }))}
+                    className="flex-1 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                    data-testid="input-school-name-edit"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleConfirmSave("schoolName")}
+                    disabled={isUpdatingProfile || tempValues.schoolName === profileForm.schoolName || !tempValues.schoolName.trim()}
+                    data-testid="button-save-school-name"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleCancelEdit("schoolName")}
+                    disabled={isUpdatingProfile}
+                    data-testid="button-cancel-school-name"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Input
+                    id="schoolName"
+                    value={profileForm.schoolName}
+                    readOnly
+                    className="flex-1 bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                    data-testid="input-school-name"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => startEditing("schoolName")}
+                    data-testid="button-edit-school-name"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 touch-manipulation bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+            {school?.lastSchoolNameChange && (() => {
+              const lastChange = new Date(school.lastSchoolNameChange);
+              const now = new Date();
+              const daysSinceLastChange = (now.getTime() - lastChange.getTime()) / (1000 * 60 * 60 * 24);
+              const daysRemaining = Math.max(0, Math.ceil(30 - daysSinceLastChange));
+              
+              return daysRemaining > 0 ? (
+                <p className="text-xs text-amber-200 mt-1 flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  School name can be changed again in {daysRemaining} day{daysRemaining === 1 ? '' : 's'}
+                </p>
+              ) : null;
+            })()}
+            <p className="text-xs text-white/70 mt-1">
+              School name can only be changed once every 30 days
+            </p>
+          </div>
+
+          {/* Username Field */}
+          <div className="grid gap-2">
+            <Label htmlFor="username" data-testid="label-username" className="text-sm font-medium text-white">School Username</Label>
+            <div className="flex items-center gap-2">
+              {editingField === "username" ? (
+                <>
+                  <div className="flex-1">
+                    <Input
+                      id="username"
+                      value={tempValues.username}
+                      onChange={(e) => setTempValues(prev => ({ ...prev, username: e.target.value }))}
+                      className="h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                      data-testid="input-username-edit"
+                    />
+                    {/* Real-time Username Availability Status */}
+                    {tempValues.username && (
+                      <div className="mt-2">
+                        {isCheckingUsername ? (
+                          <div className="flex items-center space-x-2 text-sm text-blue-200">
+                            <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                            <span>Checking availability...</span>
+                          </div>
+                        ) : usernameAvailable === true ? (
+                          <div className="flex items-center space-x-2 text-sm text-green-200 bg-green-500/20 backdrop-blur-lg border border-green-400/30 rounded-md p-2">
+                            <CheckCircle className="h-4 w-4" />
+                            <span>{usernameMessage}</span>
+                          </div>
+                        ) : usernameAvailable === false ? (
+                          <div className="flex items-center space-x-2 text-sm text-red-200 bg-red-500/20 backdrop-blur-lg border border-red-400/30 rounded-md p-2">
+                            <AlertCircle className="h-4 w-4" />
+                            <span>{usernameMessage}</span>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleConfirmSave("username")}
+                    disabled={isUpdatingProfile || !usernameAvailable || isCheckingUsername || tempValues.username === profileForm.username}
+                    data-testid="button-save-username"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleCancelEdit("username")}
+                    disabled={isUpdatingProfile}
+                    data-testid="button-cancel-username"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Input
+                    id="username"
+                    value={profileForm.username}
+                    readOnly
+                    className="flex-1 bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                    data-testid="input-username"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => startEditing("username")}
+                    data-testid="button-edit-username"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 touch-manipulation bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+           {school?.username && (
+             <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+               <Label className="text-sm font-medium text-white">Public Profile URL</Label>
+               <div className="flex items-center gap-2 mt-2">
+                 <a href={`/${school.username}`} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-sm text-cyan-300 hover:text-cyan-200">{window.location.origin}/{school.username}</a>
+                 <Button size="icon" variant="ghost" onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/${school.username}`); toast({ title: "Profile URL copied" }); }} className="h-9 w-9 flex-shrink-0 border border-white/20 text-white" data-testid="button-copy-profile-url"><Copy className="h-4 w-4" /></Button>
+               </div>
+             </div>
+           )}
+
+          {/* School Logo */}
+          <div className="grid gap-2">
+            <Label className="text-sm font-medium text-white">School Logo</Label>
+            <div className="flex items-center gap-4">
+              {/* Current Logo Display */}
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {school?.logo ? (
+                  <img 
+                    src={school.logo.startsWith('http') ? school.logo : (school.logo.startsWith('/') ? school.logo : `/${school.logo}`)}
+                    alt="School logo"
+                    className="w-full h-full object-cover"
+                    style={{ aspectRatio: '1 / 1' }}
+                  />
+                ) : (
+                  <Upload className="w-8 h-8 text-white" />
+                )}
+              </div>
+              
+              {/* Upload Input */}
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setSelectedImageFile(file);
+                      setShowCropDialog(true);
+                      // Clear the input so the same file can be selected again
+                      e.target.value = '';
+                    }
+                  }}
+                  className="w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer"
+                  data-testid="input-logo-upload"
+                />
+                <p className="text-xs text-white/70 mt-1">
+                  Upload any image. You'll be able to crop and adjust it before saving.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* School Banner */}
+          <div className="grid gap-2">
+            <Label className="text-sm font-medium text-white">School Banner (Profile Cover Photo)</Label>
+            <div className="space-y-3">
+              {/* Current Banner Display */}
+              <div className="w-full h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center overflow-hidden">
+                {school?.coverPhoto ? (
+                  <img 
+                    src={school.coverPhoto.startsWith('http') ? school.coverPhoto : (school.coverPhoto.startsWith('/') ? school.coverPhoto : `/${school.coverPhoto}`)}
+                    alt="School banner"
+                    className="w-full h-full object-cover"
+                    style={{ aspectRatio: '3 / 1' }}
+                  />
+                ) : (
+                  <div className="text-center">
+                    <Upload className="w-8 h-8 text-white mx-auto mb-2" />
+                    <p className="text-xs text-white/80">No banner uploaded</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Upload Input */}
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setSelectedBannerFile(file);
+                      setShowBannerCropDialog(true);
+                      // Clear the input so the same file can be selected again
+                      e.target.value = '';
+                    }
+                  }}
+                  className="w-full text-sm text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-white/10 file:text-white hover:file:bg-white/20 cursor-pointer"
+                  data-testid="input-banner-upload"
+                />
+                <p className="text-xs text-white/70 mt-1">
+                  <strong>Required aspect ratio: 3:1 (1200x400 pixels minimum HD quality).</strong> You'll be able to crop and adjust it before saving.
+                </p>
+              </div>
+            </div>
+          </div>
+
+            </CardContent>
+       </Card>
+
+       {/* School Details */}
+       <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
+         <CardHeader className="p-4 sm:p-6">
+           <CardTitle className="text-lg sm:text-xl text-white">School Details</CardTitle>
+           <p className="text-sm text-blue-50">Manage the information shown on your public Yearbuk profile.</p>
+         </CardHeader>
+         <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             {renderEditableSchoolField("email", "Public School Email", { type: "email", placeholder: "school@example.com" })}
+             {renderEditableSchoolField("phoneNumber", "Public School Phone", { type: "tel", placeholder: "(234)8012345678" })}
+             {renderEditableSchoolField("yearFounded", "Year Founded", { type: "number", min: 1000, max: new Date().getFullYear(), placeholder: "e.g. 1998" })}
+             {renderEditableSchoolField("country", "Country", { placeholder: "Enter country" })}
+             {renderEditableSchoolField("city", "City", { placeholder: "Enter city" })}
+           </div>
+         </CardContent>
+       </Card>
+
+      {/* Location & Website */}
+      <Card className="bg-white/10 backdrop-blur-lg border border-white/20">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl text-white">Location & Website</CardTitle>
+          <p className="text-sm text-blue-50">Update the public location and website information.</p>
+        </CardHeader>
+        <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+          <div className="grid gap-2">
+            <Label htmlFor="website" data-testid="label-website" className="text-sm font-medium text-white">School Website (Optional)</Label>
+            <div className="flex items-center gap-2">
+              {editingField === "website" ? (
+                <>
+                  <Input
+                    id="website"
+                    type="url"
+                    value={tempValues.website || ""}
+                    onChange={(e) => setTempValues(prev => ({ ...prev, website: e.target.value }))}
+                    className="flex-1 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                    placeholder="https://www.yourschool.com"
+                    data-testid="input-website-edit"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleConfirmSave("website")}
+                    disabled={isUpdatingProfile}
+                    data-testid="button-save-website"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleCancelEdit("website")}
+                    disabled={isUpdatingProfile}
+                    data-testid="button-cancel-website"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Input
+                    id="website"
+                    value={school?.website || "Not provided"}
+                    readOnly
+                    className="flex-1 bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                    data-testid="input-website"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => startEditing("website")}
+                    data-testid="button-edit-website"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 touch-manipulation bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="address" data-testid="label-address" className="text-sm font-medium text-white">School Address (Optional)</Label>
+            <div className="flex items-start gap-2">
+              {editingField === "address" ? (
+                <>
+                  <textarea
+                    id="address"
+                    value={tempValues.address || ""}
+                    onChange={(e) => setTempValues(prev => ({ ...prev, address: e.target.value }))}
+                    className="flex-1 min-h-[80px] p-2 border rounded-md text-sm resize-none bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                    placeholder="Enter school address"
+                    data-testid="textarea-address-edit"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleConfirmSave("address")}
+                    disabled={isUpdatingProfile}
+                    data-testid="button-save-address"
+                    className="h-10 w-10 flex-shrink-0 mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleCancelEdit("address")}
+                    disabled={isUpdatingProfile}
+                    data-testid="button-cancel-address"
+                    className="h-10 w-10 flex-shrink-0 mt-1 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <textarea
+                    id="address"
+                    value={school?.address || "Not provided"}
+                    readOnly
+                    className="flex-1 min-h-[80px] p-2 rounded-md text-sm resize-none bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                    data-testid="textarea-address"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => startEditing("address")}
+                    data-testid="button-edit-address"
+                    className="h-10 w-10 flex-shrink-0 mt-1 touch-manipulation bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="state" data-testid="label-state" className="text-sm font-medium text-white">State/Province (Optional)</Label>
+            <div className="flex items-center gap-2">
+              {editingField === "state" ? (
+                <>
+                  <Input
+                    id="state"
+                    value={tempValues.state || ""}
+                    onChange={(e) => setTempValues(prev => ({ ...prev, state: e.target.value }))}
+                    className="flex-1 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                    placeholder="Enter state or province"
+                    data-testid="input-state-edit"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleConfirmSave("state")}
+                    disabled={isUpdatingProfile}
+                    data-testid="button-save-state"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleCancelEdit("state")}
+                    disabled={isUpdatingProfile}
+                    data-testid="button-cancel-state"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Input
+                    id="state"
+                    value={school?.state || "Not provided"}
+                    readOnly
+                    className="flex-1 bg-gray-50 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                    data-testid="input-state"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => startEditing("state")}
+                    data-testid="button-edit-state"
+                    className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 touch-manipulation bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  // Generate yearbook codes
+  const generateCodes = async () => {
+    if (!user?.schoolId) return;
+    
+    setIsGeneratingCodes(true);
+    try {
+      const response = await apiRequest("POST", "/api/yearbook-codes/create", {
+        schoolId: user.schoolId,
+        year: selectedYear,
+        count: codeCount
+      });
+      
+      const data = await response.json();
+      
+      if (data.codes) {
+        setGeneratedCodes(data.codes);
+        toast({
+          className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+          title: "Codes Generated!",
+          description: `Successfully generated ${codeCount} yearbook codes for ${selectedYear}`,
+        });
+        // Refresh existing codes
+        queryClient.invalidateQueries({ queryKey: ["/api/yearbook-codes/school", user.schoolId] });
+      } else {
+        throw new Error(data.message || "Failed to generate codes");
+      }
+    } catch (error: any) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Generation Failed",
+        description: error.message || "Failed to generate codes",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingCodes(false);
+    }
+  };
+
+  // Copy code to clipboard
+  const copyToClipboard = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast({
+        className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Copied!",
+        description: `Code ${code} copied to clipboard`,
+      });
+    } catch (err) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Copy Failed",
+        description: "Could not copy code to clipboard",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Delete individual code
+  const handleDeleteCode = async () => {
+    if (!codeToDelete || !user?.id) return;
+    
+    setIsDeletingCode(true);
+    try {
+      await apiRequest("DELETE", `/api/yearbook-codes/${codeToDelete.id}`);
+      
+      toast({
+        title: "Code deleted",
+        description: `Code ${codeToDelete.code} has been deleted`,
+      });
+      
+      // Refresh codes list
+      queryClient.invalidateQueries({ queryKey: [`/api/yearbook-codes/school/${user.schoolId}`] });
+      setCodeToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Failed to delete code",
+        description: "Could not delete the code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingCode(false);
+    }
+  };
+
+  // Delete all codes for a year
+  const handleDeleteAllCodes = async () => {
+    if (!yearToDeleteAll || !user?.id || !user?.schoolId) return;
+    
+    setIsDeletingCode(true);
+    try {
+      await apiRequest("DELETE", `/api/yearbook-codes/school/${user.schoolId}/year/${yearToDeleteAll}`);
+      
+      toast({
+        title: "All codes deleted",
+        description: `All codes for year ${yearToDeleteAll} have been deleted`,
+      });
+      
+      // Refresh codes list
+      queryClient.invalidateQueries({ queryKey: [`/api/yearbook-codes/school/${user.schoolId}`] });
+      setYearToDeleteAll(null);
+    } catch (error) {
+      toast({
+        title: "Failed to delete codes",
+        description: "Could not delete the codes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingCode(false);
+    }
+  };
+
   const renderPaymentsTab = () => {
     // API responses should be arrays, but normalize defensively so a malformed
     // or unexpected response cannot crash the entire settings page.
