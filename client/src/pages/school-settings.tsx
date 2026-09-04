@@ -436,6 +436,178 @@ export default function SchoolSettings() {
     enabled: !!school?.id && !!user?.id && activeTab === "revenue",
   });
 
+
+  type ProfileField = keyof typeof profileForm;
+
+  const startEditing = (field: ProfileField) => {
+    setTempValues(prev => ({ ...prev, [field]: profileForm[field] || "" }));
+    setEditingField(field);
+    if (field === "username") {
+      setUsernameAvailable(true);
+      setUsernameMessage("");
+    }
+  };
+
+  const handleCancelEdit = (field: ProfileField) => {
+    setEditingField(null);
+    setTempValues(prev => ({ ...prev, [field]: profileForm[field] || "" }));
+    if (field === "username") {
+      setUsernameAvailable(null);
+      setUsernameMessage("");
+    }
+  };
+
+  const performSave = async (field: ProfileField) => {
+    if (!school?.id) return;
+
+    setIsUpdatingProfile(true);
+    try {
+      const value = tempValues[field].trim();
+      const payload = { [field === "schoolName" ? "name" : field]: value };
+      const response = await apiRequest("PATCH", "/api/schools/" + school.id, payload);
+      const updatedSchool = await response.json();
+      const updatedValue = field === "schoolName" ? updatedSchool.name : updatedSchool[field];
+
+      setProfileForm(prev => ({
+        ...prev,
+        [field]: updatedValue == null ? value : String(updatedValue),
+      }));
+      queryClient.invalidateQueries({ queryKey: ["/api/schools", user?.schoolId] });
+      setEditingField(null);
+      setShowUsernameConfirm(false);
+      setShowSchoolNameConfirm(false);
+      setUsernameAvailable(null);
+      setUsernameMessage("");
+      toast({
+        className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Profile updated",
+        description: "Your school information has been saved.",
+      });
+    } catch (error: any) {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Update failed",
+        description: error?.message || "Could not save your school information. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleConfirmSave = (field: ProfileField) => {
+    const value = tempValues[field].trim();
+    const optionalFields: ProfileField[] = ["website", "address", "state"];
+
+    if (!value && !optionalFields.includes(field)) {
+      toast({
+        title: "Value required",
+        description: "Please enter a value before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (field === "username") {
+      if (!/^[a-z0-9_]{3,50}$/.test(value.toLowerCase())) {
+        setUsernameAvailable(false);
+        setUsernameMessage("Use 3–50 lowercase letters, numbers, or underscores.");
+        toast({
+          title: "Invalid username",
+          description: "Use 3–50 letters, numbers, or underscores.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setShowUsernameConfirm(true);
+      return;
+    }
+
+    if (field === "schoolName") {
+      setShowSchoolNameConfirm(true);
+      return;
+    }
+
+    performSave(field);
+  };
+
+  const renderEditableSchoolField = (
+    field: ProfileField,
+    label: string,
+    inputProps: React.InputHTMLAttributes<HTMLInputElement> = {},
+  ) => {
+    const { value: _value, onChange: _onChange, ...restInputProps } = inputProps;
+    const isEditing = editingField === field;
+
+    return (
+      <div className="grid gap-2">
+        <Label htmlFor={field} data-testid={"label-" + field} className="text-sm font-medium text-white">
+          {label}
+        </Label>
+        <div className="flex items-center gap-2">
+          {isEditing ? (
+            <>
+              <Input
+                {...restInputProps}
+                id={field}
+                value={tempValues[field] || ""}
+                onChange={(e) => setTempValues(prev => ({ ...prev, [field]: e.target.value }))}
+                className="flex-1 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20"
+                data-testid={"input-" + field + "-edit"}
+              />
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleConfirmSave(field)}
+                disabled={isUpdatingProfile}
+                data-testid={"button-save-" + field}
+                className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleCancelEdit(field)}
+                disabled={isUpdatingProfile}
+                data-testid={"button-cancel-" + field}
+                className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Input
+                {...restInputProps}
+                id={field}
+                value={profileForm[field] || ""}
+                readOnly
+                className="flex-1 h-10 sm:h-11 bg-white/10 backdrop-blur-lg border border-white/20 text-white placeholder:text-white/50"
+                data-testid={"input-" + field}
+              />
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => startEditing(field)}
+                data-testid={"button-edit-" + field}
+                className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 bg-white/10 backdrop-blur-lg border border-white/20 text-white"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("userChanged"));
+    setLocation("/home");
+  };
+
   const renderDisplayTab = () => {
     return (
       <div className="space-y-4 sm:space-y-6 max-w-4xl">
