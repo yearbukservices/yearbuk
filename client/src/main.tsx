@@ -29,4 +29,12 @@ if (!document.querySelector("link[rel~='icon']")) {
   document.head.appendChild(link);
 }
 
+// Provide the same branded icon for iOS home-screen shortcuts.
+const appleTouchLink = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement || document.createElement('link');
+appleTouchLink.rel = 'apple-touch-icon';
+appleTouchLink.href = '/tab_logo_good.png?v=2';
+if (!document.querySelector("link[rel='apple-touch-icon']")) {
+  document.head.appendChild(appleTouchLink);
+}
+
 createRoot(document.getElementById("root")!).render(<App />);
