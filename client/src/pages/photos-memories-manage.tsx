@@ -923,7 +923,7 @@ export default function PhotosMemoriesManage() {
 
       {/* Notification Dropdown */}
       {showNotifications && (
-        <div className="notification-dropdown fixed top-16 right-16 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-blue-600/60 backdrop-blur-lg rounded-lg shadow-xl border border-white/20 z-[999999]">
+        <div className="notification-dropdown fixed top-16 right-16 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-blue-950/95 backdrop-blur-lg rounded-lg shadow-xl border border-white/20 z-[999999]">
           <div className="p-4 border-b border-white/20">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-white">Notifications</h3>
