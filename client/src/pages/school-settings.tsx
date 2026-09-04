@@ -2492,8 +2492,6 @@ export default function SchoolSettings() {
     switch (activeTab) {
       case "profile":
         return renderProfileTab();
-      case "display":
-        return renderDisplayTab();
       case "revenue":
       case "payments":
       case "display":
