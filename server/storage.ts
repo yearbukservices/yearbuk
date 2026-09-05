@@ -3099,8 +3099,126 @@ export class DatabaseStorage implements IStorage {
 
 
   async deleteSchool(id: string): Promise<boolean> {
-    const result = await db.delete(schools).where(eq(schools.id, id)).returning();
-    return Array.isArray(result) && result.length > 0;
+    const school = await db.select({ id: schools.id }).from(schools).where(eq(schools.id, id)).limit(1);
+    if (!school[0]) return false;
+
+    const deletedPassword = await hashPassword("account-deleted-" + randomUUID());
+    const anonymizedEmail = "deleted-school-" + id + "@example.invalid";
+
+    await db.transaction(async (tx) => {
+      const linkedUsers = await tx
+        .select({ id: users.id, userType: users.userType })
+        .from(users)
+        .where(eq(users.schoolId, id));
+      const linkedUserIds = linkedUsers.map((linkedUser) => linkedUser.id);
+      const schoolAdminIds = linkedUsers
+        .filter((linkedUser) => linkedUser.userType === "school")
+        .map((linkedUser) => linkedUser.id);
+
+      const schoolMemories = await tx
+        .select({ id: memories.id })
+        .from(memories)
+        .where(eq(memories.schoolId, id));
+      const memoryIds = schoolMemories.map((memory) => memory.id);
+
+      const schoolYearbooks = await tx
+        .select({ id: yearbooks.id })
+        .from(yearbooks)
+        .where(eq(yearbooks.schoolId, id));
+      const yearbookIds = schoolYearbooks.map((yearbook) => yearbook.id);
+
+      const schoolAlumniRequests = await tx
+        .select({ id: alumniRequests.id })
+        .from(alumniRequests)
+        .where(eq(alumniRequests.schoolId, id));
+      const alumniRequestIds = schoolAlumniRequests.map((request) => request.id);
+
+      // Remove school-owned media and its tag relationships first.
+      if (memoryIds.length > 0) {
+        await tx.delete(photoTags).where(inArray(photoTags.memoryId, memoryIds));
+        await tx.delete(memories).where(inArray(memories.id, memoryIds));
+      }
+      if (linkedUserIds.length > 0) {
+        await tx.delete(photoTags).where(inArray(photoTags.taggedUserId, linkedUserIds));
+        await tx.update(alumniRequests).set({ reviewedBy: null }).where(inArray(alumniRequests.reviewedBy, linkedUserIds));
+      }
+
+      // Remove school-specific alumni relationships without deleting viewer accounts.
+      if (alumniRequestIds.length > 0) {
+        await tx.delete(alumniBadges).where(inArray(alumniBadges.alumniRequestId, alumniRequestIds));
+      }
+      if (linkedUserIds.length > 0) {
+        await tx.delete(alumniBadges).where(inArray(alumniBadges.userId, linkedUserIds));
+        await tx.delete(notifications).where(inArray(notifications.userId, linkedUserIds));
+        await tx.delete(loginActivity).where(inArray(loginActivity.userId, linkedUserIds));
+        await tx.delete(passwordResetTokens).where(inArray(passwordResetTokens.userId, linkedUserIds));
+      }
+      await tx.delete(alumniRequests).where(eq(alumniRequests.schoolId, id));
+      await tx.delete(alumniRequestBlocks).where(eq(alumniRequestBlocks.schoolId, id));
+
+      // Remove yearbook-owned records before removing the yearbooks.
+      if (yearbookIds.length > 0) {
+        await tx.delete(yearbookPriceHistory).where(inArray(yearbookPriceHistory.yearbookId, yearbookIds));
+        await tx.delete(yearbookPages).where(inArray(yearbookPages.yearbookId, yearbookIds));
+        await tx.delete(tableOfContents).where(inArray(tableOfContents.yearbookId, yearbookIds));
+        await tx.delete(yearbooks).where(inArray(yearbooks.id, yearbookIds));
+      }
+
+      await tx.delete(publicUploadLinks).where(eq(publicUploadLinks.schoolId, id));
+      await tx.delete(schoolGalleryImages).where(eq(schoolGalleryImages.schoolId, id));
+      await tx.delete(yearbookCodes).where(eq(yearbookCodes.schoolId, id));
+      await tx.delete(yearPurchases).where(eq(yearPurchases.schoolId, id));
+      await tx.delete(viewerYearPurchases).where(eq(viewerYearPurchases.schoolId, id));
+      await tx.delete(cartItems).where(eq(cartItems.schoolId, id));
+
+      // Preserve financial records, but detach them from the deleted school.
+      await tx.update(paymentRecords).set({ schoolId: null }).where(eq(paymentRecords.schoolId, id));
+      if (schoolAdminIds.length > 0) {
+        await tx.update(paymentRecords)
+          .set({ email: anonymizedEmail, paystackData: null })
+          .where(inArray(paymentRecords.userId, schoolAdminIds));
+      }
+
+      // Viewers remain independent accounts; only school ownership is removed.
+      if (linkedUserIds.length > 0) {
+        await tx.update(users).set({ schoolId: null }).where(inArray(users.id, linkedUserIds));
+      }
+
+      // Keep admin/payment foreign keys valid while making the school owner unusable.
+      for (const schoolAdminId of schoolAdminIds) {
+        await tx.update(users)
+          .set({
+            username: "deleted-school-" + schoolAdminId,
+            password: deletedPassword,
+            userType: "deleted",
+            role: "deleted",
+            firstName: "Deleted",
+            middleName: null,
+            lastName: "School User",
+            fullName: "Deleted School User",
+            dateOfBirth: "1970-01-01",
+            email: anonymizedEmail,
+            phoneNumber: null,
+            showPhoneToAlumni: false,
+            preferredCurrency: "USD",
+            profileImage: null,
+            badgeSlots: 0,
+            isEmailVerified: false,
+            emailVerificationToken: null,
+            emailVerificationTokenExpiresAt: null,
+            twoFactorCode: null,
+            twoFactorCodeExpiresAt: null,
+            twoFactorCodeSentAt: null,
+            authVersion: sql`${users.authVersion} + 1`,
+            lastUsernameChange: new Date(),
+          })
+          .where(eq(users.id, schoolAdminId));
+      }
+
+      await tx.delete(schools).where(eq(schools.id, id));
+    });
+
+    return true;
   }
 
   async updateUserRole(id: string, userType: string): Promise<User | undefined> {
