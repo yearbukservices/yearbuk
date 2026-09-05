@@ -163,6 +163,7 @@ export default function SearchPage({ onRegisterReset, forceSchoolProfile, forceV
       <PublicViewerProfile
         username={selectedViewerUsername}
         onBack={handleBackToSearch}
+        inDashboard={true}
       />
     );
   };
