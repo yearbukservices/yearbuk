@@ -292,6 +292,9 @@ export default function SchoolSettings() {
     queryKey: ["/api/schools", user?.schoolId],
     enabled: !!user?.schoolId,
   });
+  const schoolUsername = user?.username || school?.username || "your school username";
+  const isDeleteConfirmationValid = deleteSchoolUsername === schoolUsername && deleteSchoolPassword.length > 0;
+
   // Keep the form synced with the single school profile source of truth.
   useEffect(() => {
     if (!school) return;
@@ -2491,9 +2494,6 @@ export default function SchoolSettings() {
   };
 
   const renderDangerZoneTab = () => {
-    const schoolUsername = user?.username || school?.username || "your school username";
-    const isDeleteConfirmationValid = deleteSchoolUsername === schoolUsername && deleteSchoolPassword.length > 0;
-
     return (
       <div className="space-y-6">
         <div>
