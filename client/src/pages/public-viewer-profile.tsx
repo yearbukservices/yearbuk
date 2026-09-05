@@ -21,9 +21,10 @@ interface PublicUser {
 interface PublicViewerProfileProps {
   username: string;
   onBack?: () => void;
+  inDashboard?: boolean;
 }
 
-export default function PublicViewerProfile({ username, onBack }: PublicViewerProfileProps) {
+export default function PublicViewerProfile({ username, onBack, inDashboard = false }: PublicViewerProfileProps) {
   const [, setLocation] = useLocation();
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"posts" | "tagged" | "badges">("posts");
@@ -170,7 +171,7 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase();
 
-  const navigation = (
+  const navigation = inDashboard ? null : (
     <div className="fixed top-0 left-0 right-0 bg-white/10 backdrop-blur-lg border-b border-white/20 shadow-2xl z-30">
       <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
         <button
@@ -232,7 +233,7 @@ export default function PublicViewerProfile({ username, onBack }: PublicViewerPr
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-2">
+    <div className={inDashboard ? "min-h-screen pb-2" : "min-h-screen pt-24 pb-2"}>
       {navigation}
       <div className="max-w-3xl mx-auto px-4">
         {/* Header Section */}
