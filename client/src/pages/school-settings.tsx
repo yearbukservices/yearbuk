@@ -2497,7 +2497,7 @@ export default function SchoolSettings() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white">Danger Zone</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Delete account</h2>
           <p className="text-white/70 mt-1">Permanent account actions are separated from normal school settings.</p>
         </div>
 
@@ -2985,7 +2985,7 @@ export default function SchoolSettings() {
                   data-testid="tab-danger-zone"
                 >
                   <Trash2 className="h-4 w-4 mr-2 flex-shrink-0" />
-                  Danger Zone
+                  Delete account
                 </button>
               </nav>
             </div>
@@ -3150,7 +3150,7 @@ export default function SchoolSettings() {
                     data-testid="tab-danger-zone-mobile"
                   >
                     <Trash2 className="h-5 w-5 mr-3 flex-shrink-0" />
-                    Danger Zone
+                    Delete account
                   </button>
               </nav>
             </div>
