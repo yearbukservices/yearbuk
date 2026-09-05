@@ -61,12 +61,9 @@ interface Bank {
 }
 
 export default function SchoolSettings() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [user, setUser] = useState<UserType | null>(null);
-  const [activeTab, setActiveTab] = useState(() => {
-    const requestedTab = new URLSearchParams(location.split("?")[1] || "").get("tab");
-    return requestedTab === "support-legal" ? requestedTab : "profile";
-  });
+  const [activeTab, setActiveTab] = useState("profile");
   const [billingTab, setBillingTab] = useState<"revenue" | "payments" | "currency">("revenue");
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -2889,6 +2886,21 @@ export default function SchoolSettings() {
             </div>
           </div>
         </div>
+
+            {/* Support & Legal Section */}
+            <div>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Support & Legal</h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveTab("support-legal")}
+                  className={"flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors " + (activeTab === "support-legal" ? "bg-white/20 text-white font-medium" : "text-white/70 hover:text-white hover:bg-white/10")}
+                  data-testid="tab-support-legal"
+                >
+                  <LifeBuoy className="h-4 w-4 mr-2 flex-shrink-0" />
+                  Support & Legal
+                </button>
+              </nav>
+            </div>
         {/* Mobile Sidebar */}
         <div className={`fixed top-0 left-0 h-full w-64 bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto lg:hidden ${
           showSidebar ? 'translate-x-0' : '-translate-x-full'
@@ -3023,6 +3035,24 @@ export default function SchoolSettings() {
             </div>
           </div>
         </div>
+
+            {/* Support & Legal Section */}
+            <div>
+              <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider mb-2 px-3">Support & Legal</h3>
+              <nav className="space-y-1">
+                <button
+                  onClick={() => {
+                    setActiveTab("support-legal");
+                    setShowSidebar(false);
+                  }}
+                  className={"flex items-center w-full px-3 py-3 text-sm rounded-md transition-colors touch-manipulation " + (activeTab === "support-legal" ? "bg-white/20 text-white font-medium" : "text-white/70 hover:text-white hover:bg-white/10")}
+                  data-testid="tab-support-legal-mobile"
+                >
+                  <LifeBuoy className="h-5 w-5 mr-3 flex-shrink-0" />
+                  Support & Legal
+                </button>
+              </nav>
+            </div>
         {/* Main Content */}
         <div className="flex-1 min-w-0">
           <div className="p-4 sm:p-6">
