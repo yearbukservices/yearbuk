@@ -68,6 +68,9 @@ export default function SchoolSettings() {
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showDeleteSchoolDialog, setShowDeleteSchoolDialog] = useState(false);
+  const [deleteSchoolUsername, setDeleteSchoolUsername] = useState("");
+  const [deleteSchoolPassword, setDeleteSchoolPassword] = useState("");
   const { toast } = useToast();
   const { userCurrency, setUserCurrency, formatPrice, convertPrice } = useCurrency();
 
@@ -367,6 +370,40 @@ export default function SchoolSettings() {
 
   const handleClearAllNotifications = () => {
     clearAllNotificationsMutation.mutate();
+  };
+
+  const deleteSchoolAccountMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; confirmationUsername: string }) => {
+      const response = await apiRequest("POST", "/api/auth/delete-school-account", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      localStorage.removeItem("user");
+      window.dispatchEvent(new Event("userChanged"));
+      setShowDeleteSchoolDialog(false);
+      toast({
+        className: "bg-blue-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "School account deleted",
+        description: "Your school account has been deleted and your session has been signed out.",
+      });
+      setLocation("/");
+    },
+    onError: (error: any) => {
+      toast({
+        className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+        title: "Deletion failed",
+        description: error?.message || "The school account was not deleted. Please verify your details and try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteSchoolAccount = () => {
+    if (!user?.username || deleteSchoolUsername !== user.username || !deleteSchoolPassword) return;
+    deleteSchoolAccountMutation.mutate({
+      currentPassword: deleteSchoolPassword,
+      confirmationUsername: deleteSchoolUsername,
+    });
   };
 
   // Helper function to format relative time
@@ -2453,6 +2490,48 @@ export default function SchoolSettings() {
     );
   };
 
+  const renderDangerZoneTab = () => {
+    const schoolUsername = user?.username || school?.username || "your school username";
+    const isDeleteConfirmationValid = deleteSchoolUsername === schoolUsername && deleteSchoolPassword.length > 0;
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Danger Zone</h2>
+          <p className="text-white/70 mt-1">Permanent account actions are separated from normal school settings.</p>
+        </div>
+
+        <Card className="bg-white/5 border-amber-400/30">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl text-white">Deactivate school account</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0">
+            <p className="text-sm text-white/70">Temporary school-account deactivation is not currently supported by the backend, so no deactivation control is offered.</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-red-950/30 border-red-500/50">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl text-red-100">Delete school account</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+            <p className="text-sm text-red-100/80">Permanently delete this school account and its school-owned data according to Yearbuk&apos;s deletion policy. Financial records may be retained when required for accounting or legal reasons, and viewer accounts are not deleted.</p>
+            <Button
+              type="button"
+              variant="destructive"
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={() => setShowDeleteSchoolDialog(true)}
+              data-testid="button-delete-school-account"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete school account
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   const renderSupportLegalTab = () => {
     const supportHref = "mailto:support@yearbuk.com?subject=Yearbuk%20Support%20Request";
     const reportHref = "mailto:support@yearbuk.com?subject=Yearbuk%20Report%20a%20Problem";
@@ -2546,6 +2625,8 @@ export default function SchoolSettings() {
         return renderCreateCodesTab();
       case "security":
         return renderSecurityTab();
+      case "danger-zone":
+        return renderDangerZoneTab();
       case "support-legal":
         return renderSupportLegalTab();
       default:
@@ -2894,6 +2975,18 @@ export default function SchoolSettings() {
                   <LifeBuoy className="h-4 w-4 mr-2 flex-shrink-0" />
                   Support & Legal
                 </button>
+                <button
+                  onClick={() => setActiveTab("danger-zone")}
+                  className={`flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors ${
+                    activeTab === "danger-zone"
+                      ? "bg-red-500/20 text-red-100 font-medium"
+                      : "text-red-200/70 hover:text-red-100 hover:bg-red-500/10"
+                  }`}
+                  data-testid="tab-danger-zone"
+                >
+                  <Trash2 className="h-4 w-4 mr-2 flex-shrink-0" />
+                  Danger Zone
+                </button>
               </nav>
             </div>
           </div>
@@ -3044,6 +3137,21 @@ export default function SchoolSettings() {
                   <LifeBuoy className="h-5 w-5 mr-3 flex-shrink-0" />
                   Support & Legal
                 </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("danger-zone");
+                      setShowSidebar(false);
+                    }}
+                    className={`flex items-center w-full px-3 py-3 text-sm rounded-md transition-colors touch-manipulation ${
+                      activeTab === "danger-zone"
+                        ? "bg-red-500/20 text-red-100 font-medium"
+                        : "text-red-200/70 hover:text-red-100 hover:bg-red-500/10"
+                    }`}
+                    data-testid="tab-danger-zone-mobile"
+                  >
+                    <Trash2 className="h-5 w-5 mr-3 flex-shrink-0" />
+                    Danger Zone
+                  </button>
               </nav>
             </div>
           </div>
@@ -3081,6 +3189,82 @@ export default function SchoolSettings() {
         minWidth={1200}
         minHeight={400}
       />
+
+      {/* Delete School Account Confirmation Dialog */}
+      <AlertDialog
+        open={showDeleteSchoolDialog}
+        onOpenChange={(open) => {
+          if (!open && !deleteSchoolAccountMutation.isPending) {
+            setShowDeleteSchoolDialog(false);
+            setDeleteSchoolUsername("");
+            setDeleteSchoolPassword("");
+          }
+        }}
+      >
+        <AlertDialogContent className="bg-slate-900 border-red-500/50 max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-100">Delete school account?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/75 space-y-3">
+              <span className="block">This action is permanent. It removes the school account and school-owned content according to Yearbuk&apos;s deletion policy. It cannot be undone. Independent viewer accounts are not deleted.</span>
+              <span className="block font-medium text-red-100">To confirm, type your school username and enter your current password.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="delete-school-username" className="text-white">School username</Label>
+              <Input
+                id="delete-school-username"
+                value={deleteSchoolUsername}
+                onChange={(event) => setDeleteSchoolUsername(event.target.value)}
+                placeholder={school?.username || user?.username || "school username"}
+                className="bg-white/10 border-white/20 text-white"
+                autoComplete="off"
+                data-testid="input-delete-school-username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="delete-school-password" className="text-white">Current password</Label>
+              <Input
+                id="delete-school-password"
+                type="password"
+                value={deleteSchoolPassword}
+                onChange={(event) => setDeleteSchoolPassword(event.target.value)}
+                className="bg-white/10 border-white/20 text-white"
+                autoComplete="current-password"
+                data-testid="input-delete-school-password"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+              disabled={deleteSchoolAccountMutation.isPending}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                if (!isDeleteConfirmationValid) {
+                  event.preventDefault();
+                  toast({
+                    className: "bg-red-600/60 backdrop-blur-lg border border-white/20 shadow-2xl text-white",
+                    title: "Confirmation required",
+                    description: "Type your exact school username and enter your current password.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                handleDeleteSchoolAccount();
+              }}
+              disabled={!isDeleteConfirmationValid || deleteSchoolAccountMutation.isPending}
+              className="bg-red-600 text-white hover:bg-red-700"
+              data-testid="button-confirm-delete-school-account"
+            >
+              {deleteSchoolAccountMutation.isPending ? "Deleting..." : "Delete school account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Single Code Confirmation Dialog */}
       <AlertDialog open={!!codeToDelete} onOpenChange={(open) => !open && setCodeToDelete(null)}>
