@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Bell, Menu, ShoppingCart, Settings, Home, LogOut, X, Library, User, Upload, Users, Search, BookOpen, Image as ImageIcon, Package, UserCheck } from "lucide-react";
+import { Bell, Menu, ShoppingCart, Settings, Home, LogOut, X, Library, User, Upload, Users, Search, BookOpen, Image as ImageIcon, Package, UserCheck, LifeBuoy } from "lucide-react";
 import logoImage from "@assets/tab_logo_good.png";
 import type { Notification, User as UserType, AlumniBadge } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -548,6 +548,18 @@ export function DashboardLayout({ children, userType = "viewer", onSearchTabClic
                 <User className="h-5 w-5" />
                 <span>Profile</span>
               </button>
+              <button
+                onClick={() => setLocation("/school-settings?tab=support-legal")}
+                className={`px-4 py-3 text-sm font-medium rounded-xl flex items-center space-x-3 transition-all duration-300 ${
+                  location.startsWith("/school-settings")
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25" 
+                    : "bg-white/10 text-blue-100 hover:bg-white/20 hover:text-white"
+                }`}
+                data-testid="tab-support-legal-desktop"
+              >
+                <LifeBuoy className="h-5 w-5" />
+                <span>Support & Legal</span>
+              </button>
             </>
           ) : (
             <>
@@ -692,6 +704,16 @@ export function DashboardLayout({ children, userType = "viewer", onSearchTabClic
               >
                 <User className={`h-6 w-6 mb-1 ${location.startsWith("/school-profile") ? "text-indigo-400" : ""}`} />
                 <span className="text-xs">Profile</span>
+              </button>
+              <button
+                onClick={() => setLocation("/school-settings?tab=support-legal")}
+                className={`flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-300 ${
+                  location.startsWith("/school-settings") ? "text-white" : "text-blue-200"
+                }`}
+                data-testid="tab-support-legal-mobile"
+              >
+                <LifeBuoy className={`h-6 w-6 mb-1 ${location.startsWith("/school-settings") ? "text-emerald-400" : ""}`} />
+                <span className="text-xs">Support</span>
               </button>
             </>
           ) : (
