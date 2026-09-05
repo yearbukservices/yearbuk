@@ -3068,6 +3068,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Permanently delete the authenticated school account after password and username confirmation.
+  // This reuses storage.deleteSchool, the authoritative school deletion flow.
+  app.post("/api/auth/delete-school-account", requireAuth, async (req: any, res) => {
+    try {
+      const currentUser = await storage.getUserWithPassword(req.user.id);
+      if (!currentUser || currentUser.userType !== "school" || !currentUser.schoolId) {
+        return res.status(403).json({ message: "Only an authenticated school account can perform this action" });
+      }
+
+      const { currentPassword, confirmationUsername } = req.body || {};
+      if (typeof currentPassword !== "string" || !currentPassword) {
+        return res.status(400).json({ message: "Current password is required" });
+      }
+      if (typeof confirmationUsername !== "string" || confirmationUsername.trim() !== currentUser.username) {
+        return res.status(400).json({ message: "Type your school username exactly to confirm deletion" });
+      }
+      if (!(await comparePassword(currentPassword, currentUser.password))) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+
+      const school = await storage.getSchool(currentUser.schoolId);
+      if (!school) {
+        return res.status(404).json({ message: "School account not found" });
+      }
+
+      const deleted = await storage.deleteSchool(currentUser.schoolId);
+      if (!deleted) {
+        return res.status(404).json({ message: "School account was not deleted" });
+      }
+
+      // Reuse the existing server-side Cloudinary cleanup. The account is already
+      // deleted transactionally; cleanup failures are logged for follow-up.
+      const schoolCode = (school as any).schoolCode || school.username;
+      deleteSchoolAssets(school.name, schoolCode)
+        .then((result) => {
+          if (!result.success) {
+            console.error("Cloudinary cleanup had errors for deleted school " + school.name + ":", result.errors);
+          }
+        })
+        .catch((error) => console.error("Cloudinary cleanup failed for deleted school " + school.name + ":", error));
+
+      return res.json({ message: "School account deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting school account:", error);
+      return res.status(500).json({ message: "The school account was not deleted. Please try again." });
+    }
+  });
+
   // Update user profile (email, username, fullName, password) - MUST come before /api/users/:id
   app.patch("/api/users/profile", async (req, res) => {
     try {
