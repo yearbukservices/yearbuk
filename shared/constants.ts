@@ -15,4 +15,4 @@ export const BADGE_SLOT_PRICE = isServer ? parseFloat(process.env.BADGE_SLOT_PRI
 export const MIN_FOUNDING_YEAR = 1800;
 
 // Beta version flag — when true, purchases are replaced with free unlocks (no payment)
-export const BETA_VERSION = true;
+export const BETA_VERSION = false;
