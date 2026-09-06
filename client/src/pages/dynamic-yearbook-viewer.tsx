@@ -63,10 +63,22 @@ export default function DynamicYearbookViewer() {
   // Fetch yearbook data - use regular endpoint for preview mode, published endpoint for viewers
   const apiEndpoint = isPreviewMode ? `/api/yearbooks/${schoolId}/${year}` : `/api/published-yearbooks/${schoolId}/${year}`;
   const { data: yearbook, isLoading: yearbookLoading } = useQuery<Yearbook>({
-    queryKey: [apiEndpoint],
+    queryKey: [apiEndpoint, user?.id],
     enabled: !!schoolId && !!year,
     queryFn: async () => {
-      const res = await fetch(apiEndpoint);
+      const userData = localStorage.getItem("user");
+      const storedUser = userData ? JSON.parse(userData) : null;
+      const headers: Record<string, string> = {};
+      if (storedUser?.id) {
+        headers["Authorization"] = `Bearer ${storedUser.id}`;
+        if (storedUser.authVersion !== undefined) {
+          headers["X-Auth-Version"] = String(storedUser.authVersion);
+        }
+      }
+      const res = await fetch(apiEndpoint, {
+        credentials: "include",
+        headers,
+      });
       if (!res.ok) throw new Error("Yearbook not found");
       return res.json();
     },
