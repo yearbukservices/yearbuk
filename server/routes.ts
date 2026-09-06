@@ -4794,6 +4794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId = authHeader.replace('Bearer ', '');
       }
       const user = userId ? await storage.getUserById(userId) : undefined;
+      const hasContentAccess = await canAccessYearbook(user, schoolId, validYear, yearbook);
       const thumbnailTransformation = [
         { width: 400, crop: 'limit', quality: 'auto', fetch_format: 'auto' }
       ];
@@ -4801,7 +4802,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if ((yearbook as any).pages) {
         (yearbook as any).pages = (yearbook as any).pages.map((page: any) => {
           const isPublicCover = page.pageType === 'front_cover' || page.pageType === 'back_cover';
-          if (!user && !isPublicCover) return page;
+
+          if (!isPublicCover && !hasContentAccess) {
+            return {
+              ...page,
+              imageUrl: null,
+              cloudinaryPublicId: null,
+              thumbnailUrl: null
+            };
+          }
 
           return {
             ...page,
