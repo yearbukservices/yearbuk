@@ -224,47 +224,44 @@ const requireAuth = async (req: any, res: any, next: any) => {
   }
 };
 
+// Shared yearbook content authorization used by both API routes and image delivery.
+const canAccessYearbook = async (
+  user: any,
+  schoolId: string,
+  year: number,
+  yearbookOverride?: any
+): Promise<boolean> => {
+  if (!user) return false;
+
+  // Super admins and the owning school have unrestricted access.
+  if (user.userType === 'super_admin' || user.role === 'super_admin') return true;
+  if (user.userType === 'school' && user.schoolId === schoolId) return true;
+
+  // Beta mode and explicitly free yearbooks are available to viewers.
+  if (BETA_VERSION) return true;
+  const yearbook = yearbookOverride ?? await storage.getYearbookBySchoolAndYear(schoolId, year);
+  if (yearbook?.isFree) return true;
+
+  // Paid viewer access requires a completed purchase for this school/year.
+  if (user.userType === 'viewer') {
+    return storage.checkUserYearbookAccess(user.id, schoolId, year);
+  }
+
+  return false;
+};
+
 // Yearbook Access Control Middleware
 const checkYearbookAccess = async (req: any, res: any, next: any) => {
   try {
     const { schoolId, year } = req.params;
-    const user = req.user;
+    const yearNumber = parseInt(year);
+    const yearbook = await storage.getYearbookBySchoolAndYear(schoolId, yearNumber);
 
-    // Super Admin has unrestricted access
-    if (user.userType === 'super_admin' || user.role === 'super_admin') {
+    if (await canAccessYearbook(req.user, schoolId, yearNumber, yearbook)) {
       req.hasAccess = true;
       return next();
     }
 
-    // School accounts can access their own yearbooks
-    if (user.userType === 'school' && user.schoolId === schoolId) {
-      req.hasAccess = true;
-      return next();
-    }
-
-    // In beta mode all yearbooks are free — grant access unconditionally
-    if (BETA_VERSION) {
-      req.hasAccess = true;
-      return next();
-    }
-
-    // Check if yearbook is free for all viewers (must check BEFORE purchase check)
-    const yearbook = await storage.getYearbookBySchoolAndYear(schoolId, parseInt(year));
-    if (yearbook?.isFree) {
-      req.hasAccess = true;
-      return next();
-    }
-
-    // Viewer accounts can only access yearbooks they've purchased
-    if (user.userType === 'viewer') {
-      const hasAccess = await storage.checkUserYearbookAccess(user.id, schoolId, parseInt(year));
-      if (hasAccess) {
-        req.hasAccess = true;
-        return next();
-      }
-    }
-
-    // Access denied
     return res.status(403).json({ message: 'You do not have access to this yearbook' });
   } catch (error) {
     console.error('Error checking yearbook access:', error);
@@ -4851,10 +4848,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId = authHeader.replace('Bearer ', '');
       }
       const user = userId ? await storage.getUserById(userId) : undefined;
+      const hasContentAccess = await canAccessYearbook(user, schoolId, validYear, yearbook);
       if ((yearbook as any).pages) {
         (yearbook as any).pages = (yearbook as any).pages.map((page: any) => {
           const isPublicCover = page.pageType === 'front_cover' || page.pageType === 'back_cover';
-          if (!user && !isPublicCover) return page;
+
+          // Covers remain public for yearbook previews. Interior pages are never
+          // returned unless the server has verified purchase/free/Beta access.
+          if (!isPublicCover && !hasContentAccess) {
+            return {
+              ...page,
+              imageUrl: null,
+              cloudinaryPublicId: null
+            };
+          }
 
           return {
             ...page,
