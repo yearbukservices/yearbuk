@@ -27,3 +27,8 @@ declare module '@assets/*.webp' {
   const value: string;
   export default value;
 }
+
+declare module '*.txt?raw' {
+  const value: string;
+  export default value;
+}
