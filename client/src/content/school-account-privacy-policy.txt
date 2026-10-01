@@ -1,0 +1,317 @@
+YEARBUK SCHOOL ACCOUNT PRIVACY POLICY
+Last Updated: October 1, 2026
+This School Account Privacy Policy explains how Yearbuk handles personal data in connection with school accounts and the information that schools upload, submit, manage, or otherwise process through the Yearbuk platform.
+Yearbuk is operated by Nwabuisi Netochukwu from Nigeria.
+For privacy-related questions, contact:
+support@yearbuk.com
+This policy should be read together with the Yearbuk Terms of Service.
+⸻
+1. What This Policy Covers
+This policy applies specifically to:
+	●	Schools that create and operate Yearbuk school accounts;
+	●	Information provided when a school creates or manages its account;
+	●	Information schools upload to Yearbuk;
+	●	Information schools receive through alumni-verification features;
+	●	Memories, photographs, yearbooks, and other school content;
+	●	Personal information relating to students, alumni, staff, or other individuals that a school submits to Yearbuk; and
+	●	The processing of school-account information by Yearbuk.
+This policy does not replace the privacy rights or privacy information provided to individual viewer accounts.
+⸻
+2. Important Roles and Responsibilities
+Yearbuk and a school may have different responsibilities depending on the particular processing activity.
+Yearbuk
+Yearbuk operates the platform and processes information necessary to:
+	●	provide the Yearbuk service;
+	●	authenticate school accounts;
+	●	host school profiles and content;
+	●	provide yearbook functionality;
+	●	facilitate alumni verification;
+	●	maintain security;
+	●	provide support;
+	●	administer the platform; and
+	●	comply with applicable legal obligations.
+Schools
+Schools are responsible for the information they choose to upload, publish, manage, or otherwise process through their Yearbuk account.
+For example, a school may decide to:
+	●	publish photographs;
+	●	approve an alumni-verification request;
+	●	display alumni information;
+	●	upload a yearbook;
+	●	publish memories; or
+	●	manage school-specific content.
+Schools should therefore only submit or publish personal information where they have an appropriate legal basis and the necessary rights or permissions to do so.
+⸻
+3. Information We Collect From School Accounts
+When a school creates an account, Yearbuk may collect:
+	●	School name;
+	●	Year founded;
+	●	School username;
+	●	School website, if provided;
+	●	Country;
+	●	State or province;
+	●	City;
+	●	School address, if provided;
+	●	School email address;
+	●	School phone number;
+	●	Account login credentials;
+	●	Email-verification information;
+	●	Two-factor authentication information, where enabled;
+	●	School logo;
+	●	Profile banner; and
+	●	Other information voluntarily provided by the school.
+Some information may be required to create or verify a school account, while other information may be optional.
+⸻
+4. School Profile Information
+Schools may create a public-facing school profile.
+Depending on the information supplied by the school, a public school profile may display information such as:
+	●	School name;
+	●	School username;
+	●	School logo;
+	●	Profile banner;
+	●	Year founded;
+	●	Country;
+	●	State or province;
+	●	City;
+	●	School address;
+	●	School website;
+	●	Public school contact information;
+	●	Memories;
+	●	Yearbooks; and
+	●	Alumni information made available through the school’s settings and verification system.
+Schools should review information before publishing it because information placed on a public profile may be accessible to other Yearbuk users and, depending on the platform’s public-profile functionality, potentially to people who are not logged in.
+⸻
+5. Alumni Information
+Yearbuk allows individuals to request verification as alumni of a school.
+An individual may provide information such as:
+	●	Admission year;
+	●	Graduation year;
+	●	Additional information supporting their request; and
+	●	Other information necessary for the verification process.
+The school may review and approve or reject the request.
+Where an individual is verified as an alumnus/alumna of a school, the school account may be able to access information permitted by Yearbuk’s alumni-verification system, which may include:
+	●	Full name;
+	●	Email address;
+	●	Phone number;
+	●	Admission year; and
+	●	Graduation year.
+Schools must use this information responsibly and only for legitimate purposes consistent with applicable law and the Yearbuk Terms of Service.
+Schools must not sell, misuse, unnecessarily redistribute, or otherwise exploit alumni information obtained through Yearbuk.
+⸻
+6. Alumni Directory Visibility
+Yearbuk may allow verified alumni to view information about other verified alumni of the same school.
+The information displayed is determined by Yearbuk’s platform functionality and applicable privacy settings.
+Schools must not attempt to circumvent these controls or use technical means to obtain information that is not made available to them.
+If Yearbuk provides schools with controls over alumni-directory visibility, schools are responsible for using those controls appropriately.
+⸻
+7. Memories, Photographs and Other Content
+Schools may upload or publish:
+	●	Photographs;
+	●	Videos, where supported;
+	●	Memories;
+	●	Yearbooks;
+	●	School events;
+	●	Historical materials;
+	●	Alumni-related content; and
+	●	Other school-related media.
+Some of this content may contain personal information about identifiable individuals.
+Before uploading or publishing such material, the school is responsible for ensuring that it has the necessary rights, permissions, or other lawful basis to do so.
+Yearbuk does not require schools to transfer ownership of content merely because it is uploaded to the platform.
+Content ownership and licensing are governed by the Yearbuk Terms of Service.
+⸻
+8. Information About Students and Minors
+Schools may upload content that contains information or photographs relating to students who are under 18.
+Schools should take particular care when processing information relating to children and should ensure that the school has an appropriate legal basis and any required parental, guardian, or other authorization before publishing or otherwise processing such information.
+Yearbuk may apply additional safeguards to accounts or content involving minors where appropriate.
+Schools must not use Yearbuk to improperly collect, publish, or distribute children’s personal information.
+⸻
+9. How Yearbuk Uses School Account Information
+Yearbuk may use school-account information to:
+	●	Create and maintain the school account;
+	●	Authenticate school users;
+	●	Verify school accounts;
+	●	Provide school profiles;
+	●	Host and display school content;
+	●	Facilitate alumni verification;
+	●	Provide yearbook functionality;
+	●	Provide account-security features;
+	●	Communicate with schools;
+	●	Respond to support requests;
+	●	Investigate reports and abuse;
+	●	Detect and prevent unauthorized activity;
+	●	Maintain and secure the platform;
+	●	Improve the reliability and functionality of Yearbuk;
+	●	Comply with legal obligations; and
+	●	Enforce the Terms of Service.
+Yearbuk will not use personal data for purposes incompatible with the purpose for which it was collected unless permitted or required by applicable law.
+⸻
+10. Legal Basis for Processing
+Where required by applicable law, Yearbuk processes personal data on an appropriate legal basis.
+Depending on the processing activity, the legal basis may include:
+	●	Performance of a contract;
+	●	Compliance with a legal obligation;
+	●	Consent;
+	●	Legitimate interests;
+	●	Protection of vital interests; or
+	●	Performance of a task carried out in the public interest, where applicable.
+The applicable legal basis depends on the specific processing activity.
+Where Yearbuk relies on consent, the individual may generally withdraw consent, subject to applicable legal limitations and circumstances where another lawful basis permits continued processing.
+⸻
+11. Data Minimisation
+Yearbuk aims to collect and process information that is reasonably necessary for the relevant purpose.
+Schools should likewise avoid uploading personal information that is unnecessary for the intended use of the Yearbuk platform.
+The Nigeria Data Protection framework emphasises data minimisation, purpose limitation, storage limitation, and transparent processing. ￼
+⸻
+12. School Responsibilities
+A school using Yearbuk is responsible for:
+	●	Providing accurate information;
+	●	Ensuring it has authority to operate its school account;
+	●	Ensuring it has an appropriate legal basis for information it submits;
+	●	Obtaining required permissions where applicable;
+	●	Respecting the privacy rights of students and alumni;
+	●	Protecting information accessed through the school account;
+	●	Using alumni information only for legitimate purposes;
+	●	Reviewing content before publication;
+	●	Responding appropriately to privacy-related requests brought to its attention; and
+	●	Complying with applicable privacy and data-protection laws.
+Schools should not upload sensitive personal information unless it is genuinely necessary and there is an appropriate lawful basis for doing so.
+⸻
+13. Information Shared With Other Users
+Information may become visible to other Yearbuk users when a school chooses to publish or approve it.
+Examples include:
+	●	Public school profile information;
+	●	Memories;
+	●	Yearbook content;
+	●	Photographs;
+	●	Public school contact information; and
+	●	Information made available through the alumni directory.
+Schools should consider the privacy implications before publishing information.
+Once information is publicly displayed, Yearbuk cannot guarantee that third parties will not copy, screenshot, save, or redistribute it.
+⸻
+14. Service Providers
+Yearbuk may use third-party service providers to operate the platform.
+These may include:
+Cloudinary
+Used for storing and serving uploaded media such as images and other supported content.
+Render
+Used for hosting and infrastructure/database services.
+Zoho
+Used for email and related communications infrastructure.
+Resend
+Used for automated transactional email such as account verification, password changes, account deletion communications, and security-related messages.
+Yearbuk may add or change service providers where reasonably necessary to operate the platform.
+Service providers receive access only to information reasonably necessary for the services they provide, subject to applicable agreements and safeguards.
+⸻
+15. Payments
+Yearbuk intends to support paid digital yearbooks in the future.
+Where payment functionality becomes available, payment processing may involve third-party payment providers such as Paystack.
+Yearbuk will not request or store payment-card information unnecessarily.
+Because payments are not currently active, this section describes planned functionality and does not mean that school payment processing is currently enabled.
+⸻
+16. Security
+Yearbuk uses reasonable technical and organisational measures designed to protect personal data against:
+	●	Unauthorized access;
+	●	Unauthorized disclosure;
+	●	Loss;
+	●	Destruction;
+	●	Alteration; and
+	●	Other inappropriate processing.
+Security measures may include:
+	●	Authentication;
+	●	Password protection;
+	●	Email verification;
+	●	Two-factor authentication where available;
+	●	Access controls;
+	●	Server-side authorization;
+	●	Secure infrastructure; and
+	●	Other technical safeguards appropriate to the service.
+No online system can guarantee absolute security.
+⸻
+17. Sign-In and Technical Information
+Yearbuk does not intentionally provide schools with an application-level history of users’ precise sign-in locations or device names.
+However, hosting, security, authentication, email, and other infrastructure providers may process technical information such as IP addresses, connection information, browser information, or logs as part of operating and securing their services.
+Such processing may occur independently of Yearbuk’s school-facing features.
+⸻
+18. Data Retention
+Yearbuk retains personal data only for as long as reasonably necessary for the purposes for which it was collected, including:
+	●	Providing the service;
+	●	Maintaining accounts;
+	●	Maintaining school content;
+	●	Security;
+	●	Resolving disputes;
+	●	Preventing abuse;
+	●	Meeting legal obligations; and
+	●	Protecting legitimate business interests.
+Retention periods may differ depending on the type of information.
+When information is no longer reasonably necessary and there is no legal or legitimate reason to retain it, Yearbuk may delete or anonymize it.
+Backups may continue to contain information for a limited period while they are securely cycled out.
+⸻
+19. School Account Deletion
+A school may request deletion of its Yearbuk account through the account settings where that functionality is available.
+Deletion may result in the removal or unavailability of school-specific:
+	●	Profile information;
+	●	Memories;
+	●	Media;
+	●	Yearbooks; and
+	●	Other associated content.
+The exact consequences depend on the underlying data relationships and applicable retention requirements.
+Yearbuk may retain limited information where reasonably necessary for:
+	●	Legal compliance;
+	●	Security;
+	●	Fraud prevention;
+	●	Dispute resolution;
+	●	Financial/accounting records; or
+	●	Enforcement of legal rights.
+Yearbuk will not claim that every copy of information is instantly and irreversibly removed when legal, security, backup, or other legitimate retention requirements apply.
+⸻
+20. Data Subject Rights
+Individuals whose personal data is processed through Yearbuk may have rights under applicable Nigerian data-protection law.
+Depending on the circumstances, these may include rights to:
+	●	Access personal data;
+	●	Request correction of inaccurate information;
+	●	Request erasure;
+	●	Request restriction of processing;
+	●	Object to certain processing;
+	●	Request data portability where applicable;
+	●	Withdraw consent where consent is the applicable legal basis; and
+	●	Exercise other rights provided by applicable law.
+The NDPC identifies rights including access, rectification, erasure, restriction, portability, and objection among data-subject rights under Nigeria’s data-protection framework. ￼
+Requests may be submitted to:
+support@yearbuk.com
+Yearbuk may need to verify the identity of the person making a request before providing or modifying personal information.
+⸻
+21. Requests Concerning School-Managed Information
+Where a school determines how information about its students, alumni, staff, or other individuals is used, the school may have responsibilities in relation to that processing.
+If an individual contacts Yearbuk regarding information controlled by a school, Yearbuk may:
+	●	Respond directly where Yearbuk is responsible for the processing;
+	●	Forward or direct the request to the relevant school where appropriate; or
+	●	Take other steps required by applicable law.
+Yearbuk may cooperate with schools and individuals to address legitimate privacy requests.
+⸻
+22. Complaints
+If you believe that your personal information has been handled improperly, you may contact Yearbuk first at:
+support@yearbuk.com
+You may also have the right to contact the Nigeria Data Protection Commission (NDPC) or another competent regulatory authority where applicable.
+⸻
+23. Data Breaches
+Yearbuk maintains security measures designed to reduce the likelihood and impact of personal-data breaches.
+If a personal-data breach occurs, Yearbuk will assess the incident and take appropriate steps required by applicable law, which may include notifying relevant authorities and affected individuals where required.
+The NDPC’s current materials identify security and breach-notification obligations as part of Nigeria’s data-protection framework. ￼
+⸻
+24. International Processing
+Some Yearbuk service providers or infrastructure may process information outside Nigeria.
+Where personal data is transferred or processed internationally, Yearbuk will take steps required by applicable law to provide appropriate protection for that information.
+⸻
+25. Changes to This Policy
+Yearbuk may update this Privacy Policy from time to time to reflect:
+	●	Changes to Yearbuk;
+	●	New features;
+	●	Changes to data-processing practices;
+	●	Changes to applicable law; or
+	●	Security or operational requirements.
+When changes are material, Yearbuk may provide notice through the platform or another appropriate communication method.
+The “Last Updated” date at the top of this policy will indicate when it was most recently revised.
+⸻
+26. Contact
+For questions, privacy requests, or concerns relating to school accounts or personal data:
+Yearbuk Operated by Nwabuisi Netochukwu Nigeria
+Email: support@yearbuk.com
