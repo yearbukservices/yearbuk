@@ -32,6 +32,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import schoolAccountPrivacyPolicy from "@/content/school-account-privacy-policy.txt?raw";
+import schoolAccountTermsOfService from "@/content/school-account-terms-of-service.txt?raw";
 import { useCurrency, Currency } from "@/contexts/CurrencyContext";
 import type { User as UserType, yearbookCodes, Notification } from "@shared/schema";
 import { CURRENT_YEAR, BETA_VERSION } from "@shared/constants";
@@ -2603,13 +2604,26 @@ export default function SchoolSettings() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 space-y-3">
-            <div className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-white/5 p-4">
-              <div>
-                <p className="text-white font-medium">Terms of Service</p>
-                <p className="text-sm text-white/60">Canonical link coming soon.</p>
-              </div>
-              <span className="shrink-0 rounded-full border border-white/20 px-3 py-1 text-xs text-white/60">Coming soon</span>
-            </div>
+            <Dialog>
+                  <div className="flex flex-col items-start gap-3 rounded-md border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <div>
+                      <p className="text-white font-medium">School Account Terms of Service</p>
+                      <p className="text-sm text-white/60">Review the terms for Yearbuk school accounts.</p>
+                    </div>
+                    <DialogTrigger asChild>
+                      <Button type="button" variant="outline" className="shrink-0 border-white/20 bg-white/10 text-white hover:bg-white/20" data-testid="button-read-school-terms-of-service">View terms of service</Button>
+                    </DialogTrigger>
+                  </div>
+                  <DialogContent className="flex h-[min(85vh,56rem)] max-h-[85vh] w-[calc(100%-2rem)] max-w-3xl flex-col gap-4 overflow-hidden border-white/20 bg-slate-950 p-4 text-white sm:p-6">
+                    <DialogHeader className="pr-8 text-left">
+                      <DialogTitle className="text-white">School Account Terms of Service</DialogTitle>
+                      <DialogDescription className="text-white/70">The complete Terms of Service for Yearbuk school accounts.</DialogDescription>
+                    </DialogHeader>
+                    <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-white/10 bg-white/5 p-4 sm:p-5">
+                      <pre className="m-0 whitespace-pre-wrap break-words font-sans text-sm leading-6 text-white/80">{schoolAccountTermsOfService}</pre>
+                    </div>
+                  </DialogContent>
+                </Dialog>
             <Dialog>
               <div className="flex flex-col items-start gap-3 rounded-md border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <div>
