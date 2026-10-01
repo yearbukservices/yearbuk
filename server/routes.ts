@@ -1336,8 +1336,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // School registration route - Creates registration request only, no user account
   app.post("/api/auth/school-register", upload.single('accreditationDocument'), async (req, res) => {
     try {
-      const { username, password, schoolName, country, state, city, email, phoneNumber, website, address, yearFounded, registrationNumber } = req.body;
-      
+      const { username, password, schoolName, country, state, city, email, phoneNumber, website, address, yearFounded, registrationNumber, acceptedSchoolTerms } = req.body;
+
+      if (acceptedSchoolTerms !== "true") {
+        return res.status(400).json({ message: "You must accept the School Account Terms of Service and Privacy Policy" });
+      }
       // Log phone number validation for debugging null constraint issues
       if (!phoneNumber) {
         console.error("ERROR: Phone number is missing or null in school registration:", {

@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +19,28 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, School, CheckCircle, Loader2, Search, Copy, Download, Upload, Check, Mail } from "lucide-react";
 import { countries, statesByCountry, getCountryByCode, Country, State } from "@/lib/countries";
 import { apiRequest } from "@/lib/queryClient";
+import schoolAccountTermsOfService from "@/content/school-account-terms-of-service.txt?raw";
+import schoolAccountPrivacyPolicy from "@/content/school-account-privacy-policy.txt?raw";
 import { CURRENT_YEAR, BETA_VERSION } from "@shared/constants";
+
+function SchoolDocumentDialog({ title, description, triggerLabel, content, testId }: { title: string; description: string; triggerLabel: string; content: string; testId: string }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button type="button" variant="link" className="h-auto px-0 py-1 text-blue-200 underline underline-offset-2" data-testid={testId}>{triggerLabel}</Button>
+      </DialogTrigger>
+      <DialogContent className="flex h-[min(85vh,56rem)] max-h-[85vh] w-[calc(100%-2rem)] max-w-3xl flex-col gap-4 overflow-hidden border-white/20 bg-slate-950 p-4 text-white sm:p-6">
+        <DialogHeader className="pr-8 text-left">
+          <DialogTitle className="text-white">{title}</DialogTitle>
+          <DialogDescription className="text-white/70">{description}</DialogDescription>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-white/10 bg-white/5 p-4 sm:p-5">
+          <pre className="m-0 whitespace-pre-wrap break-words font-sans text-sm leading-6 text-white/80">{content}</pre>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function SchoolSignup() {
   const [, setLocation] = useLocation();
@@ -24,6 +54,7 @@ export default function SchoolSignup() {
   const [registrationSuccess, setRegistrationSuccess] = useState<{user: any, school: any} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [acceptedSchoolTerms, setAcceptedSchoolTerms] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [selectedState, setSelectedState] = useState<State | null>(null);
   const [countrySearch, setCountrySearch] = useState("");
@@ -157,6 +188,10 @@ export default function SchoolSignup() {
           setError("Passwords do not match");
           return false;
         }
+        if (!acceptedSchoolTerms) {
+          setError("Please accept the School Account Terms of Service and Privacy Policy");
+          return false;
+        }
         break;
     }
     
@@ -221,6 +256,7 @@ export default function SchoolSignup() {
       formData.append('address', form.address);
       formData.append('yearFounded', form.yearFounded);
       formData.append('registrationNumber', form.registrationNumber);
+      formData.append('acceptedSchoolTerms', String(acceptedSchoolTerms));
       
       // Add file if selected
       if (form.accreditationDocument) {
@@ -752,6 +788,19 @@ export default function SchoolSignup() {
                     className="mt-1 placeholder:text-white/50 bg-white/10 backdrop-blur-lg border border-white/20 text-white focus:border-white/40 focus:ring-white/20"
                     data-testid="input-confirm-password"
                   />
+                </div>
+
+                <div className="rounded-md border border-white/20 bg-white/5 p-4" data-testid="school-legal-acceptance">
+                  <div className="flex items-start gap-3">
+                    <input id="school-legal-acceptance-checkbox" type="checkbox" checked={acceptedSchoolTerms} onChange={(event) => setAcceptedSchoolTerms(event.target.checked)} required className="mt-1 h-4 w-4 shrink-0 accent-blue-400" data-testid="checkbox-school-legal-acceptance" />
+                    <label htmlFor="school-legal-acceptance-checkbox" className="text-sm leading-6 text-white/80">
+                      I confirm that I am authorized to create and operate this school account, agree to the Yearbuk School Account Terms of Service, and acknowledge that I have read and understood the School Account Privacy Policy.
+                    </label>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-7">
+                    <SchoolDocumentDialog title="School Account Terms of Service" description="The Terms of Service for Yearbuk school accounts." triggerLabel="Read the Terms of Service" content={schoolAccountTermsOfService} testId="button-signup-school-terms" />
+                    <SchoolDocumentDialog title="School Account Privacy Policy" description="How Yearbuk handles information related to school accounts." triggerLabel="Read the School Account Privacy Policy" content={schoolAccountPrivacyPolicy} testId="button-signup-school-privacy" />
+                  </div>
                 </div>
               </div>
             )}

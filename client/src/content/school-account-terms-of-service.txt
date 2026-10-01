@@ -1,0 +1,393 @@
+YEARBUK SCHOOL ACCOUNT TERMS OF SERVICE
+Last Updated: October 1, 2026
+These School Account Terms of Service (“Terms”) govern the creation and use of a school account on Yearbuk.
+Yearbuk is operated by Nwabuisi Netochukwu from Nigeria.
+By creating or operating a school account, you agree to these Terms and to the Yearbuk School Account Privacy Policy.
+If you do not agree to these Terms, you should not create or operate a school account.
+For questions regarding these Terms:
+support@yearbuk.com
+⸻
+1. About Yearbuk
+Yearbuk is an online platform that allows schools to create digital profiles, preserve and share school memories, manage digital yearbooks, and facilitate connections between schools and their alumni.
+Depending on the features available, a school account may allow a school to:
+	●	Create and manage a school profile;
+	●	Upload photographs and other memories;
+	●	Publish school-related content;
+	●	Upload and manage digital yearbooks;
+	●	Manage alumni-verification requests;
+	●	Maintain an alumni directory;
+	●	Moderate submitted content;
+	●	Configure yearbook access;
+	●	Communicate with Yearbuk support; and
+	●	Use other school-related features provided by Yearbuk.
+Features may change over time.
+⸻
+2. Creating a School Account
+A school account may only be created by an individual who is authorized to create and operate an account on behalf of the school.
+When creating an account, you agree to provide accurate and current information.
+School registration may require information including:
+	●	School name;
+	●	Year founded;
+	●	School website;
+	●	Country;
+	●	State or province;
+	●	City;
+	●	School address;
+	●	School email;
+	●	School phone number; and
+	●	Other information reasonably required by Yearbuk.
+You must not knowingly provide false information or impersonate another school.
+⸻
+3. Authority to Represent a School
+By creating a school account, you represent that you are authorized to create and operate the account on behalf of the school.
+You must not:
+	●	Create an account for a school without appropriate authority;
+	●	Impersonate a school;
+	●	Misrepresent your relationship with a school;
+	●	Use another school’s identity without authorization; or
+	●	Attempt to obtain verification through false information.
+Yearbuk may request information reasonably necessary to verify a school’s identity or the account operator’s authority.
+⸻
+4. School Verification
+Yearbuk may require school accounts to undergo verification.
+Verification may involve information or documentation reasonably necessary to establish that:
+	●	The school exists; and
+	●	The account operator is authorized to represent the school.
+Verification status may include statuses such as:
+	●	Not Verified;
+	●	Pending;
+	●	Verified;
+	●	Rejected; or
+	●	Suspended.
+A school must not represent itself as verified unless Yearbuk has actually granted verified status.
+Verification does not constitute an endorsement of the school by Yearbuk.
+Yearbuk may suspend or remove verification if information becomes inaccurate, circumstances change, or the account violates these Terms.
+⸻
+5. School Profile
+Schools may create a public profile containing information such as:
+	●	School name;
+	●	Username;
+	●	Logo;
+	●	Banner;
+	●	Founding year;
+	●	Location;
+	●	Website;
+	●	Public contact information;
+	●	Memories;
+	●	Yearbooks; and
+	●	Alumni information.
+The school is responsible for reviewing information before publishing it.
+A school must not intentionally publish misleading or fraudulent information.
+⸻
+6. School Content
+Schools may upload content including:
+	●	Photographs;
+	●	Videos, where supported;
+	●	Memories;
+	●	Historical materials;
+	●	Yearbooks;
+	●	School events;
+	●	School publications; and
+	●	Other school-related content.
+The school is responsible for ensuring that it has the necessary rights, permissions, or other lawful basis to upload and publish the content.
+⸻
+7. Ownership of Content
+Uploading content to Yearbuk does not automatically transfer ownership of that content to Yearbuk.
+Where the school owns the content, the school retains ownership subject to the rights granted under these Terms.
+Where another person owns the content, the school must have the necessary permission or legal authority to use it.
+By uploading content to Yearbuk, the school grants Yearbuk a non-exclusive, worldwide, royalty-free license to host, store, reproduce, process, display, transmit, and distribute that content to the extent reasonably necessary to:
+	●	Operate Yearbuk;
+	●	Provide the school’s requested services;
+	●	Display the school’s profile and content;
+	●	Deliver yearbooks and memories to authorized users;
+	●	Maintain backups;
+	●	Secure the platform; and
+	●	Improve and maintain the service.
+This license does not transfer ownership of the content to Yearbuk.
+⸻
+8. Photos and Information About Other People
+School content may contain photographs or information about:
+	●	Students;
+	●	Alumni;
+	●	Teachers;
+	●	Staff;
+	●	Parents;
+	●	Visitors; or
+	●	Other individuals.
+Before uploading or publishing such content, the school is responsible for ensuring that it has the appropriate rights, permissions, or other lawful basis to do so.
+This is particularly important where content involves children or other vulnerable individuals.
+The school must not use Yearbuk to unlawfully publish someone’s personal information.
+⸻
+9. Alumni Verification
+Yearbuk allows individuals to request verification as alumni of a school.
+A school may review information submitted by an individual and approve or reject the request according to the Yearbuk alumni-verification system.
+A school must:
+	●	Review requests honestly;
+	●	Not knowingly approve false alumni claims;
+	●	Not knowingly reject legitimate requests for discriminatory or improper reasons;
+	●	Keep verification information reasonably confidential; and
+	●	Use alumni information only for legitimate purposes.
+Schools must not attempt to manipulate the verification system.
+⸻
+10. Alumni Information
+Depending on Yearbuk’s functionality, verified alumni information available to a school may include:
+	●	Full name;
+	●	Email address;
+	●	Phone number;
+	●	Admission year; and
+	●	Graduation year.
+This information must only be used for legitimate purposes consistent with applicable law and these Terms.
+Schools must not:
+	●	Sell alumni information;
+	●	Create unauthorized mailing lists;
+	●	Use the information for spam;
+	●	Share it indiscriminately with third parties;
+	●	Use it for unlawful purposes; or
+	●	Attempt to circumvent Yearbuk’s privacy controls.
+⸻
+11. School Responsibilities for Personal Data
+A school is responsible for information about students, alumni, staff, or other individuals that it chooses to upload, publish, manage, or otherwise process through Yearbuk.
+The school agrees to comply with applicable privacy and data-protection laws.
+The school should only collect or upload information that is reasonably necessary for its intended purpose.
+Where required, the school must obtain appropriate consent, authorization, or other lawful basis before processing or publishing personal information.
+⸻
+12. Children and Minors
+Schools may use Yearbuk to preserve memories and yearbooks containing information or photographs of students under 18.
+Schools are responsible for ensuring that their processing and publication of children’s information complies with applicable law and any required parental, guardian, or other authorization.
+Schools must not use Yearbuk to improperly collect, exploit, publish, or distribute children’s personal information.
+Yearbuk may apply additional safeguards to accounts or content involving minors.
+⸻
+13. Memory Submissions
+Yearbuk may allow viewer accounts to submit photographs or other memories to a school.
+Schools may review, approve, reject, or remove submissions according to the functionality provided by Yearbuk.
+A school must use moderation tools responsibly.
+Approving content does not transfer ownership of that content to the school unless the school already owns it or has otherwise obtained the necessary rights.
+⸻
+14. Content Moderation
+Schools may moderate content associated with their school profile where Yearbuk provides moderation functionality.
+This may include:
+	●	Approving submissions;
+	●	Rejecting submissions;
+	●	Removing inappropriate content;
+	●	Reviewing reports; and
+	●	Managing published memories.
+Schools must not use moderation tools to unlawfully discriminate, harass, retaliate against, or otherwise abuse users.
+Yearbuk may independently remove content or restrict accounts where necessary to enforce these Terms, protect users, comply with law, or protect the platform.
+⸻
+15. Prohibited Content and Conduct
+A school must not use Yearbuk to:
+	●	Upload unlawful content;
+	●	Upload content that infringes another person’s copyright or other rights;
+	●	Upload malware or malicious code;
+	●	Harass or threaten individuals;
+	●	Impersonate another school or person;
+	●	Publish personal information without an appropriate legal basis;
+	●	Exploit or endanger children;
+	●	Distribute spam;
+	●	Attempt to gain unauthorized access;
+	●	Circumvent security controls;
+	●	Manipulate verification systems;
+	●	Abuse reporting systems;
+	●	Scrape information in violation of applicable restrictions;
+	●	Use Yearbuk for fraudulent purposes; or
+	●	Otherwise violate applicable law or these Terms.
+⸻
+16. Copyright and Intellectual Property Complaints
+If a school believes that content on Yearbuk infringes its intellectual-property rights, it may contact:
+support@yearbuk.com
+Yearbuk may investigate reported infringement and may remove or restrict access to content where appropriate.
+A school must not knowingly submit false copyright or intellectual-property complaints.
+⸻
+17. Yearbooks
+Schools may create and manage digital yearbooks using Yearbuk’s yearbook functionality.
+Depending on the available features, schools may:
+	●	Upload yearbook pages;
+	●	Organize yearbook content;
+	●	Publish yearbooks;
+	●	Configure access;
+	●	Make yearbooks free; or
+	●	Require payment for access.
+The school is responsible for ensuring that it has the rights necessary to publish the yearbook content.
+⸻
+18. Yearbook Access
+Yearbook access is governed by the settings and access controls implemented by Yearbuk.
+Where a yearbook is configured as free, eligible logged-in users may access it without purchasing it.
+Where a yearbook requires payment, access may require a valid purchase.
+Purchased yearbooks are intended to provide permanent access, subject to applicable refund, account, legal, or security circumstances.
+Yearbuk does not currently operate yearbooks as subscriptions unless this functionality is specifically introduced in the future.
+⸻
+19. Future Payments
+Yearbuk currently has no live microtransactions.
+Yearbuk intends to support paid digital yearbooks in the future.
+Where payment functionality becomes available:
+	●	Payments may be processed through third-party payment providers such as Paystack;
+	●	Schools are intended to receive 90% of eligible yearbook revenue;
+	●	Yearbuk is intended to retain 10%;
+	●	Refund functionality may be provided; and
+	●	Additional payment terms may apply.
+These future arrangements do not constitute currently active payment functionality.
+Yearbuk may update these Terms before or when payment functionality is introduced.
+⸻
+20. Payment Information
+If payment functionality becomes available, schools must not request or store users’ payment-card information through Yearbuk outside the supported payment system.
+Schools must not attempt to bypass Yearbuk’s payment infrastructure.
+Payment processing may be subject to the terms and privacy policies of the relevant payment provider.
+⸻
+21. School Account Security
+Schools are responsible for maintaining the security of their account credentials.
+You must:
+	●	Keep passwords confidential;
+	●	Use appropriate security practices;
+	●	Enable two-factor authentication where available;
+	●	Not share credentials unnecessarily; and
+	●	Notify Yearbuk if you believe the account has been compromised.
+The school is responsible for activity performed through its account to the extent permitted by applicable law.
+⸻
+22. Unauthorized Access
+You must not:
+	●	Attempt to access another school’s account;
+	●	Access restricted Yearbuk systems;
+	●	Bypass authentication;
+	●	Exploit vulnerabilities;
+	●	Interfere with Yearbuk’s infrastructure; or
+	●	Access information you are not authorized to access.
+Security vulnerabilities may be reported to:
+support@yearbuk.com
+⸻
+23. Third-Party Services
+Yearbuk may use third-party services to operate the platform.
+These may include services for:
+	●	Hosting;
+	●	Database infrastructure;
+	●	Media storage;
+	●	Email;
+	●	Authentication;
+	●	Payment processing; and
+	●	Security.
+Third-party services may have their own terms and privacy policies.
+Schools must comply with applicable third-party requirements when using features that depend on those services.
+⸻
+24. Account Suspension and Termination
+Yearbuk may suspend, restrict, or terminate a school account where reasonably necessary to:
+	●	Enforce these Terms;
+	●	Prevent abuse;
+	●	Protect users;
+	●	Protect the platform;
+	●	Investigate suspected unlawful activity;
+	●	Respond to security incidents;
+	●	Comply with legal obligations; or
+	●	Address serious or repeated violations.
+Where appropriate and reasonably practicable, Yearbuk may provide notice before taking action.
+However, immediate action may be taken where necessary to protect users, security, or the platform.
+⸻
+25. Verification Suspension
+Yearbuk may suspend or remove a school’s verified status independently of account termination.
+For example, this may occur if:
+	●	Verification information becomes unreliable;
+	●	The school is no longer eligible for verification;
+	●	The account was obtained through false information; or
+	●	The school violates applicable verification requirements.
+Removal of verification does not necessarily mean that the entire school account is deleted.
+⸻
+26. School Account Deactivation
+Where Yearbuk provides a deactivation feature, a school may temporarily deactivate its account according to the available functionality.
+Deactivation is different from permanent deletion.
+The consequences of deactivation will depend on Yearbuk’s implementation and may include making the school profile or associated content unavailable.
+Where reactivation is supported, the school may reactivate its account through the provided process.
+⸻
+27. School Account Deletion
+Where available, a school may request permanent deletion of its account.
+Deletion may result in the removal or unavailability of:
+	●	School profile information;
+	●	Memories;
+	●	Uploaded media;
+	●	Yearbooks;
+	●	School-specific alumni relationships; and
+	●	Other associated information.
+However, Yearbuk may retain information where reasonably necessary for:
+	●	Legal obligations;
+	●	Security;
+	●	Fraud prevention;
+	●	Dispute resolution;
+	●	Financial/accounting requirements;
+	●	Enforcement of legal rights; or
+	●	Other legitimate retention purposes.
+Deletion of a school account does not mean that independent viewer accounts belonging to alumni are deleted.
+⸻
+28. Privacy
+Yearbuk’s processing of personal information is described in the Yearbuk School Account Privacy Policy.
+By operating a school account, you acknowledge that you have reviewed that Privacy Policy.
+Schools remain responsible for their own processing of personal information through the platform.
+⸻
+29. Public Content
+Schools understand that information intentionally published on a public school profile may be accessible to other users and potentially to people outside Yearbuk depending on the platform’s functionality.
+Yearbuk cannot guarantee that third parties will not:
+	●	Screenshot content;
+	●	Copy information;
+	●	Save photographs;
+	●	Share content elsewhere; or
+	●	Otherwise reproduce publicly accessible information.
+Schools should consider this before publishing content.
+⸻
+30. Platform Availability
+Yearbuk aims to provide a reliable service but does not guarantee that the platform will:
+	●	Always be available;
+	●	Operate without interruption;
+	●	Be completely error-free; or
+	●	Remain unchanged.
+Maintenance, security incidents, infrastructure failures, third-party service failures, or other circumstances may temporarily affect availability.
+⸻
+31. Content Accuracy
+Yearbuk provides tools for schools to publish and manage information.
+Yearbuk does not independently guarantee the accuracy of every school profile, memory, photograph, yearbook, or alumni record submitted by users or schools.
+Schools are responsible for the accuracy of information they publish.
+⸻
+32. No Transfer of School Authority
+Creating a school account does not make Yearbuk an agent, employee, representative, or legal representative of the school.
+Except where expressly agreed otherwise, Yearbuk does not make decisions on behalf of the school regarding:
+	●	Student records;
+	●	Alumni status;
+	●	School administration;
+	●	School employment;
+	●	Academic records; or
+	●	Other institutional matters.
+⸻
+33. Changes to Yearbuk
+Yearbuk may add, remove, modify, or discontinue features.
+Where a significant change affects these Terms, Yearbuk may update the Terms and provide appropriate notice.
+The “Last Updated” date will indicate when the Terms were most recently revised.
+⸻
+34. Changes to These Terms
+Yearbuk may update these Terms from time to time.
+If changes are material, Yearbuk may provide notice through the platform or another appropriate method.
+Continued use of the school account after the effective date of updated Terms constitutes acceptance of the updated Terms where permitted by applicable law.
+If you do not agree to updated Terms, you should stop using the school account and may request account closure where available.
+⸻
+35. Limitation of Liability
+To the extent permitted by applicable law, Yearbuk will not be responsible for losses resulting from:
+	●	User-uploaded content;
+	●	Inaccurate information supplied by schools or users;
+	●	Unauthorized use of a school account resulting from compromised credentials;
+	●	Third-party services;
+	●	Temporary platform unavailability;
+	●	User-to-user disputes; or
+	●	Events outside Yearbuk’s reasonable control.
+Nothing in these Terms excludes or limits liability where doing so would be prohibited by applicable law.
+⸻
+36. Indemnity
+To the extent permitted by applicable law, a school agrees to be responsible for claims, losses, or reasonable expenses arising from the school’s:
+	●	Violation of these Terms;
+	●	Unlawful processing of personal information;
+	●	Unauthorized publication of content;
+	●	Infringement of another person’s rights; or
+	●	Unauthorized use of Yearbuk.
+This section does not apply to the extent that the relevant claim resulted from Yearbuk’s own unlawful conduct or negligence.
+⸻
+37. Governing Law
+These Terms are governed by the laws of the Federal Republic of Nigeria, except where applicable law requires otherwise.
+Disputes will be subject to the jurisdiction of the appropriate courts in Nigeria, subject to any mandatory legal rights or dispute-resolution requirements that apply.
+⸻
+38. Contact
+For questions about these Terms or the Yearbuk school-account service:
+Yearbuk Operated by Nwabuisi Netochukwu Nigeria
+Email: support@yearbuk.com
