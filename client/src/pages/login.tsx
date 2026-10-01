@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, GraduationCap, BookOpen, Users, Camera, Star, Shield, Heart } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
+import { PrivacyPolicyDialog } from "@/components/PrivacyPolicyDialog";
 import logoImage from "@assets/tab_logo_good.png";
 import { FaXTwitter, FaInstagram } from "react-icons/fa6";
 
@@ -21,6 +22,7 @@ export default function LoginPage() {
   const [userEmail, setUserEmail] = useState("");
   const [unverifiedUserId, setUnverifiedUserId] = useState("");
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [privacyPolicyOpen, setPrivacyPolicyOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -365,10 +367,17 @@ export default function LoginPage() {
 
           {/* Footer Links */}
           <div className="mt-6 text-center space-x-4">
-            <button className="text-xs text-white hover:text-white">Privacy Policy</button>
+            <button
+              className="text-xs text-white hover:text-white"
+              onClick={() => setPrivacyPolicyOpen(true)}
+              data-testid="button-privacy-policy-login"
+            >
+              Privacy Policy
+            </button>
             <span className="text-gray-300">•</span>
             <button className="text-xs text-white hover:text-white">Terms of Service</button>
           </div>
+          <PrivacyPolicyDialog open={privacyPolicyOpen} onOpenChange={setPrivacyPolicyOpen} />
 
           {/* Social Media Icons */}
           <div className="mt-6 flex justify-center items-center space-x-4">
