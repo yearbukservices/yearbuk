@@ -62,7 +62,7 @@ export default function HomePage() {
         <div className="max-w-4xl animate-fade-in-up text-center w-full">
           {/* Main Brand Section */}
           <div className="mb-16">
-            <div className="flex items-center justify-center mb-8">
+            <div className="flex items-center justify-center mb-12">
               <div className="relative">
                 <div className="w-32 h-32 rounded-full flex items-center justify-center shadow-2xl overflow-hidden">
                   <img 
