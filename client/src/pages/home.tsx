@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, Users, Camera, Shield, Heart } from "lucide-react";
 import { LoginDialog } from "@/components/LoginDialog";
 import { PrivacyPolicyDialog } from "@/components/PrivacyPolicyDialog";
+import { TermsOfServiceDialog } from "@/components/TermsOfServiceDialog";
 import logoImage from "@assets/logo_background_null.png";
 import { FaXTwitter, FaInstagram } from "react-icons/fa6";
 
@@ -11,6 +12,7 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [privacyPolicyOpen, setPrivacyPolicyOpen] = useState(false);
+  const [termsOfServiceOpen, setTermsOfServiceOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex flex-col relative overflow-hidden">
@@ -183,10 +185,17 @@ export default function HomePage() {
             Privacy Policy
           </button>
           <span className="text-white/50">•</span>
-          <button className="text-sm text-white/70 hover:text-white">Terms of Service</button>
+          <button
+            className="text-sm text-white/70 hover:text-white"
+            onClick={() => setTermsOfServiceOpen(true)}
+            data-testid="button-terms-of-service-footer"
+          >
+            Terms of Service
+          </button>
         </div>
       </div>
       <PrivacyPolicyDialog open={privacyPolicyOpen} onOpenChange={setPrivacyPolicyOpen} />
+      <TermsOfServiceDialog open={termsOfServiceOpen} onOpenChange={setTermsOfServiceOpen} />
     </div>
   );
 }
